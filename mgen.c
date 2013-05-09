@@ -3,9 +3,9 @@
 // Visualisation:
 //    objdump -dS mgen.o
 
+#include <assert.h>
 #include <stdio.h>
 #include <emmintrin.h>
-#include <assert.h>
 
 typedef char epi8 __attribute__ ((vector_size (16)));
 epi8 zero   = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -60,23 +60,22 @@ void remove_generator(monoid *src, monoid *dst, unsigned char gen)
   dst->genus = src->genus + 1;
   if (gen == src->min) dst->min = dst->conductor;
   else                 dst->min = src->min;
+
   start_block = gen >> 4;
-  for (i=0; i<start_block; i++)
+  for (i=0; i<NBLOCKS; i++)
     nth_block(dst->decs, i) = nth_block(src->decs, i);
   decal = gen - (gen & 0xFFF0);
   block = zero;
   for (i=decal; i<16; i++) block[i] = src->decs[i-decal];
-  nth_block(dst->decs, start_block) =
-    nth_block(src->decs, start_block) - ((block != zero) & block2);
+  nth_block(dst->decs, start_block) -= ((block != zero) & block2);
   for (i=start_block+1; i<NBLOCKS; i++)
     {
       // The following won't work due to a bug in GCC 4.7.1
       // block = *((epi8*)(src->decs+ ((i-start_block)<<4) - decal));
       block = load_epi8(src->decs+ ((i-start_block)<<4) - decal);
-      nth_block(dst->decs, i) =
-	nth_block(src->decs, i) - ((block != zero) & block2);
+      nth_block(dst->decs, i) -= ((block != zero) & block2);
     }
-  if (gen+gen<SIZE) dst->decs[gen+gen]++;
+  if (2*gen<SIZE) dst->decs[2*gen]++;
 
   assert(dst->decs[dst->conductor-1] == 0);
 }
