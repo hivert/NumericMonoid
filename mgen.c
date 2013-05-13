@@ -16,7 +16,7 @@ epi8 block2 = {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
 #define store_epi8(t, v) (_mm_store_si128((__m128i *) (t), (__m128i) (v)))
 #define storeu_epi8(t, v) (_mm_storeu_si128((__m128i *) (t), (__m128i) (v)))
 
-#define MAX_GENUS 30
+#define MAX_GENUS 40
 #define SIZE_BOUND (3*MAX_GENUS-1)
 #define NBLOCKS ((SIZE_BOUND+15) >> 4)
 #define SIZE (NBLOCKS << 4)
@@ -29,7 +29,7 @@ typedef struct {
   unsigned char conductor, min, genus;
 } monoid;
 
-unsigned long long int number[MAX_GENUS+1];
+unsigned long long int numbers[MAX_GENUS+1];
 unsigned int stack_pointer = 0;
 monoid stack[100], current;
 
@@ -86,7 +86,7 @@ int main(void)
   unsigned int i, genus;
   epi8 block;
 
-  for (i=0; i<=MAX_GENUS; i++) number[i] = 0;
+  for (i=0; i<=MAX_GENUS; i++) numbers[i] = 0;
   for (i=0; i<16; i++) block[i] = i+1;
   for (i=0; i<NBLOCKS; i++) nth_block(current.decs, i) = block + ((char) (i<<4));
   current.genus = 0;
@@ -97,22 +97,18 @@ int main(void)
 
   while (stack_pointer)
     {
-      stack_pointer--;
-      genus = stack[stack_pointer].genus;
-      number[genus]++;
+      genus = stack[--stack_pointer].genus;
+      numbers[genus]++;
       if (genus < MAX_GENUS)
 	{
 	  current = stack[stack_pointer];
 	  for (i = current.conductor; i <= current.conductor+current.min; i++)
 	    if (current.decs[i] == 2)
-	      {
-		remove_generator(&current, &(stack[stack_pointer]), i);
-		stack_pointer++;
-	      }
+	      remove_generator(&current, &(stack[stack_pointer++]), i);
 	}
     }
   printf("Size = ");
-  for (i=1; i<=MAX_GENUS; i++) printf("%llu ", number[i]);
+  for (i=1; i<=MAX_GENUS; i++) printf("%llu ", numbers[i]);
   printf("\n");
   return EXIT_SUCCESS;
 }
