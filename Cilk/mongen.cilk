@@ -120,11 +120,8 @@ void print_sizes(int nproc)
 
 
 #include <signal.h>
-#include <unistd.h>
-#include <stdio.h>
 
 #define PERIOD 5
-volatile long int status = 0;
 int nproc, nloops=0;
 void sigalrm_handler( int sig )
 {
