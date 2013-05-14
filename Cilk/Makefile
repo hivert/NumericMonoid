@@ -4,8 +4,8 @@ SUFFIXES = .cilk
 NPROC = 8
 PROGFLAGS = --nproc $(NPROC)
 
-CFLAGS = -g -W -march=native -mtune=native -O3 -DNDEBUG -lrt
-CILKFLAGS = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600
+CFLAGS = -W -march=native -mtune=native -O3 -DNDEBUG -lrt -Wvector-operation-performance
+CILKFLAGS = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 # -cilk-profile
 CILKCOMPILE = $(CILK) $(DEFS) $(INCLUDES) $(CFLAGS) $(AM_CILKFLAGS) $(CILKFLAGS)
 CILKLD = $(CILK)
 CILKLINK = $(CILKLD) $(CILKFLAGS) $(LDFLAGS) -o $@
