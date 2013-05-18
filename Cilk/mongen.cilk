@@ -66,7 +66,7 @@ void remove_generator(monoid *__restrict__ src,
     nth_block(dst->decs, i) = nth_block(src->decs, i);
 
   start_block = gen >> 4;
-  decal = gen - (gen & 0xFFF0);
+  decal = gen & 0xF;
   // Shift block by decal uchar
   block = (epi8) _mm_shuffle_epi8((__m128i) nth_block(src->decs, 0),
 				  (__m128i) shift16[decal]);
@@ -110,7 +110,7 @@ cilk void walk_children(monoid *pm)
     epi8 block;
 
     start_block = pm->conductor >> 4;
-    decal = pm->conductor - (pm->conductor & 0xFFF0);
+    decal = pm->conductor & 0xF;
     block = nth_block(pm->decs, start_block) & mask16[decal];
     nbr = _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block2)));
     for (i=start_block+1; i <= (pm->conductor+pm->min+15) >> 4; i++)
