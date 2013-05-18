@@ -64,7 +64,7 @@ void print_epi8(epi8 bl)
   printf("\n");
 }
 
-void remove_generator(monoid *__restrict__ src,
+inline void remove_generator(monoid *__restrict__ src,
 		      monoid *__restrict__ dst,
 		      unsigned long int gen)
 {
@@ -102,11 +102,10 @@ void remove_generator(monoid *__restrict__ src,
 
 cilk void walk_children(monoid *pm)
 {
-  unsigned long int iblock, gen, decal;
+  unsigned long int iblock, gen, decal, shift, mask;
   monoid tmpmon, *newmonoid = &tmpmon;
   int working = 0, nbr;
   epi8 block;
-  unsigned int mask, shift;
 
   iblock = pm->conductor >> 4;
   decal = pm->conductor & 0xF;
@@ -122,12 +121,12 @@ cilk void walk_children(monoid *pm)
 	    {
 	      shift = __bsfd (mask) + 1;
 	      gen += shift;
+	      mask >>= shift;
 	      if (working) // Another thread is still working on the former newmonoid
 		newmonoid = (monoid *) Cilk_alloca(sizeof(monoid));
 	      remove_generator(pm, newmonoid, gen);
 	      spawn walk_children(newmonoid);
 	      working = !SYNCHED;
-	      mask >>= shift;
 	      nbr++;
 	    }
 	  iblock++;
