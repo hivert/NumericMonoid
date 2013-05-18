@@ -2,11 +2,27 @@
 //    gcc -O3 -Wall -ggdb mgen.c -c && gcc mgen.o -o mgen
 // Visualisation:
 //    objdump -dS mgen.o
+/*
+Size = 1 2 4 7 12 23 39 67 118 204 343 592 1001 1693 2857 4806 8045 13467 22464 37396 62194 103246 170963 282828 467224 770832 1270267 2091030 3437839 5646773 9266788 15195070 24896206 40761087 66687201 109032500 178158289 290939807 474851445 774614284 
+
+*/
 
 #include <assert.h>
 #include <stdio.h>
 #include <x86intrin.h>
+
+#ifdef CILK
 #include <cilk-lib.cilkh>
+#else
+#define cilk
+#define spawn
+#define sync
+#define Self (0)
+#define SYNCHED (1)
+#define Cilk_active_size (1)
+#define Cilk_alloca (alloca)
+#endif
+
 
 typedef unsigned char epi8 __attribute__ ((vector_size (16)));
 epi8 zero, block2, shift16[16], mask16[16];
@@ -28,8 +44,7 @@ typedef struct {
   unsigned long int conductor, min, genus;
 } monoid;
 
-typedef unsigned long long int ulong;
-typedef ulong result[MAX_GENUS];
+typedef unsigned long long int result[MAX_GENUS];
 
 result *numbers_proc_local;
 
@@ -87,35 +102,46 @@ void remove_generator(monoid *__restrict__ src,
 
 cilk void walk_children(monoid *pm)
 {
-  unsigned long int i;
+  unsigned long int iblock, gen, decal;
   monoid tmpmon, *newmonoid = &tmpmon;
-  int working = 0, nbr = 0;
+  int working = 0, nbr;
+  epi8 block;
+  unsigned int mask, shift;
 
+  iblock = pm->conductor >> 4;
+  decal = pm->conductor & 0xF;
+  block = nth_block(pm->decs, iblock) & mask16[decal];
+  mask  = _mm_movemask_epi8((__m128i) (block == block2));
   if (pm->genus < MAX_GENUS-1)
     {
-      for (i = pm->conductor; i <= pm->conductor+pm->min; i++)
-	if (pm->decs[i] == 2)
-	  {
-	    nbr++;
-	    if (working) // Another thread is still working on the former newmonoid
-	      newmonoid = (monoid *) Cilk_alloca(sizeof(monoid));
-	    remove_generator(pm, newmonoid, i);
-	    spawn walk_children(newmonoid);
-	    working = !SYNCHED;
-	  }
+      nbr = 0;
+      do
+	{
+	  gen = (iblock << 4) - 1;
+	  while (mask)
+	    {
+	      shift = __bsfd (mask) + 1;
+	      gen += shift;
+	      if (working) // Another thread is still working on the former newmonoid
+		newmonoid = (monoid *) Cilk_alloca(sizeof(monoid));
+	      remove_generator(pm, newmonoid, gen);
+	      spawn walk_children(newmonoid);
+	      working = !SYNCHED;
+	      mask >>= shift;
+	      nbr++;
+	    }
+	  iblock++;
+	  block = nth_block(pm->decs, iblock);
+	  mask  = _mm_movemask_epi8((__m128i) (block == block2));
+	}
+      while (iblock <= (pm->conductor+pm->min+15) >> 4);
     }
   else
   {
-    unsigned long int start_block, decal;
-    epi8 block;
-
-    start_block = pm->conductor >> 4;
-    decal = pm->conductor & 0xF;
-    block = nth_block(pm->decs, start_block) & mask16[decal];
-    nbr = _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block2)));
-    for (i=start_block+1; i <= (pm->conductor+pm->min+15) >> 4; i++)
+    nbr = _mm_popcnt_u32(mask);
+    for (iblock++; iblock <= (pm->conductor+pm->min+15) >> 4; iblock++)
       {
-	block = nth_block(pm->decs, i);
+	block = nth_block(pm->decs, iblock);
 	nbr += _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block2)));
       }
   }
@@ -131,7 +157,7 @@ void print_sizes(int nproc)
   printf("Size = ");
   for (i=0; i<MAX_GENUS; i++)
     {
-      ulong res = 0;
+      unsigned long long int res = 0;
       for (proc=0; proc<nproc; proc++) res += numbers_proc_local[proc][i];
       printf("%llu ", res);
     }
@@ -211,7 +237,3 @@ cilk int main(void)
 }
 
 
-/*
-  Size = 1 2 4 7 12 23 39 67 118 204 343 592 1001 1693 2857 4806 8045 13467 22464 37396 62194 103246 170963 282828 467224 770832 1270267 2091030 3437839 5646773 9266788 15195070 24896206 40761087 66687201 109032500 178158289 290939807 474851445 774614284 
-
-*/

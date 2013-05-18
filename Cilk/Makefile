@@ -4,8 +4,8 @@ SUFFIXES = .cilk
 NPROC = 8
 PROGFLAGS = --nproc $(NPROC)
 
-CFLAGS = -g -W -march=native -mtune=native -O3 -lrt -Wvector-operation-performance -DNDEBUG
-CILKFLAGS = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 #-cilk-profile
+CFLAGS = -g -W -O3 -march=native -mtune=native -lrt -Wvector-operation-performance -DNDEBUG
+CILKFLAGS = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -DCILK #-cilk-profile
 CILKCOMPILE = $(CILK) $(DEFS) $(INCLUDES) $(CFLAGS) $(AM_CILKFLAGS) $(CILKFLAGS)
 CILKLD = $(CILK)
 CILKLINK = $(CILKLD) $(CILKFLAGS) $(LDFLAGS) -o $@
@@ -17,7 +17,11 @@ all: mongen monser
 mongen: mongen.cilk
 	$(CILKCOMPILE) mongen.cilk -o mongen 2>&1| grep -v "implicit.*__builtin_"
 
-monser: monser.c
-	gcc $(CFLAGS) monser.c -o monser
+monser: mongen.cilk
+	gcc $(CFLAGS) mongen.c -o monser
 run: all
 	./mongen $(PROGFLAGS)
+
+clean:
+	rm -f mongen monser
+
