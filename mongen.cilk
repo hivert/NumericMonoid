@@ -19,22 +19,21 @@ Size = 1 2 4 7 12 23 39 67 118 204 343 592 1001 1693 2857 4806 8045 13467 22464 
 
 cilk void walk_children(monoid *pm)
 {
-  unsigned long int iblock, decal, shift, gen;
+  unsigned long int iblock, shift, gen;
   monoid tmpmon, *newmonoid = &tmpmon;
   unsigned int mask;
   epi8 block;
 
   iblock = pm->conductor >> 4;
-  decal = pm->conductor & 0xF;
-  block = nth_block(pm->decs, iblock) & mask16[decal];
+  block = nth_block(pm->decs, iblock) & mask16[pm->conductor & 0xF];
   mask  = _mm_movemask_epi8((__m128i) (block == block2));
   if (pm->genus < MAX_GENUS-1)
     {
       unsigned long int nbr = 0;
+      gen = (iblock << 4) - 1;
       do
 	{
-	  gen = (iblock << 4) - 1;
-	  while (mask)
+	  if (mask)
 	    {
 	      shift = __bsfd (mask) + 1;
 	      gen += shift;
@@ -45,11 +44,15 @@ cilk void walk_children(monoid *pm)
 	      spawn walk_children(newmonoid);
 	      nbr++;
 	    }
-	  iblock++;
-	  block = nth_block(pm->decs, iblock);
-	  mask  = _mm_movemask_epi8((__m128i) (block == block2));
+	  else
+	    {
+	      if (++iblock > (pm->conductor+pm->min+15) >> 4) break;
+	      gen = (iblock << 4) - 1;
+	      block = nth_block(pm->decs, iblock);
+	      mask  = _mm_movemask_epi8((__m128i) (block == block2));
+	    }
 	}
-      while (iblock <= (pm->conductor+pm->min+15) >> 4);
+      while (1);
       results_proc_local[Self][pm->genus]+=nbr;
     }
   else

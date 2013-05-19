@@ -64,10 +64,10 @@ int main(void)
       if (current.genus < MAX_GENUS - 1)
 	{
 	  unsigned long int nbr = 0;
+	  gen = (iblock << 4) - 1;
 	  do
 	    {
-	      gen = (iblock << 4) - 1;
-	      while (mask)
+	      if (mask)
 		{
 		  shift = __bsfd (mask) + 1;
 		  gen += shift;
@@ -75,11 +75,15 @@ int main(void)
 		  remove_generator(&current, &(stack[stack_pointer++]), gen);
 		  nbr++;
 		}
-	      iblock++;
-	      block = nth_block(current.decs, iblock);
-	      mask  = _mm_movemask_epi8((__m128i) (block == block2));
+	      else
+		{
+		  if (++iblock > (current.conductor+current.min+15) >> 4) break;
+		  gen = (iblock << 4) - 1;
+		  block = nth_block(current.decs, iblock);
+		  mask  = _mm_movemask_epi8((__m128i) (block == block2));
+		}
 	    }
-	  while (iblock <= (current.conductor+current.min+15) >> 4);
+	  while (1);
 	  results[current.genus]+=nbr;
 	}
       else
