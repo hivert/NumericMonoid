@@ -11,16 +11,8 @@ Size = 1 2 4 7 12 23 39 67 118 204 343 592 1001 1693 2857 4806 8045 13467 22464 
 #include <stdio.h>
 #include <x86intrin.h>
 
-#ifdef CILK
+#ifndef C_ELISION
 #include <cilk-lib.cilkh>
-#else
-#define cilk
-#define spawn
-#define sync
-#define Self (0)
-#define SYNCHED (1)
-#define Cilk_active_size (1)
-#define Cilk_alloca (alloca)
 #endif
 
 
@@ -32,7 +24,7 @@ epi8 zero, block2, shift16[16], mask16[16];
 #define store_epi8(t, v) (_mm_store_si128((__m128i *) (t), (__m128i) (v)))
 #define storeu_epi8(t, v) (_mm_storeu_si128((__m128i *) (t), (__m128i) (v)))
 
-#define MAX_GENUS 35
+#define MAX_GENUS 40
 #define SIZE_BOUND (3*(MAX_GENUS-1))
 #define NBLOCKS ((SIZE_BOUND+15) >> 4)
 #define SIZE (NBLOCKS << 4)
