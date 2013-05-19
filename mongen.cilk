@@ -7,90 +7,15 @@ Size = 1 2 4 7 12 23 39 67 118 204 343 592 1001 1693 2857 4806 8045 13467 22464 
 
 */
 
-#include <assert.h>
 #include <stdio.h>
-#include <x86intrin.h>
+#include <assert.h>
 
 #ifndef C_ELISION
 #include <cilk-lib.cilkh>
 #endif
 
-
-typedef unsigned char epi8 __attribute__ ((vector_size (16)));
-epi8 zero, block2, shift16[16], mask16[16];
-
-#define nth_block(st, i) (((epi8 *) st)[i])
-#define load_epi8(t) ((epi8) _mm_loadu_si128((__m128i *) (t)))
-#define store_epi8(t, v) (_mm_store_si128((__m128i *) (t), (__m128i) (v)))
-#define storeu_epi8(t, v) (_mm_storeu_si128((__m128i *) (t), (__m128i) (v)))
-
-#define MAX_GENUS 40
-#define SIZE_BOUND (3*(MAX_GENUS-1))
-#define NBLOCKS ((SIZE_BOUND+15) >> 4)
-#define SIZE (NBLOCKS << 4)
-
-
-typedef unsigned char nb_decompositions[SIZE] __attribute__ ((aligned (16)));
-typedef struct {
-  nb_decompositions decs;
-  unsigned long int conductor, min, genus;
-} monoid;
-
-typedef unsigned long long int result[MAX_GENUS];
-
-result *results_proc_local;
-
-void print_monoid(monoid *pm)
-{
-  unsigned int i;
-  printf("min = %i, cond = %i, genus = %i, decs = ",
-	 pm->min, pm->conductor, pm->genus);
-  for (i=0; i<SIZE; i++) printf("%u ", pm->decs[i]);
-  printf("\n");
-}
-
-void print_epi8(epi8 bl)
-{
-  unsigned int i;
-  for (i=0; i<16; i++) printf("%u ", ((unsigned char*)&bl)[i]);
-  printf("\n");
-}
-
-inline void remove_generator(monoid *__restrict__ src,
-		      monoid *__restrict__ dst,
-		      unsigned long int gen)
-{
-  unsigned long int start_block, decal, i;
-  epi8 block;
-
-  assert(src->decs[gen] == 2);
-
-  dst->conductor = gen + 1;
-  dst->genus = src->genus + 1;
-  dst->min = gen == src->min ? dst->conductor : src->min;
-
-  for (i=0; i<NBLOCKS; i++)
-    nth_block(dst->decs, i) = nth_block(src->decs, i);
-
-  start_block = gen >> 4;
-  decal = gen & 0xF;
-  // Shift block by decal uchar
-  block = (epi8) _mm_shuffle_epi8((__m128i) nth_block(src->decs, 0),
-				  (__m128i) shift16[decal]);
-  nth_block(dst->decs, start_block) -= ((block != zero) & block2);
-
-  for (i=start_block+1; i<NBLOCKS; i++)
-    {
-      // The following won't work due to a bug in GCC 4.7.1
-      // block = *((epi8*)(src->decs + ((i-start_block)<<4) - decal));
-      block = load_epi8(src->decs + ((i-start_block)<<4) - decal);
-      nth_block(dst->decs, i) -= ((block != zero) & block2);
-    }
-  if (2*gen<SIZE) dst->decs[2*gen]++;
-
-  assert(dst->decs[dst->conductor-1] == 0);
-}
-
+#include "alarm.h"
+#include "monoid.h"
 
 cilk void walk_children(monoid *pm)
 {
@@ -155,30 +80,8 @@ void print_sizes()
   printf("\n");
 }
 
+void progress_report(void) { print_sizes(); }
 
-
-#include <signal.h>
-
-#define PERIOD 10
-int nloops=0;
-void sigalrm_handler( int sig )
-{
-  printf("\nNloops = %i\n", nloops++);
-  print_sizes();
-  alarm(PERIOD);
-}
-
-void start_alarm(void)
-{
-    struct sigaction sact;
-
-    sigemptyset(&sact.sa_mask);
-    sact.sa_flags = 0;
-    sact.sa_handler = sigalrm_handler;
-    sigaction(SIGALRM, &sact, NULL);
-
-    alarm(PERIOD);
-}
 
 
 cilk int main(void)
