@@ -1,5 +1,6 @@
 Docs/.*$
 exper/.*$
+.*\.o$
 mgen$
 mongen$
 monser$
