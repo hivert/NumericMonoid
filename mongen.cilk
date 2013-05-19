@@ -96,7 +96,7 @@ cilk int main(void)
   start_alarm();
 
   // Init the proc local results
-  results_proc_local = (result *) malloc(Cilk_active_size*sizeof(result));
+  results_proc_local = malloc(Cilk_active_size*sizeof(result));
   for (proc=0; proc<Cilk_active_size; proc++)
     for (i=0; i<MAX_GENUS; i++) results_proc_local[proc][i] = 0;
   // Init the shifter
