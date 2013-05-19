@@ -140,8 +140,8 @@ cilk void walk_children(monoid *pm)
 
 }
 
-
-void print_sizes(int nproc)
+int nproc;
+void print_sizes()
 {
   int i, proc;
 
@@ -159,20 +159,19 @@ void print_sizes(int nproc)
 
 #include <signal.h>
 
-#define PERIOD 5
-int nproc, nloops=0;
+#define PERIOD 10
+int nloops=0;
 void sigalrm_handler( int sig )
 {
   printf("\nNloops = %i\n", nloops++);
-  print_sizes(nproc);
+  print_sizes();
   alarm(PERIOD);
 }
 
-void start_alarm(int np)
+void start_alarm(void)
 {
     struct sigaction sact;
 
-    nproc = np;
     sigemptyset(&sact.sa_mask);
     sact.sa_flags = 0;
     sact.sa_handler = sigalrm_handler;
@@ -190,7 +189,8 @@ cilk int main(void)
   monoid N, N1;
 
   printf("Computing number of numeric monoids for genus <= %i\n", MAX_GENUS);
-  start_alarm(Cilk_active_size);
+  nproc = Cilk_active_size;
+  start_alarm();
 
   // Init the proc local results
   results_proc_local = (result *) malloc(Cilk_active_size*sizeof(result));
@@ -222,7 +222,7 @@ cilk int main(void)
   sync;
 
   printf("\n============================\n\n");
-  print_sizes(Cilk_active_size);
+  print_sizes();
   free(results_proc_local);
   return EXIT_SUCCESS;
 }

@@ -98,8 +98,8 @@ void print_sizes(void)
 #include <unistd.h>
 #include <signal.h>
 
-#define PERIOD 5
-int nproc, nloops=0;
+#define PERIOD 10
+int nloops=0;
 void sigalrm_handler( int sig )
 {
   printf("\nNloops = %i\n", nloops++);
