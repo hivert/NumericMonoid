@@ -27,14 +27,18 @@ mongen.o: mongen.cilk monoid.h alarm.h
 mongen: mongen.o alarm.o monoid.o
 	$(CILKLINK) $^
 
-monser: mongen.cilk monser.c monoid.o alarm.o
-	gcc $(CFLAGS) monoid.o alarm.o monser.c -o monser
+monser.o: mongen.cilk monoid.h alarm.h
+monser: monser.o monoid.o alarm.o
+	gcc $(CFLAGS) $^ -o $@
 
-mgen: mgen.c alarm.o monoid.o
-	gcc $(CFLAGS) monoid.o alarm.o mgen.c -o mgen
+mgen.o: monoid.h alarm.h
+mgen: mgen.o alarm.o monoid.o
+	gcc $(CFLAGS) $^ -o $@
 
 run: all
 	./mongen $(PROGFLAGS)
+
+.PHONY: clean run
 
 clean:
 	rm -f mongen monser mgen *.o
