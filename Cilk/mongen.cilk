@@ -104,7 +104,7 @@ cilk void walk_children(monoid *pm)
 {
   unsigned long int iblock, decal, shift, gen;
   monoid tmpmon, *newmonoid = &tmpmon;
-  unsigned int mask, nbr;
+  unsigned int mask;
   epi8 block;
 
   iblock = pm->conductor >> 4;
@@ -113,7 +113,7 @@ cilk void walk_children(monoid *pm)
   mask  = _mm_movemask_epi8((__m128i) (block == block2));
   if (pm->genus < MAX_GENUS-1)
     {
-      nbr = 0;
+      unsigned long int nbr = 0;
       do
 	{
 	  gen = (iblock << 4) - 1;
@@ -133,18 +133,19 @@ cilk void walk_children(monoid *pm)
 	  mask  = _mm_movemask_epi8((__m128i) (block == block2));
 	}
       while (iblock <= (pm->conductor+pm->min+15) >> 4);
+      numbers_proc_local[Self][pm->genus]+=nbr;
     }
   else
   {
-    nbr = _mm_popcnt_u32(mask);
+    unsigned char nbr = _mm_popcnt_u32(mask);
     for (iblock++; iblock <= (pm->conductor+pm->min+15) >> 4; iblock++)
       {
 	block = nth_block(pm->decs, iblock);
 	nbr += _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block2)));
       }
+      numbers_proc_local[Self][pm->genus]+=nbr;
   }
 
-  numbers_proc_local[Self][pm->genus]+=nbr;
 }
 
 
