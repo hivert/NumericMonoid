@@ -1,0 +1,6 @@
+Docs/.*$
+exper/.*$
+mgen$
+mongen$
+monser$
+
