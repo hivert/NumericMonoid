@@ -17,7 +17,7 @@ all: mongen monser mgen
 mongen: mongen.cilk
 	$(CILKCOMPILE) mongen.cilk -o mongen 2>&1| grep -v "implicit.*__builtin_"
 
-monser: mongen.cilk
+monser: mongen.cilk mongen.c
 	gcc $(CFLAGS) mongen.c -o monser
 
 mgen: mgen.c
