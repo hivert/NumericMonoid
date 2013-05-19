@@ -27,8 +27,8 @@ mongen.o: mongen.cilk monoid.h alarm.h
 mongen: mongen.o alarm.o monoid.o
 	$(CILKLINK) $^
 
-monser: mongen.cilk mongen.c monoid.o alarm.o
-	gcc $(CFLAGS) monoid.o alarm.o mongen.c -o monser
+monser: mongen.cilk monser.c monoid.o alarm.o
+	gcc $(CFLAGS) monoid.o alarm.o monser.c -o monser
 
 mgen: mgen.c alarm.o monoid.o
 	gcc $(CFLAGS) monoid.o alarm.o mgen.c -o mgen
