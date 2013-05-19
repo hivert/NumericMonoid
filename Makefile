@@ -5,7 +5,7 @@ NPROC = 8
 PROGFLAGS = --nproc $(NPROC)
 
 CFLAGS = -g -W -O3 -march=native -mtune=native -lrt -Wvector-operation-performance -DNDEBUG
-CILKFLAGS = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -DCILK -cilk-profile
+CILKFLAGS = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -DCILK # -cilk-profile
 CILKCOMPILE = $(CILK) $(DEFS) $(INCLUDES) $(CFLAGS) $(CILKFLAGS)
 CILKLD = $(CILK)
 CILKLINK = $(CILKLD) $(CILKFLAGS) $(LDFLAGS) -o $@
