@@ -36,7 +36,7 @@ clean::
 
 
 monser.o: mongen.cilk monoid.h alarm.h
-monser: monser.o monoid.o alarm.o
+monser: monser.o alarm.o monoid.o
 clean::
 	-$(RM) monser
 
@@ -51,4 +51,4 @@ run: all
 
 
 clean::
-	-$(RM) *.o
+	-$(RM) *.o perf.data

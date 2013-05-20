@@ -68,7 +68,7 @@ inline void remove_generator(monoid *__restrict__ src,
 		      monoid *__restrict__ dst,
 		      unsigned long int gen)
 {
-  unsigned long int start_block, decal, i;
+  unsigned long int start_block, decal;
   epi8 block;
 
   assert(src->decs[gen] == 2);
@@ -86,13 +86,44 @@ inline void remove_generator(monoid *__restrict__ src,
 				  (__m128i) shift16[decal]);
   nth_block(dst->decs, start_block) -= ((block != zero) & block2);
 
-  for (i=start_block+1; i<NBLOCKS; i++)
+#if NBLOCKS == 8
+  #warning "Using unrolled loop version"
+  {
+    unsigned char *srcblock = src->decs + 16 - decal;
+  switch(start_block)
+    {
+    case 0 :
+      nth_block(dst->decs, 1) -= ((load_epi8(srcblock) != zero) & block2);
+      srcblock += 16;
+    case 1 :
+      nth_block(dst->decs, 2) -= ((load_epi8(srcblock) != zero) & block2);
+      srcblock += 16;
+    case 2 :
+      nth_block(dst->decs, 3) -= ((load_epi8(srcblock) != zero) & block2);
+      srcblock += 16;
+    case 3 :
+      nth_block(dst->decs, 4) -= ((load_epi8(srcblock) != zero) & block2);
+      srcblock += 16;
+    case 4 :
+      nth_block(dst->decs, 5) -= ((load_epi8(srcblock) != zero) & block2);
+      srcblock += 16;
+    case 5 :
+      nth_block(dst->decs, 6) -= ((load_epi8(srcblock) != zero) & block2);
+      srcblock += 16;
+    case 6 :
+      nth_block(dst->decs, 7) -= ((load_epi8(srcblock) != zero) & block2);
+    }
+  }
+#else
+  #warning "Loop not unrolled"
+  for (unsigned long int i=start_block+1; i<NBLOCKS; i++)
     {
       // The following won't work due to a bug in GCC 4.7.1
       // block = *((epi8*)(src->decs + ((i-start_block)<<4) - decal));
       block = load_epi8(src->decs + ((i-start_block)<<4) - decal);
       nth_block(dst->decs, i) -= ((block != zero) & block2);
     }
+#endif
   if (2*gen<SIZE) dst->decs[2*gen]++;
 
   assert(dst->decs[dst->conductor-1] == 0);
