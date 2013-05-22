@@ -44,31 +44,33 @@ int main(void)
 
   while (stack_pointer)
     {
-      mon_gen_scan scan;
+      monoid_generator_scan scan;
 
-      // current = stack[--stack_pointer];
       --stack_pointer;
-      current.genus = stack[stack_pointer].genus;
-      current.conductor = stack[stack_pointer].conductor;
-      current.min = stack[stack_pointer].min;
-      copy_decs(&current.decs, &(stack[stack_pointer].decs));
-
-//printf("SP = %li\n", stack_pointer);
-//print_monoid(&current);
-      init_gen_scan(&current, &scan);
-
-      if (current.genus < MAX_GENUS - 1)
+      if (stack[stack_pointer].genus < MAX_GENUS - 1)
 	{
 	  unsigned long int nbr = 0, gen;
-	  while ((gen = next_gen_scan(&current, &scan)) != 0)
+
+	  current.genus = stack[stack_pointer].genus;
+	  current.conductor = stack[stack_pointer].conductor;
+	  current.min = stack[stack_pointer].min;
+	  copy_decs(&current.decs, &(stack[stack_pointer].decs));
+
+	  init_generator_scan(&current, &scan);
+
+	  while ((gen = next_generator_scan(&current, &scan)) != 0)
 	    {
 	      remove_generator(&current, &(stack[stack_pointer++]), gen);
 	      nbr++;
 	    }
-	  results[current.genus]+=nbr;
+	  results[current.genus] += nbr;
 	}
       else
-	results[current.genus]+=count_gen_scan(&current, &scan);
+	{
+	  init_generator_scan(&stack[stack_pointer], &scan);
+	  results[stack[stack_pointer].genus] +=
+	    count_generator_scan(&stack[stack_pointer], &scan);
+	}
     }
   printf("\n============================\n\n");
   print_sizes();

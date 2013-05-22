@@ -151,7 +151,7 @@ inline void remove_generator(monoid *__restrict__ src,
 }
 
 
-inline void init_gen_scan(monoid *pm, mon_gen_scan *scan)
+inline void init_generator_scan(monoid *pm, monoid_generator_scan *scan)
 {
   epi8 block;
 
@@ -163,7 +163,7 @@ inline void init_gen_scan(monoid *pm, mon_gen_scan *scan)
   scan->bound = (pm->conductor+pm->min+15) >> 4;
 }
 
-inline unsigned long int next_gen_scan(monoid *pm, mon_gen_scan *scan)
+inline unsigned long int next_generator_scan(monoid *pm, monoid_generator_scan *scan)
 {
   unsigned long int shift;
   epi8 block;
@@ -189,7 +189,7 @@ inline unsigned long int next_gen_scan(monoid *pm, mon_gen_scan *scan)
   while (1);
 }
 
-inline unsigned char count_gen_scan(monoid *pm, mon_gen_scan *scan)
+inline unsigned char count_generator_scan(monoid *pm, monoid_generator_scan *scan)
 {
   epi8 block;
   unsigned char nbr = _mm_popcnt_u32(scan->mask);

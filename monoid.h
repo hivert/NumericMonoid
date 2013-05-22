@@ -32,8 +32,8 @@ inline void remove_generator(monoid *__restrict__, monoid *__restrict__, unsigne
 typedef struct
 {
   unsigned long int iblock, mask, gen, bound;
-} mon_gen_scan;
+} monoid_generator_scan;
 
-inline void init_gen_scan(monoid *pm, mon_gen_scan *scan);
-inline unsigned long int next_gen_scan(monoid *pm, mon_gen_scan *scan);
-inline unsigned char count_gen_scan(monoid *pm, mon_gen_scan *scan);
+inline void init_generator_scan(monoid *pm, monoid_generator_scan *scan);
+inline unsigned long int next_generator_scan(monoid *pm, monoid_generator_scan *scan);
+inline unsigned char count_generator_scan(monoid *pm, monoid_generator_scan *scan);

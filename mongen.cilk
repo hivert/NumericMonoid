@@ -20,15 +20,15 @@ Size = 1 2 4 7 12 23 39 67 118 204 343 592 1001 1693 2857 4806 8045 13467 22464 
 
 cilk void walk_children(monoid *pm)
 {
-  mon_gen_scan scan;
+  monoid_generator_scan scan;
   monoid tmpmon, *newmonoid = &tmpmon;
 
-  init_gen_scan(pm, &scan);
+  init_generator_scan(pm, &scan);
 
   if (pm->genus < MAX_GENUS-1)
     {
       unsigned long int nbr = 0, gen;
-      while ((gen = next_gen_scan(pm, &scan)) != 0)
+      while ((gen = next_generator_scan(pm, &scan)) != 0)
 	{
 	  if (!SYNCHED) // Another thread is still working on the former newmonoid
 	    newmonoid = (monoid *) Cilk_alloca(sizeof(monoid));
@@ -36,10 +36,10 @@ cilk void walk_children(monoid *pm)
 	  spawn walk_children(newmonoid);
 	  nbr++;
 	}
-      results_proc_local[Self][pm->genus]+=nbr;
+      results_proc_local[Self][pm->genus] += nbr;
     }
   else
-    results_proc_local[Self][pm->genus]+=count_gen_scan(pm, &scan);
+    results_proc_local[Self][pm->genus] += count_generator_scan(pm, &scan);
 }
 
 int nproc;
