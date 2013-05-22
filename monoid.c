@@ -149,3 +149,55 @@ inline void remove_generator(monoid *__restrict__ src,
 
   assert(dst->decs[dst->conductor-1] == 0);
 }
+
+
+inline void init_gen_scan(monoid *pm, mon_gen_scan *scan)
+{
+  epi8 block;
+
+  scan->iblock = pm->conductor >> 4;
+  block = nth_block(pm->decs, scan->iblock) & mask16[pm->conductor & 0xF];
+  scan->mask  = _mm_movemask_epi8((__m128i) (block == block2));
+  scan->gen = (scan->iblock << 4) - 1;
+  scan->iblock++;
+  scan->bound = (pm->conductor+pm->min+15) >> 4;
+}
+
+inline unsigned long int next_gen_scan(monoid *pm, mon_gen_scan *scan)
+{
+  unsigned long int shift;
+  epi8 block;
+
+  do
+    {
+      if (scan->mask)
+	{
+	  shift = __bsfd (scan->mask) + 1;
+	  scan->gen += shift;
+	  scan->mask >>= shift;
+	  return scan->gen;
+	}
+      else
+	{
+	  if (scan->iblock > scan->bound) return 0;
+	  scan->gen = (scan->iblock << 4) - 1;
+	  block = nth_block(pm->decs, scan->iblock);
+	  scan->mask  = _mm_movemask_epi8((__m128i) (block == block2));
+	  scan->iblock++;
+	}
+    }
+  while (1);
+}
+
+inline unsigned char count_gen_scan(monoid *pm, mon_gen_scan *scan)
+{
+  epi8 block;
+  unsigned char nbr = _mm_popcnt_u32(scan->mask);
+  for (/* nothing */ ; scan->iblock <= scan->bound; scan->iblock++)
+    {
+      block = nth_block(pm->decs, scan->iblock);
+      nbr += _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block2)));
+    }
+  return nbr;
+}
+

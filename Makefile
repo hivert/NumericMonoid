@@ -22,7 +22,7 @@ LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS)  -o $@
 %.o: %.cilk
 	$(COMPILE.cilk) -o $@ -c $< 2>&1| $(GREP) -v "implicit.*__builtin_"
 
-all: mongen monser mgen monbug
+all: mongen monser mgen mon_no_fence
 
 alarm.o: alarm.h
 monoid.o: monoid.h
@@ -34,15 +34,15 @@ mongen: mongen.o alarm.o monoid.o
 clean::
 	-$(RM)  mongen
 
-monbug.cilkc: mongen.cilk monoid.h alarm.h
+mon_no_fence.cilkc: mongen.cilk monoid.h alarm.h
 	$(COMPILE.cilk) -E1 -save-temps $< 2>&1| $(GREP) -v "implicit.*__builtin_"
-	$(GREP) -v mfence.\*memory mongen.cilkc > monbug.cilkc
-monbug.o: monbug.cilkc monoid.h alarm.h
+	$(GREP) -v mfence.\*memory mongen.cilkc > mon_no_fence.cilkc
+mon_no_fence.o: mon_no_fence.cilkc monoid.h alarm.h
 	$(COMPILE.cilk) -c $<
-monbug: monbug.o alarm.o monoid.o
+mon_no_fence: mon_no_fence.o alarm.o monoid.o
 	$(LINK.cilk) $^
 clean::
-	-$(RM)  mongen.cilki mongen.cilkc monbug.cilkc monbug
+	-$(RM)  mongen.cilki mongen.cilkc mon_no_fence.cilkc mon_no_fence
 
 
 monser.o: mongen.cilk monoid.h alarm.h
@@ -61,4 +61,4 @@ run: all
 
 
 clean::
-	-$(RM) *.o perf.data
+	-$(RM) *.o perf.data*

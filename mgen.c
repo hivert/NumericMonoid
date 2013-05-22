@@ -44,9 +44,7 @@ int main(void)
 
   while (stack_pointer)
     {
-      unsigned long int iblock, decal, shift, gen;
-      unsigned int mask;
-      epi8 block;
+      mon_gen_scan scan;
 
       // current = stack[--stack_pointer];
       --stack_pointer;
@@ -57,45 +55,20 @@ int main(void)
 
 //printf("SP = %li\n", stack_pointer);
 //print_monoid(&current);
-      iblock = current.conductor >> 4;
-      decal = current.conductor & 0xF;
-      block = nth_block(current.decs, iblock) & mask16[decal];
-      mask  = _mm_movemask_epi8((__m128i) (block == block2));
+      init_gen_scan(&current, &scan);
+
       if (current.genus < MAX_GENUS - 1)
 	{
-	  unsigned long int nbr = 0;
-	  gen = (iblock << 4) - 1;
-	  do
+	  unsigned long int nbr = 0, gen;
+	  while ((gen = next_gen_scan(&current, &scan)) != 0)
 	    {
-	      if (mask)
-		{
-		  shift = __bsfd (mask) + 1;
-		  gen += shift;
-		  mask >>= shift;
-		  remove_generator(&current, &(stack[stack_pointer++]), gen);
-		  nbr++;
-		}
-	      else
-		{
-		  if (++iblock > (current.conductor+current.min+15) >> 4) break;
-		  gen = (iblock << 4) - 1;
-		  block = nth_block(current.decs, iblock);
-		  mask  = _mm_movemask_epi8((__m128i) (block == block2));
-		}
+	      remove_generator(&current, &(stack[stack_pointer++]), gen);
+	      nbr++;
 	    }
-	  while (1);
 	  results[current.genus]+=nbr;
 	}
       else
-	{
-	  unsigned char nbr = _mm_popcnt_u32(mask);
-	  for (iblock++; iblock <= (current.conductor+current.min+15) >> 4; iblock++)
-	    {
-	      block = nth_block(current.decs, iblock);
-	      nbr += _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block2)));
-	    }
-	  results[current.genus]+=nbr;
-	}
+	results[current.genus]+=count_gen_scan(&current, &scan);
     }
   printf("\n============================\n\n");
   print_sizes();

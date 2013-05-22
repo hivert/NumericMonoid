@@ -28,3 +28,12 @@ void print_monoid(monoid *);
 void print_epi8(epi8);
 inline void copy_decs(nb_decompositions *src, nb_decompositions *dst);
 inline void remove_generator(monoid *__restrict__, monoid *__restrict__, unsigned long int);
+
+typedef struct
+{
+  unsigned long int iblock, mask, gen, bound;
+} mon_gen_scan;
+
+inline void init_gen_scan(monoid *pm, mon_gen_scan *scan);
+inline unsigned long int next_gen_scan(monoid *pm, mon_gen_scan *scan);
+inline unsigned char count_gen_scan(monoid *pm, mon_gen_scan *scan);
