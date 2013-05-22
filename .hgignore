@@ -4,4 +4,6 @@ exper/.*$
 mgen$
 mongen$
 monser$
-
+mon_no_fence$
+.*\.cilk.$
+TAGS
