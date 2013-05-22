@@ -1,13 +1,13 @@
 CC   = gcc
 CILK = cilkc
-
+GREP = grep
 .SUFFIXES:.cilk
 
 NPROC        = 8
 PROGFLAGS    = --nproc $(NPROC)
 
 TARGET_ARCH  = -march=native -mtune=native
-OPTIM        = -O3 -flto
+OPTIM        = -O3 -flto -g
 CPPFLAGS     = -DNDEBUG
 CFLAGS       = -Wall $(OPTIM) -Wvector-operation-performance
 LDLIBS       = -lrt
@@ -20,9 +20,9 @@ LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS)  -o $@
 .PHONY: clean run
 
 %.o: %.cilk
-	$(COMPILE.cilk) -o $@ -c $< 2>&1| grep -v "implicit.*__builtin_"
+	$(COMPILE.cilk) -o $@ -c $< 2>&1| $(GREP) -v "implicit.*__builtin_"
 
-all: mongen monser mgen
+all: mongen monser mgen monbug
 
 alarm.o: alarm.h
 monoid.o: monoid.h
@@ -33,6 +33,16 @@ mongen: mongen.o alarm.o monoid.o
 	$(LINK.cilk) $^
 clean::
 	-$(RM)  mongen
+
+monbug.cilkc: mongen.cilk monoid.h alarm.h
+	$(COMPILE.cilk) -E1 -save-temps $< 2>&1| $(GREP) -v "implicit.*__builtin_"
+	$(GREP) -v mfence.\*memory mongen.cilkc > monbug.cilkc
+monbug.o: monbug.cilkc monoid.h alarm.h
+	$(COMPILE.cilk) -c $<
+monbug: monbug.o alarm.o monoid.o
+	$(LINK.cilk) $^
+clean::
+	-$(RM)  mongen.cilki mongen.cilkc monbug.cilkc monbug
 
 
 monser.o: mongen.cilk monoid.h alarm.h
