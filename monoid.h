@@ -22,8 +22,6 @@ typedef struct {
 
 typedef unsigned long long int result[MAX_GENUS];
 
-result *results_proc_local;
-
 void print_monoid(monoid *);
 void print_epi8(epi8);
 inline void copy_decs(nb_decompositions *src, nb_decompositions *dst);
