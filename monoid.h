@@ -13,6 +13,9 @@ epi8 zero, block2, shift16[16], mask16[16];
 #define NBLOCKS ((SIZE_BOUND+15) >> 4)
 #define SIZE (NBLOCKS << 4)
 
+#define NOINLINE
+// #define NOINLINE   __attribute__ ((noinline))
+// #define inline
 
 typedef unsigned char nb_decompositions[SIZE] __attribute__ ((aligned (16)));
 typedef struct {
@@ -24,14 +27,16 @@ typedef unsigned long long int result[MAX_GENUS];
 
 void print_monoid(monoid *);
 void print_epi8(epi8);
-inline void copy_decs(nb_decompositions *src, nb_decompositions *dst);
-inline void remove_generator(monoid *__restrict__, monoid *__restrict__, unsigned long int);
+inline void copy_decs(nb_decompositions *src, nb_decompositions *dst) NOINLINE;
+inline void remove_generator(monoid *__restrict__, monoid *__restrict__, unsigned long int) NOINLINE;
 
 typedef struct
 {
   unsigned long int iblock, mask, gen, bound;
 } monoid_generator_scan;
 
-inline void init_generator_scan(monoid *pm, monoid_generator_scan *scan);
-inline unsigned long int next_generator_scan(monoid *pm, monoid_generator_scan *scan);
-inline unsigned char count_generator_scan(monoid *pm, monoid_generator_scan *scan);
+inline void init_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
+inline unsigned long int next_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
+inline unsigned char count_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
+
+inline void walk_children_stack(monoid stack[], result results) NOINLINE;

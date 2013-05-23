@@ -201,3 +201,40 @@ inline unsigned char count_generator_scan(monoid *pm, monoid_generator_scan *sca
   return nbr;
 }
 
+inline void walk_children_stack(monoid stack[], result results)
+// The root monoid is supposed to be in stack[0]
+// The stack is supposed to be sufficiently large. !!! NO CHECK IS PERFORMED !!!
+{
+  unsigned long int stack_pointer = 1;
+  monoid_generator_scan scan;
+  monoid current;
+
+  while (stack_pointer)
+    {
+      --stack_pointer;
+      if (stack[stack_pointer].genus < MAX_GENUS - 1)
+	{
+	  unsigned long int nbr = 0, gen;
+
+	  current.genus = stack[stack_pointer].genus;
+	  current.conductor = stack[stack_pointer].conductor;
+	  current.min = stack[stack_pointer].min;
+	  copy_decs(&current.decs, &(stack[stack_pointer].decs));
+
+	  init_generator_scan(&current, &scan);
+
+	  while ((gen = next_generator_scan(&current, &scan)) != 0)
+	    {
+	      remove_generator(&current, &(stack[stack_pointer++]), gen);
+	      nbr++;
+	    }
+	  results[current.genus] += nbr;
+	}
+      else
+	{
+	  init_generator_scan(&stack[stack_pointer], &scan);
+	  results[stack[stack_pointer].genus] +=
+	    count_generator_scan(&stack[stack_pointer], &scan);
+	}
+    }
+}
