@@ -17,7 +17,7 @@ CILKFLAGS    = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 # -cilk-profile
 COMPILE.cilk = $(CILK) $(CPPFLAGS) $(CFLAGS) $(TARGET_ARCH) $(CILKFLAGS)
 LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS)  -o $@
 
-.PHONY: clean run
+.PHONY: clean run tags
 
 %.o: %.cilk
 	$(COMPILE.cilk) -o $@ -c $< 2>&1| $(GREP) -v "implicit.*__builtin_"
@@ -44,7 +44,6 @@ mon_no_fence: mon_no_fence.o alarm.o monoid.o
 clean::
 	-$(RM)  mongen.cilki mongen.cilkc mon_no_fence.cilkc mon_no_fence
 
-
 monser.o: mongen.cilk monoid.h alarm.h
 monser: monser.o alarm.o monoid.o
 clean::
@@ -57,8 +56,8 @@ clean::
 
 
 run: all
-	./mongen $(PROGFLAGS)
-
-
+	./mongen $(PROGFLAGS)\
+tags:
+	etags *.c *.h *.cilk
 clean::
-	-$(RM) *.o perf.data*
+	-$(RM) *.o perf.data* tags
