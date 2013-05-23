@@ -18,17 +18,21 @@ Size = 1 2 4 7 12 23 39 67 118 204 343 592 1001 1693 2857 4806 8045 13467 22464 
 #include "monoid.h"
 
 result *results_proc_local;
+monoid **stacks_proc_local;
+
+// Optimal for n=40
+#define STACK_BOUND 10
 
 cilk void walk_children(monoid *pm)
 {
+  unsigned long int nbr = 0, gen;
   monoid_generator_scan scan;
   monoid tmpmon, *newmonoid = &tmpmon;
 
   init_generator_scan(pm, &scan);
 
-  if (pm->genus < MAX_GENUS-1)
+  if (pm->genus < MAX_GENUS-STACK_BOUND)
     {
-      unsigned long int nbr = 0, gen;
       while ((gen = next_generator_scan(pm, &scan)) != 0)
 	{
 	  if (!SYNCHED) // Another thread is still working on the former newmonoid
@@ -37,10 +41,15 @@ cilk void walk_children(monoid *pm)
 	  spawn walk_children(newmonoid);
 	  nbr++;
 	}
-      results_proc_local[Self][pm->genus] += nbr;
     }
   else
-    results_proc_local[Self][pm->genus] += count_generator_scan(pm, &scan);
+    while ((gen = next_generator_scan(pm, &scan)) != 0)
+      {
+	remove_generator(pm, stacks_proc_local[Self], gen);
+	walk_children_stack(stacks_proc_local[Self], results_proc_local[Self]);
+	nbr++;
+      }
+  results_proc_local[Self][pm->genus] += nbr;
 }
 
 int nproc;
@@ -73,6 +82,10 @@ cilk int main(void)
   nproc = Cilk_active_size;
   start_alarm();
 
+  // Init the various stacks
+  stacks_proc_local = malloc(Cilk_active_size*sizeof(result));
+  for (proc=0; proc<Cilk_active_size; proc++)
+    stacks_proc_local[proc] = malloc(100*sizeof(monoid));
   // Init the proc local results
   results_proc_local = malloc(Cilk_active_size*sizeof(result));
   for (proc=0; proc<Cilk_active_size; proc++)
