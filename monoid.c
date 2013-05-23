@@ -48,6 +48,11 @@ epi8 mask16[16] =
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1,-1},
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1} };
 
+monoid *alloc_monoid()
+{
+  return malloc(sizeof(monoid));
+}
+
 void print_monoid(monoid *pm)
 {
   unsigned int i;
