@@ -20,7 +20,7 @@ LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS)  -o $@
 .PHONY: clean run tags
 
 %.o: %.cilk
-	$(COMPILE.cilk) -o $@ -c $< 2>&1| $(GREP) -v "implicit.*__builtin_"
+	$(COMPILE.cilk) -o $@ -c $<
 
 all: mongen monser mgen mon_no_fence
 
@@ -35,7 +35,7 @@ clean::
 	-$(RM)  mongen
 
 mon_no_fence.cilkc: mongen.cilk monoid.h alarm.h
-	$(COMPILE.cilk) -E1 -save-temps $< 2>&1| $(GREP) -v "implicit.*__builtin_"
+	$(COMPILE.cilk) -E1 -save-temps $<
 	$(GREP) -v mfence.\*memory mongen.cilkc > mon_no_fence.cilkc
 mon_no_fence.o: mon_no_fence.cilkc monoid.h alarm.h
 	$(COMPILE.cilk) -c $<

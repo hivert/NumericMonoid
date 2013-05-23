@@ -7,4 +7,5 @@
 #define Cilk_active_size (1)
 #define Cilk_alloca (alloca)
 
+#include "alloca.h"
 #include "mongen.cilk"

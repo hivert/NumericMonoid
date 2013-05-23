@@ -1,6 +1,15 @@
 #include <stdio.h>
 #include <assert.h>
+#include <x86intrin.h>
+
 #include "monoid.h"
+
+epi8 zero, block2, shift16[16], mask16[16];
+
+#define nth_block(st, i) (((epi8 *) st)[i])
+#define load_epi8(t) ((epi8) _mm_loadu_si128((__m128i *) (t)))
+#define store_epi8(t, v) (_mm_store_si128((__m128i *) (t), (__m128i) (v)))
+#define storeu_epi8(t, v) (_mm_storeu_si128((__m128i *) (t), (__m128i) (v)))
 
 epi8 zero   = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 epi8 block2 = {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
@@ -150,6 +159,18 @@ inline void remove_generator(monoid *__restrict__ src,
   assert(dst->decs[dst->conductor-1] == 0);
 }
 
+
+void init_full_N(monoid *pm)
+{
+  unsigned long int i;
+  epi8 block;
+
+  for (i=0; i<16; i++) block[i] = i+1;
+  for (i=0; i<NBLOCKS; i++) nth_block(pm->decs, i) = block + ((char) (i<<4));
+  pm->genus = 0;
+  pm->conductor = 1;
+  pm->min = 1;
+}
 
 inline void init_generator_scan(monoid *pm, monoid_generator_scan *scan)
 {
