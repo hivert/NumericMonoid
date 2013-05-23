@@ -177,7 +177,20 @@ void init_full_N(monoid *pm)
   pm->min = 1;
 }
 
-inline void init_generator_scan(monoid *pm, monoid_generator_scan *scan)
+inline void init_all_generator_scan(monoid *pm, monoid_generator_scan *scan)
+{
+  epi8 block;
+
+  scan->iblock = 0;
+  block = nth_block(pm->decs, 0);
+  scan->mask  = _mm_movemask_epi8((__m128i) (block == block2));
+  scan->gen = - 1;
+  scan->iblock++;
+  scan->bound = (pm->conductor+pm->min+15) >> 4;
+}
+
+
+inline void init_children_generator_scan(monoid *pm, monoid_generator_scan *scan)
 {
   epi8 block;
 
@@ -247,7 +260,7 @@ inline void walk_children_stack(monoid stack[], result results)
 	  current.min = stack[stack_pointer].min;
 	  copy_decs(&current.decs, &(stack[stack_pointer].decs));
 
-	  init_generator_scan(&current, &scan);
+	  init_children_generator_scan(&current, &scan);
 
 	  while ((gen = next_generator_scan(&current, &scan)) != 0)
 	    {
@@ -258,7 +271,7 @@ inline void walk_children_stack(monoid stack[], result results)
 	}
       else
 	{
-	  init_generator_scan(&stack[stack_pointer], &scan);
+	  init_children_generator_scan(&stack[stack_pointer], &scan);
 	  results[stack[stack_pointer].genus] +=
 	    count_generator_scan(&stack[stack_pointer], &scan);
 	}

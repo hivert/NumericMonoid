@@ -29,7 +29,8 @@ typedef struct
   unsigned long int iblock, mask, gen, bound;
 } monoid_generator_scan;
 
-inline void init_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
+inline void init_all_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
+inline void init_children_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
 inline unsigned long int next_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
 inline unsigned char count_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
 

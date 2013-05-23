@@ -30,7 +30,7 @@ cilk void walk_children(monoid *pm)
   monoid_generator_scan scan;
   monoid tmpmon, *newmonoid = &tmpmon;
 
-  init_generator_scan(pm, &scan);
+  init_children_generator_scan(pm, &scan);
 
   if (pm->genus < MAX_GENUS-STACK_BOUND)
     {
