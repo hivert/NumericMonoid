@@ -11,14 +11,14 @@ TARGET_ARCH  = -march=native -mtune=native
 OPTIM        = -O3 -flto -g
 CPPFLAGS     = -DNDEBUG
 CFLAGS       = -fPIC -Wall $(OPTIM) -Wvector-operation-performance
+MODFLAGS     = -shared -pthread -fwrapv -fno-strict-aliasing -I/usr/include/python2.7
 LDLIBS       = -lrt
 LDFLAGS      = -Wall $(OPTIM)
 CILKFLAGS    = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 # -cilk-profile
 
+COMPILE.module = $(CC) $(CFLAGS) $(MODFLAGS)
 COMPILE.cilk = $(CILK) $(CPPFLAGS) $(CFLAGS) $(TARGET_ARCH) $(CILKFLAGS)
 LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS)  -o $@
-
-COMPILE.module = $(CC) -shared -pthread -fPIC -fwrapv -O3 -Wall -fno-strict-aliasing -I/usr/include/python2.7
 
 .PHONY: clean run tags
 

@@ -1,6 +1,6 @@
 cimport cmonoid
 
-PRINT_GEN = True
+print_gen = True
 
 cdef class Monoid:
     cdef cmonoid.monoid pmon
@@ -62,7 +62,7 @@ cdef class Monoid:
     def __repr__(self):
         cdef str res
         cdef int i
-        if PRINT_GEN:
+        if print_gen:
             return "< "+" ".join(str(i) for i in self.generators())+" >"
         else:
             res = "Mon("
