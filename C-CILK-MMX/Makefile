@@ -25,7 +25,7 @@ LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS) -o $@
 %.o: %.cilk
 	$(COMPILE.cilk) -c $< -o $@
 %.o: %.cilkc
-	$(COMPILE.cilk)  -I/usr/local/include/cilk/ -c $< -o $@
+	$(COMPILE.cilk) -I/usr/local/include/cilk/ -c $< -o $@
 %.c: %.pxd
 	$(CYTHON) $<
 %.c: %.pyx
