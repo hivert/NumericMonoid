@@ -15,6 +15,7 @@ MODFLAGS     = -shared -pthread -fwrapv -fno-strict-aliasing -I/usr/include/pyth
 LDLIBS       = -lrt
 LDFLAGS      = -Wall $(OPTIM)
 CILKFLAGS    = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 # -cilk-profile
+CLFLAGS      = -I/usr/local/include/cilk/ -L/usr/local/lib64/cilk -lcilkrt0 -lcilk -pthread
 
 COMPILE.module = $(CC) $(CPPFLAGS) $(CFLAGS) $(TARGET_ARCH) $(MODFLAGS)
 COMPILE.cilk = $(CILK) $(CPPFLAGS) $(CFLAGS) $(TARGET_ARCH) $(CILKFLAGS)
@@ -26,9 +27,9 @@ LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS) -o $@
 	$(COMPILE.cilk) -c $< -o $@
 %.o: %.cilkc
 	$(COMPILE.cilk) -I/usr/local/include/cilk/ -c $< -o $@
-%.c: %.pxd
-	$(CYTHON) $<
 %.c: %.pyx
+	$(CYTHON) $<
+%.c: %.pxd
 	$(CYTHON) $<
 %.so: %.c
 	$(COMPILE.module) $^ -o $@
@@ -60,11 +61,10 @@ mgen.o: monoid.h alarm.h
 mgen: mgen.o alarm.o monoid.o
 
 
-CLF = -I/usr/local/include/cilk/ -L/usr/local/lib64/cilk -lcilkrt0 -lcilk -pthread
 call-cilk.o: call-cilk.cilkc monoid.h
 
 moncilk.so: moncilk.c call-cilk.o mongen.o monoid.o alarm.o call-cilk.h
-	$(COMPILE.module) $(CLF) $^ -o $@
+	$(COMPILE.module) $(CLFLAGS) $^ -o $@
 mon.so:	mon.c cmonoid.c monoid.o
 clean::
 	-$(RM) mon.c cmonoid.c moncilk.c

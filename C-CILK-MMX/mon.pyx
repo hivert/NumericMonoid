@@ -3,7 +3,7 @@ cimport cmonoid
 print_gen = True
 
 cdef class Monoid:
-    cdef cmonoid.monoid pmon
+
     def __init__(self):
         cmonoid.init_full_N(&self.pmon)
 

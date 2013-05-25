@@ -1,5 +1,8 @@
-cdef extern from "call-cilk.h":
-    cdef unsigned long int call_cilk()
+cimport cmonoid
+cimport mon
 
-cpdef unsigned long int callcilk():
-     return call_cilk()
+cdef extern from "call-cilk.h":
+    cdef unsigned long int call_cilk(cmonoid.monoid *)
+
+cpdef unsigned long int callcilk(mon.Monoid m):
+     return call_cilk(&m.pmon)

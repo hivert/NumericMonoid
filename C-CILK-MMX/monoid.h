@@ -1,3 +1,6 @@
+#ifndef MONOID_H
+#define MONOID_H
+
 typedef unsigned char epi8 __attribute__ ((vector_size (16)));
 
 #define MAX_GENUS 35
@@ -35,3 +38,5 @@ inline unsigned long int next_generator_scan(monoid *pm, monoid_generator_scan *
 inline unsigned char count_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
 
 inline void walk_children_stack(monoid stack[], result results) NOINLINE;
+
+#endif
