@@ -2,7 +2,7 @@ CC   = gcc
 CILK = cilkc
 CYTHON = cython
 GREP = grep
-.SUFFIXES:.cilk .pyx .pxd
+.SUFFIXES:.cilk .cilkc .pyx .pxd
 
 NPROC        = 8
 PROGFLAGS    = --nproc $(NPROC)
@@ -16,22 +16,25 @@ LDLIBS       = -lrt
 LDFLAGS      = -Wall $(OPTIM)
 CILKFLAGS    = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 # -cilk-profile
 
-COMPILE.module = $(CC) $(CFLAGS) $(MODFLAGS)
+COMPILE.module = $(CC) $(CPPFLAGS) $(CFLAGS) $(TARGET_ARCH) $(MODFLAGS)
 COMPILE.cilk = $(CILK) $(CPPFLAGS) $(CFLAGS) $(TARGET_ARCH) $(CILKFLAGS)
-LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS)  -o $@
+LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS) -o $@
 
 .PHONY: clean run tags
 
 %.o: %.cilk
-	$(COMPILE.cilk) -o $@ -c $<
+	$(COMPILE.cilk) -c $< -o $@
+%.o: %.cilkc
+	$(COMPILE.cilk)  -I/usr/local/include/cilk/ -c $< -o $@
 %.c: %.pxd
 	$(CYTHON) $<
 %.c: %.pyx
 	$(CYTHON) $<
 %.so: %.c
-	$(COMPILE.module) -o $@ $^
+	$(COMPILE.module) $^ -o $@
 
-all: mongen monser mgen mon_no_fence mon.so
+TARGETS = mongen monser mgen mon_no_fence mon.so moncilk.so
+all: $(TARGETS)
 
 alarm.o: alarm.h
 monoid.o: monoid.h
@@ -40,41 +43,40 @@ monoid.o: monoid.h
 mongen.o: mongen.cilk monoid.h alarm.h
 mongen: mongen.o alarm.o monoid.o
 	$(LINK.cilk) $^
-clean::
-	-$(RM)  mongen
 
 mon_no_fence.cilkc: mongen.cilk monoid.h alarm.h
 	$(COMPILE.cilk) -E1 -save-temps $<
 	$(GREP) -v mfence.\*memory mongen.cilkc > mon_no_fence.cilkc
 mon_no_fence.o: mon_no_fence.cilkc monoid.h alarm.h
-	$(COMPILE.cilk) -c $<
 mon_no_fence: mon_no_fence.o alarm.o monoid.o
 	$(LINK.cilk) $^
 clean::
-	-$(RM)  mongen.cilki mongen.cilkc mon_no_fence.cilkc mon_no_fence
+	-$(RM) mongen.cilki mongen.cilkc mon_no_fence.cilkc
 
 monser.o: mongen.cilk monoid.h alarm.h
 monser: monser.o alarm.o monoid.o
-clean::
-	-$(RM) monser
 
 mgen.o: monoid.h alarm.h
 mgen: mgen.o alarm.o monoid.o
-clean::
-	-$(RM) mgen
 
+
+CLF = -I/usr/local/include/cilk/ -L/usr/local/lib64/cilk -lcilkrt0 -lcilk -pthread
+call-cilk.o: call-cilk.cilkc monoid.h
+
+moncilk.so: moncilk.c call-cilk.o mongen.o monoid.o alarm.o call-cilk.h
+	$(COMPILE.module) $(CLF) $^ -o $@
 mon.so:	mon.c cmonoid.c monoid.o
 clean::
-	-$(RM) mon.so mon.c cmonoid.c
+	-$(RM) mon.c cmonoid.c moncilk.c
 
-test: mon.so
+test: mon.so moncilk.so
 	python testmon.py
 
 run: all
-	./mongen $(PROGFLAGS)\
+	./mongen $(PROGFLAGS)
 
 tags:
 	etags *.c *.h *.cilk
 
 clean::
-	-$(RM) *.o perf.data* tags
+	-$(RM) $(TARGETS) *.o perf.data* tags

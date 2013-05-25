@@ -18,3 +18,8 @@ print mon.MAX_SIZE
 print len(mon.Full.generation(15))
 
 print mm.elements()
+
+import moncilk
+r = moncilk.callcilk()
+print r
+
