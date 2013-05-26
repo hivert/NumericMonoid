@@ -1,5 +1,5 @@
-import mon
-m = mon.Monoid()
+from mon import Monoid, MAX_SIZE, Full
+m = Monoid()
 print m
 mm = m.remove_generator(1)
 print mm
@@ -13,13 +13,12 @@ print mm.count_children()
 
 print mm.children()
 
-print mon.MAX_SIZE
+print MAX_SIZE
 
-print len(mon.Full.generation(15))
+print len(Full.generation(15))
 
 print mm.elements()
 
 import moncilk
 r = moncilk.callcilk(m)
 print r
-
