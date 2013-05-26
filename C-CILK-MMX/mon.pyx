@@ -20,12 +20,43 @@ cdef class Monoid(object):
             raise ValueError, "%i is too large for %s"%(i, self)
         return bool(self._m.decs[i])
 
+    cpdef list elements(self):
+        cdef list res = []
+        cdef int i
+        for i in range(self._m.conductor+1):
+            if self._m.decs[i] > 0:
+                res.append(i)
+        return res
+
+    def __repr__(self):
+        cdef str res
+        cdef int i
+        if print_gen:
+            return "< "+" ".join(str(i) for i in self.generators())+" >"
+        else:
+            res = "Mon("
+            for i in range(self._m.conductor+2):
+                if self._m.decs[i] > 0:
+                   res += "%i "%i
+            return res+"...)"
+
     cpdef Monoid remove_generator(self, unsigned int gen):
         cdef Monoid res
         res = Monoid.__new__(Monoid)
         if gen > cmonoid.SIZE or self._m.decs[gen] != 2:
             raise ValueError, "%i is not a generator for %s"%(gen, self)
         cmonoid.remove_generator(&self._m, &res._m, gen)
+        return res
+
+    cpdef list generators(self):
+        cdef list res = []
+        cdef int gen
+        cdef cmonoid.monoid_generator_scan scan
+        cmonoid.init_all_generator_scan(&self._m, &scan)
+        gen = cmonoid.next_generator_scan(&self._m, &scan)
+        while gen != 0:
+            res.append(gen)
+            gen = cmonoid.next_generator_scan(&self._m, &scan)
         return res
 
     cpdef int count_children(self):
@@ -44,44 +75,6 @@ cdef class Monoid(object):
             gen = cmonoid.next_generator_scan(&self._m, &scan)
         return res
 
-    cpdef list elements(self):
-        cdef list res = []
-        cdef int i
-        for i in range(self._m.conductor+1):
-            if self._m.decs[i] > 0:
-                res.append(i)
-        return res
-
-    cpdef list generation(self, unsigned int n):
-        cdef int i
-        cdef list lst = [self]
-        for i in range(self._m.genus, n):
-            lst = [x for m in lst for x in m.children()]
-        return lst
-
-    def __repr__(self):
-        cdef str res
-        cdef int i
-        if print_gen:
-            return "< "+" ".join(str(i) for i in self.generators())+" >"
-        else:
-            res = "Mon("
-            for i in range(self._m.conductor+2):
-                if self._m.decs[i] > 0:
-                   res += "%i "%i
-            return res+"...)"
-
-    cpdef list generators(self):
-        cdef list res = []
-        cdef int gen
-        cdef cmonoid.monoid_generator_scan scan
-        cmonoid.init_all_generator_scan(&self._m, &scan)
-        gen = cmonoid.next_generator_scan(&self._m, &scan)
-        while gen != 0:
-            res.append(gen)
-            gen = cmonoid.next_generator_scan(&self._m, &scan)
-        return res
-
     cpdef list children_generators(self):
         cdef list res = []
         cdef int gen
@@ -93,20 +86,26 @@ cdef class Monoid(object):
             gen = cmonoid.next_generator_scan(&self._m, &scan)
         return res
 
-    @classmethod
-    def from_generators(cls, list l):
+    cpdef list nth_generation(self, unsigned int n):
         cdef int i
-        cdef set gens = {int(i) for i in l}
-        cdef Monoid res = cls()
-        cdef cmonoid.monoid_generator_scan scan
-        cmonoid.init_children_generator_scan(&res._m, &scan)
+        cdef list lst = [self]
+        for i in range(self._m.genus, n):
+            lst = [x for m in lst for x in m.children()]
+        return lst
+
+cpdef from_generators(list l):
+    cdef int i
+    cdef set gens = {int(i) for i in l}
+    cdef Monoid res = Monoid()
+    cdef cmonoid.monoid_generator_scan scan
+    cmonoid.init_children_generator_scan(&res._m, &scan)
+    gen = cmonoid.next_generator_scan(&res._m, &scan)
+    while gen != 0:
+        if gen not in gens:
+            res = res.remove_generator(gen)
+            cmonoid.init_children_generator_scan(&res._m, &scan)
         gen = cmonoid.next_generator_scan(&res._m, &scan)
-        while gen != 0:
-            if gen not in gens:
-                res = res.remove_generator(gen)
-                cmonoid.init_children_generator_scan(&res._m, &scan)
-            gen = cmonoid.next_generator_scan(&res._m, &scan)
-        return res
+    return res
 
 Full = Monoid()
 

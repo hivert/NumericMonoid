@@ -15,7 +15,7 @@ print mm.children()
 
 print MAX_SIZE
 
-print len(Full.generation(15))
+print len(Full.nth_generation(15))
 
 print mm.elements()
 
