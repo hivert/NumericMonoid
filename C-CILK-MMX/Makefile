@@ -1,6 +1,6 @@
 CC   = gcc
 CILK = cilkc
-CYTHON = cython
+CYTHON = /home/data/Sage-Install/sage/local/bin/cython
 GREP = grep
 .SUFFIXES:.cilk .cilkc .pyx .pxd
 

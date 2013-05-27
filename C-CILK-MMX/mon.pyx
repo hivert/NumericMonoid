@@ -60,9 +60,12 @@ cdef class Monoid(object):
         return res
 
     cpdef int count_children(self):
+        cdef int res
         cdef cmonoid.monoid_generator_scan scan
-        cmonoid.init_children_generator_scan(&self._m, &scan)
-        return cmonoid.count_generator_scan(&self._m, &scan)
+        with nogil:
+            cmonoid.init_children_generator_scan(&self._m, &scan)
+            res = cmonoid.count_generator_scan(&self._m, &scan)
+        return res
 
     cpdef list children(self):
         cdef list res = []
@@ -92,6 +95,12 @@ cdef class Monoid(object):
         for i in range(self._m.genus, n):
             lst = [x for m in lst for x in m.children()]
         return lst
+
+    # don't know how to make it readonly !
+#    def decomposition_numbers(self):
+#        cdef unsigned char[:] slice = (<unsigned char[:cmonoid.SIZE]>
+#                                        <unsigned char *> self._m.decs)
+#        return slice
 
 cpdef from_generators(list l):
     cdef int i
