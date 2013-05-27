@@ -20,5 +20,5 @@ print len(Full.nth_generation(15))
 print mm.elements()
 
 import moncilk
-r = moncilk.callcilk(m)
-print r
+r = moncilk.callcilk(Full)
+print "result = %s"%r

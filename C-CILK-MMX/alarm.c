@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "alarm.h"
 
-#define PERIOD 10
 int nloops=0;
 void sigalrm_handler( int sig )
 {

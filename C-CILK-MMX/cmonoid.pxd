@@ -1,9 +1,12 @@
 cdef extern from "monoid.h":
+    enum: MAX_GENUS
     enum: SIZE
     ctypedef unsigned char nb_decompositions[SIZE]
     ctypedef struct monoid:
         nb_decompositions decs
         unsigned long int conductor, min, genus
+
+    ctypedef unsigned long long int result[MAX_GENUS]
 
     monoid *alloc_monoid()
     void init_full_N(monoid *pm)

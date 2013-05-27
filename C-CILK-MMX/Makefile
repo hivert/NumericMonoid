@@ -61,10 +61,8 @@ mgen.o: monoid.h alarm.h
 mgen: mgen.o alarm.o monoid.o
 
 
-call-cilk.o: call-cilk.cilkc monoid.h
-
 moncilk.c: mon.pxd
-moncilk.so: moncilk.c call-cilk.o mongen.o monoid.o alarm.o call-cilk.h
+moncilk.so: moncilk.c mongen.o monoid.o alarm.o mongen.h
 	$(COMPILE.module) $(CLFLAGS) $^ -o $@
 mon.so:	mon.c cmonoid.c monoid.o
 clean::
