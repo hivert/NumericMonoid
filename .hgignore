@@ -3,9 +3,11 @@ exper/.*$
 .*\.o$
 mgen$
 mongen$
+mongen\.cilk.$
 monser$
-mon_no_fence$
+mon_no_fence.*$
 cmonoid\.c$
 mon\.c$
+moncilk\.c$
 .*\.so$
 TAGS
