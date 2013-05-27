@@ -12,7 +12,6 @@ OPTIM        = -O3 -flto -g
 CPPFLAGS     = -DNDEBUG
 CFLAGS       = -fPIC -Wall $(OPTIM) -Wvector-operation-performance
 MODFLAGS     = -shared -pthread -fwrapv -fno-strict-aliasing -I/usr/include/python2.7
-LDLIBS       = -lrt
 LDFLAGS      = -Wall $(OPTIM)
 CILKFLAGS    = -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 # -cilk-profile
 CLFLAGS      = -I/usr/local/include/cilk/ -L/usr/local/lib64/cilk -lcilkrt0 -lcilk -pthread
@@ -28,8 +27,6 @@ LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS) -o $@
 %.o: %.cilkc
 	$(COMPILE.cilk) -I/usr/local/include/cilk/ -c $< -o $@
 %.c: %.pyx            # Must be declared before .pxd
-	$(CYTHON) $<
-%.c: %.pxd
 	$(CYTHON) $<
 %.so: %.c
 	$(COMPILE.module) $^ -o $@
@@ -60,11 +57,12 @@ monser: monser.o alarm.o monoid.o
 mgen.o: monoid.h alarm.h
 mgen: mgen.o alarm.o monoid.o
 
+mon.c: cmonoid.pxd
+mon.so:	mon.c monoid.o
 
-moncilk.c: mon.pxd
+moncilk.c: mon.pxd cmonoid.pxd
 moncilk.so: moncilk.c mongen.o monoid.o alarm.o mongen.h
 	$(COMPILE.module) $(CLFLAGS) $^ -o $@
-mon.so:	mon.c cmonoid.c monoid.o
 clean::
 	-$(RM) mon.c cmonoid.c moncilk.c
 
