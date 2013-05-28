@@ -2,7 +2,7 @@ CC   = gcc
 CILK = cilkc
 CYTHON = /home/data/Sage-Install/sage/local/bin/cython
 GREP = grep
-.SUFFIXES:.cilk .cilkc .pyx .pxd
+
 
 NPROC        = 8
 PROGFLAGS    = --nproc $(NPROC)
@@ -21,6 +21,9 @@ COMPILE.cilk = $(CILK) $(CPPFLAGS) $(CFLAGS) $(TARGET_ARCH) $(CILKFLAGS)
 LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS) -o $@
 
 .PHONY: clean run tags
+
+.SUFFIXES:.cilk .cilkc .pyx .pxd
+
 
 %.o: %.cilk
 	$(COMPILE.cilk) -c $< -o $@
