@@ -16,6 +16,7 @@ cdef extern from "mongen.h":
 
 cdef extern from "alarm.h":
      void start_alarm()
+     void stop_alarm()
 
 cdef CilkContext *context = NULL
 
@@ -66,6 +67,7 @@ cpdef list callcilk(mon.Monoid m):
 
     start_alarm()
     walk_children_cilk(context, &m._m)
+    stop_alarm()
 
     resl = []
     for i in range(cmonoid.MAX_GENUS):
