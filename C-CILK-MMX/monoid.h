@@ -21,7 +21,7 @@ typedef struct {
 typedef unsigned long long int result[MAX_GENUS];
 
 void init_full_N(monoid *pm);
-monoid *alloc_monoid();
+monoid *alloc_monoid(void);
 void print_monoid(monoid *);
 void print_epi8(epi8);
 inline void copy_decs(nb_decompositions *src, nb_decompositions *dst) NOINLINE;
