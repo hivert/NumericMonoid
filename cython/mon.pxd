@@ -6,7 +6,7 @@ cdef class Monoid:
     cpdef int genus(self)
     cpdef int min(self)
     cpdef int conductor(self)
-    cpdef prnt(self)
+    cpdef _print(self)
     cpdef Monoid remove_generator(self, unsigned int gen)
     cpdef int count_children(self)
     cpdef list children(self)
@@ -14,3 +14,4 @@ cdef class Monoid:
     cpdef list nth_generation(self, unsigned int n)
     cpdef list generators(self)
     cpdef list elements(self)
+    cpdef _decomposition_numbers(self)
