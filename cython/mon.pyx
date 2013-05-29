@@ -19,6 +19,8 @@ The following bound are fixed at compile time::
     sage: MAX_GENUS
     40
 """
+from sage.rings.arith import gcd
+
 
 print_gen = True
 
@@ -261,8 +263,6 @@ cdef class Monoid(object):
         cdef set gens = {int(i) for i in l}
         cdef Monoid res = cls()
         cdef cmonoid.generator_iter iter
-        from sage.rings.arith import gcd
-
         if gcd(l) != 1:
             raise ValueError, "gcd of generators must be 1"
         cmonoid.init_children_generator_iter(&res._m, &iter)
@@ -273,6 +273,28 @@ cdef class Monoid(object):
                 cmonoid.init_children_generator_iter(&res._m, &iter)
             gen = cmonoid.next_generator_iter(&res._m, &iter)
         return res
+
+    def gcd_small_generator(self):
+        """
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
+        sage: Full.gcd_small_generator()
+        0
+        sage: Monoid.from_generators([3,5,7]).gcd_small_generator()
+        3
+        """
+        return gcd([i for i in self.generators() if i < self.conductor()])
+
+    def has_finite_descendance(self):
+        """
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
+        sage: Full.has_finite_descendance()
+        False
+        sage: Monoid.from_generators([3,5,7]).has_finite_descendance()
+        False
+        sage: Monoid.from_generators([3,7]).has_finite_descendance()
+        True
+        """
+        return self.gcd_small_generator() == 1
 
 Full = Monoid()
 
