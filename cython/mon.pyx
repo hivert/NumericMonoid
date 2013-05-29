@@ -1,6 +1,10 @@
 print_gen = True
 
 cdef class Monoid(object):
+    """
+    sage: import mon
+    sage: mon.Full
+    """
     def __init__(self):
         cmonoid.init_full_N(&self._m)
 
@@ -40,7 +44,7 @@ cdef class Monoid(object):
 
     cpdef Monoid remove_generator(self, unsigned int gen):
         cdef Monoid res
-        res = Monoid.__new__(Monoid)
+        res = Monoid.__new__(self.__class__)
         if gen > cmonoid.SIZE or self._m.decs[gen] != 2:
             raise ValueError, "%i is not a generator for %s"%(gen, self)
         cmonoid.remove_generator(&self._m, &res._m, gen)
@@ -100,19 +104,20 @@ cdef class Monoid(object):
 #                                        <unsigned char *> self._m.decs)
 #        return slice
 
-cpdef from_generators(list l):
-    cdef int i
-    cdef set gens = {int(i) for i in l}
-    cdef Monoid res = Monoid()
-    cdef cmonoid.monoid_generator_scan scan
-    cmonoid.init_children_generator_scan(&res._m, &scan)
-    gen = cmonoid.next_generator_scan(&res._m, &scan)
-    while gen != 0:
-        if gen not in gens:
-            res = res.remove_generator(gen)
-            cmonoid.init_children_generator_scan(&res._m, &scan)
+    @classmethod
+    def from_generators(cls, list l):
+        cdef int i
+        cdef set gens = {int(i) for i in l}
+        cdef Monoid res = cls()
+        cdef cmonoid.monoid_generator_scan scan
+        cmonoid.init_children_generator_scan(&res._m, &scan)
         gen = cmonoid.next_generator_scan(&res._m, &scan)
-    return res
+        while gen != 0:
+            if gen not in gens:
+                res = res.remove_generator(gen)
+                cmonoid.init_children_generator_scan(&res._m, &scan)
+            gen = cmonoid.next_generator_scan(&res._m, &scan)
+        return res
 
 Full = Monoid()
 

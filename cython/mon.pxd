@@ -14,5 +14,3 @@ cdef class Monoid:
     cpdef list nth_generation(self, unsigned int n)
     cpdef list generators(self)
     cpdef list elements(self)
-
-cpdef from_generators(list l)
