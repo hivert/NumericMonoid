@@ -30,13 +30,13 @@ inline void remove_generator(monoid *__restrict__, monoid *__restrict__, unsigne
 typedef struct
 {
   unsigned long int iblock, mask, gen, bound;
-} monoid_generator_scan;
+} generator_iter;
 
-inline void init_all_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
-inline void init_children_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
-inline unsigned long int next_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
-inline unsigned char count_generator_scan(monoid *pm, monoid_generator_scan *scan) NOINLINE;
+inline void init_all_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
+inline void init_children_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
+inline unsigned long int next_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
+inline unsigned char count_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
 
-inline void walk_children_stack(monoid stack[], result results) NOINLINE;
+inline void walk_children_stack(monoid stack[], unsigned long int bound, result results) NOINLINE;
 
 #endif

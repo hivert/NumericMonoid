@@ -53,42 +53,42 @@ cdef class Monoid(object):
     cpdef list generators(self):
         cdef list res = []
         cdef int gen
-        cdef cmonoid.monoid_generator_scan scan
-        cmonoid.init_all_generator_scan(&self._m, &scan)
-        gen = cmonoid.next_generator_scan(&self._m, &scan)
+        cdef cmonoid.generator_iter iter
+        cmonoid.init_all_generator_iter(&self._m, &iter)
+        gen = cmonoid.next_generator_iter(&self._m, &iter)
         while gen != 0:
             res.append(gen)
-            gen = cmonoid.next_generator_scan(&self._m, &scan)
+            gen = cmonoid.next_generator_iter(&self._m, &iter)
         return res
 
     cpdef int count_children(self):
         cdef int res
-        cdef cmonoid.monoid_generator_scan scan
+        cdef cmonoid.generator_iter iter
         with nogil:
-            cmonoid.init_children_generator_scan(&self._m, &scan)
-            res = cmonoid.count_generator_scan(&self._m, &scan)
+            cmonoid.init_children_generator_iter(&self._m, &iter)
+            res = cmonoid.count_generator_iter(&self._m, &iter)
         return res
 
     cpdef list children(self):
         cdef list res = []
         cdef int gen
-        cdef cmonoid.monoid_generator_scan scan
-        cmonoid.init_children_generator_scan(&self._m, &scan)
-        gen = cmonoid.next_generator_scan(&self._m, &scan)
+        cdef cmonoid.generator_iter iter
+        cmonoid.init_children_generator_iter(&self._m, &iter)
+        gen = cmonoid.next_generator_iter(&self._m, &iter)
         while gen != 0:
             res.append(self.remove_generator(gen))
-            gen = cmonoid.next_generator_scan(&self._m, &scan)
+            gen = cmonoid.next_generator_iter(&self._m, &iter)
         return res
 
     cpdef list children_generators(self):
         cdef list res = []
         cdef int gen
-        cdef cmonoid.monoid_generator_scan scan
-        cmonoid.init_children_generator_scan(&self._m, &scan)
-        gen = cmonoid.next_generator_scan(&self._m, &scan)
+        cdef cmonoid.generator_iter iter
+        cmonoid.init_children_generator_iter(&self._m, &iter)
+        gen = cmonoid.next_generator_iter(&self._m, &iter)
         while gen != 0:
             res.append(gen)
-            gen = cmonoid.next_generator_scan(&self._m, &scan)
+            gen = cmonoid.next_generator_iter(&self._m, &iter)
         return res
 
     cpdef list nth_generation(self, unsigned int n):
@@ -109,14 +109,14 @@ cdef class Monoid(object):
         cdef int i
         cdef set gens = {int(i) for i in l}
         cdef Monoid res = cls()
-        cdef cmonoid.monoid_generator_scan scan
-        cmonoid.init_children_generator_scan(&res._m, &scan)
-        gen = cmonoid.next_generator_scan(&res._m, &scan)
+        cdef cmonoid.generator_iter iter
+        cmonoid.init_children_generator_iter(&res._m, &iter)
+        gen = cmonoid.next_generator_iter(&res._m, &iter)
         while gen != 0:
             if gen not in gens:
                 res = res.remove_generator(gen)
-                cmonoid.init_children_generator_scan(&res._m, &scan)
-            gen = cmonoid.next_generator_scan(&res._m, &scan)
+                cmonoid.init_children_generator_iter(&res._m, &iter)
+            gen = cmonoid.next_generator_iter(&res._m, &iter)
         return res
 
 Full = Monoid()

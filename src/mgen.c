@@ -38,7 +38,7 @@ int main(void)
   stack_pointer++;
   results[0] = 1;
 
-  walk_children_stack(stack, results);
+  walk_children_stack(stack, MAX_GENUS, results);
 
   printf("\n============================\n\n");
   print_sizes();

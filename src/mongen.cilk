@@ -27,14 +27,14 @@ monoid **stacks_proc_local;
 cilk void walk_children(monoid *pm)
 {
   unsigned long int nbr = 0, gen;
-  monoid_generator_scan scan;
+  generator_iter scan;
   monoid tmpmon, *newmonoid = &tmpmon;
 
-  init_children_generator_scan(pm, &scan);
+  init_children_generator_iter(pm, &scan);
 
   if (pm->genus < MAX_GENUS-STACK_BOUND)
     {
-      while ((gen = next_generator_scan(pm, &scan)) != 0)
+      while ((gen = next_generator_iter(pm, &scan)) != 0)
 	{
 	  if (!SYNCHED) // Another thread is still working on the former newmonoid
 	    newmonoid = (monoid *) Cilk_alloca(sizeof(monoid));
@@ -44,10 +44,10 @@ cilk void walk_children(monoid *pm)
 	}
     }
   else
-    while ((gen = next_generator_scan(pm, &scan)) != 0)
+    while ((gen = next_generator_iter(pm, &scan)) != 0)
       {
 	remove_generator(pm, stacks_proc_local[Self], gen);
-	walk_children_stack(stacks_proc_local[Self], results_proc_local[Self]);
+	walk_children_stack(stacks_proc_local[Self], MAX_GENUS, results_proc_local[Self]);
 	nbr++;
       }
   results_proc_local[Self][pm->genus] += nbr;
