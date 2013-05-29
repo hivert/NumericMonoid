@@ -52,6 +52,16 @@ cpdef cleanup():
 
 
 cpdef list callcilk(mon.Monoid m):
+    """
+    sage: import os; os.sys.path.insert(0,os.path.abspath('.')); import mon, moncilk
+    sage: r = moncilk.callcilk(mon.Full)
+    GOOOOOOO !!!!!!!!
+    <BLANKLINE>
+    Progress report no 0
+    Size = 1 2 4 7 ...
+    sage: r
+    [1, 2, 4, 7, 12, 23, 39, 67, 118, 204, 343, 592, 1001, 1693, 2857, 4806, 8045, 13467, 22464, 37396, 62194, 103246, 170963, 282828, 467224, 770832, 1270267, 2091030, 3437839, 5646773, 9266788, 15195070, 24896206, 40761087, 66687201, 109032500, 178158289, 290939807, 474851445, 774614284]
+    """
     cdef int proc, i
     cdef Integer res
     cdef list resl
