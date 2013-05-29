@@ -1,5 +1,3 @@
-cimport cmonoid
-
 print_gen = True
 
 cdef class Monoid(object):

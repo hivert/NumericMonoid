@@ -1,4 +1,5 @@
 cimport cmonoid, mon
+from sage.rings.integer cimport Integer
 
 from libc.stdlib cimport malloc, free
 
@@ -51,7 +52,8 @@ cpdef cleanup():
 
 
 cpdef list callcilk(mon.Monoid m):
-    cdef int proc, res = 0, i
+    cdef int proc, i
+    cdef Integer res
     cdef list resl
     global stacks_proc_local, results_proc_local, nproc
 
@@ -71,9 +73,9 @@ cpdef list callcilk(mon.Monoid m):
 
     resl = []
     for i in range(cmonoid.MAX_GENUS):
-        res = 0
+        res = Integer(0)
         for proc in range(nproc):
-            res += results_proc_local[proc][i];
+            res += Integer(results_proc_local[proc][i]);
         resl.append(res)
     return resl
 
