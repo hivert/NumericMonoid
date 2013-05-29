@@ -34,7 +34,7 @@ LINK.cilk    = $(CILK) $(LDFLAGS) $(TARGET_ARCH) $(CILKFLAGS) -o $@
 %.so: %.c
 	$(COMPILE.module) $^ -o $@
 
-TARGETS = mongen monser mgen mon_no_fence mon.so moncilk.so
+TARGETS = mongen monser mgen mon_no_fence # mon.so moncilk.so
 all: $(TARGETS)
 
 alarm.o: alarm.h

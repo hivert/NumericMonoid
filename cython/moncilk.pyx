@@ -8,13 +8,13 @@ cdef extern from "cilk.h":
     cdef CilkContext *Cilk_init(int *, char**)
     cdef void Cilk_terminate(CilkContext *)
 
-cdef extern from "mongen.h":
+cdef extern from "../src/mongen.h":
     cdef cmonoid.result *results_proc_local
     cdef cmonoid.monoid **stacks_proc_local
     cdef int nproc
     cdef void walk_children_cilk "EXPORT(walk_children)"(CilkContext *, cmonoid.monoid *)
 
-cdef extern from "alarm.h":
+cdef extern from "../src/alarm.h":
      void start_alarm()
      void stop_alarm()
 

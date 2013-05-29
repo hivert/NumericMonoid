@@ -1,4 +1,4 @@
-cdef extern from "monoid.h":
+cdef extern from "../src/monoid.h":
     enum: MAX_GENUS
     enum: SIZE
     ctypedef unsigned char nb_decompositions[SIZE]
