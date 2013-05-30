@@ -1,4 +1,4 @@
-cimport cmonoid, mon
+cimport cmonoid, numeric_monoid
 from sage.rings.integer cimport Integer
 
 from libc.stdlib cimport malloc, free
@@ -51,7 +51,7 @@ cpdef cleanup():
     free(results_proc_local)
 
 
-cpdef list callcilk(mon.Monoid m):
+cpdef list callcilk(numeric_monoid.NumericMonoid m):
     """
     sage: import os; os.sys.path.insert(0,os.path.abspath('.')); import mon, moncilk
     sage: r = moncilk.callcilk(mon.Full)
