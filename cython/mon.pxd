@@ -1,6 +1,7 @@
 cimport cmonoid
+from sage.structure.sage_object cimport SageObject
 
-cdef class Monoid:
+cdef class Monoid(SageObject):
     cdef cmonoid.monoid _m
 
     cpdef int genus(self)

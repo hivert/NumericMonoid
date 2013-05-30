@@ -1,4 +1,4 @@
-"""
+r"""
 Recompile with::
 
     sage -python setup.py build_ext --inplace
@@ -14,25 +14,28 @@ And the each doctest series should start with::
 
 The following bound are fixed at compile time::
 
-    sage: MAX_SIZE
+    sage: SIZE
     128
     sage: MAX_GENUS
     40
 """
 from sage.rings.arith import gcd
+from sage.structure.sage_object cimport SageObject
 
+SIZE = cmonoid.SIZE
+MAX_GENUS = cmonoid.MAX_GENUS
 
 print_gen = True
 
-cdef class Monoid(object):
-    """
+cdef class Monoid(SageObject):
+    r"""
     sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
     sage: Full
     < 1 >
     """
 
     def __init__(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Monoid()
         < 1 >
@@ -40,7 +43,7 @@ cdef class Monoid(object):
         cmonoid.init_full_N(&self._m)
 
     cpdef int genus(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.genus()
         0
@@ -50,7 +53,7 @@ cdef class Monoid(object):
         return self._m.genus
 
     cpdef int min(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.min()
         1
@@ -60,7 +63,7 @@ cdef class Monoid(object):
         return self._m.min
 
     cpdef int conductor(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.conductor()
         1
@@ -70,7 +73,7 @@ cdef class Monoid(object):
         return self._m.conductor
 
     cpdef _print(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full._print()
         min = 1, cond = 1, genus = 0, decs = 1 2 3 4 ...  128
@@ -80,7 +83,7 @@ cdef class Monoid(object):
         cmonoid.print_monoid(&self._m)
 
     def __contains__(self, unsigned int i):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: m = Monoid.from_generators([3,5])
         sage: [i in m for i in range(10)]
@@ -93,7 +96,7 @@ cdef class Monoid(object):
         return bool(self._m.decs[i])
 
     cpdef list elements(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.elements()
         [0, 1]
@@ -108,7 +111,7 @@ cdef class Monoid(object):
         return res
 
     def __repr__(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full                            # indirect doctest
         < 1 >
@@ -126,8 +129,22 @@ cdef class Monoid(object):
                    res += "%i "%i
             return res+"...)"
 
-    cpdef Monoid remove_generator(self, unsigned int gen):
+    def __reduce__(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
+        sage: Full.__reduce__()
+        (<built-in function _from_pickle>, (<type 'mon.Monoid'>, 128, 1L, 1L, 0L, (1, 2, ..., 128)))
+        sage: Monoid.from_generators([3,5]).__reduce__()
+        (<built-in function _from_pickle>, (<type 'mon.Monoid'>, 128, 8L, 3L, 4L, (1, 0, 0, 2, 0, 2, 3, 0, 4, 4, 3, 6, 5, 6, 8, 8, 9, 10, ..., 120)))
         """
+        return (_from_pickle,
+                (type(self), cmonoid.SIZE,
+                 self._m.conductor, self._m.min, self._m.genus,
+                 tuple(self._decomposition_numbers())))
+
+
+    cpdef Monoid remove_generator(self, unsigned int gen):
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.remove_generator(1)
         < 2 3 >
@@ -146,7 +163,7 @@ cdef class Monoid(object):
         return res
 
     cpdef list generators(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.generators()
         [1]
@@ -164,7 +181,7 @@ cdef class Monoid(object):
         return res
 
     cpdef int count_children(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.count_children()
         1
@@ -179,7 +196,7 @@ cdef class Monoid(object):
         return res
 
     cpdef list children(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.children()
         [< 2 3 >]
@@ -197,7 +214,7 @@ cdef class Monoid(object):
         return res
 
     cpdef list children_generators(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.children_generators()
         [1]
@@ -215,7 +232,7 @@ cdef class Monoid(object):
         return res
 
     cpdef list nth_generation(self, unsigned int genus):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.nth_generation(3)
         [< 4 5 6 7 >, < 3 5 7 >, < 3 4 >, < 2 7 >]
@@ -230,7 +247,7 @@ cdef class Monoid(object):
 
     # don't know how to make it readonly !
     cpdef _decomposition_numbers(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full._decomposition_numbers()
         <MemoryView of 'array' at 0x...>
@@ -246,7 +263,7 @@ cdef class Monoid(object):
 
     @classmethod
     def from_generators(cls, list l):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Monoid.from_generators([1])
         < 1 >
@@ -275,7 +292,7 @@ cdef class Monoid(object):
         return res
 
     def gcd_small_generator(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.gcd_small_generator()
         0
@@ -285,7 +302,7 @@ cdef class Monoid(object):
         return gcd([i for i in self.generators() if i < self.conductor()])
 
     def has_finite_descendance(self):
-        """
+        r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
         sage: Full.has_finite_descendance()
         False
@@ -296,7 +313,94 @@ cdef class Monoid(object):
         """
         return self.gcd_small_generator() == 1
 
+    # < 0    <= 1    == 2    != 3    > 4    >= 5
+    def __richcmp__(Monoid self, Monoid other, int op):
+        """
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
+        sage: m1 = Monoid.from_generators([3,5,7])
+        sage: Full == m1
+        False
+        sage: Full != m1
+        True
+        sage: Full == m1
+        False
+        sage: m1 == m1
+        True
+        sage: m1 != m1
+        False
+        sage: m1 < m1
+        Traceback (most recent call last):
+        ...
+        NotImplementedError
+        """
+        cdef int i
+        cdef bint res = (self._m.conductor ==  other._m.conductor and
+               self._m.min ==  other._m.min and
+               self._m.genus ==  other._m.genus and
+               all(self._m.decs[i] == other._m.decs[i] for i in range(cmonoid.SIZE)))
+        if op == 2:
+            return res
+        elif op == 3:
+            return not res
+        else:
+            raise NotImplementedError
+
+    def _test_monoid(self, **options):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
+        sage: m = Monoid.from_generators([3,5,7])
+        sage: m._test_monoid()
+        sage: m._decomposition_numbers()[2] = 1    # don't do this at home, kids
+        sage: m._test_monoid()
+        Traceback (most recent call last):
+        ...
+        AssertionError: wrong min
+        sage: m = Monoid.from_generators([3,5,7])
+        sage: m._decomposition_numbers()[20] = 0    # don't do this at home, kids
+        sage: m._test_monoid()
+        Traceback (most recent call last):
+        ...
+        AssertionError: wrong genus
+        """
+        cdef int i, genus
+        tester = self._tester(**options)
+        tester.assertTrue(all(self._m.decs[i] == 0 for i in range(1, self._m.min)),
+                          "wrong min")
+        genus = 0
+        for i in range(cmonoid.SIZE):
+            if self._m.decs[i] == 0:
+                genus += 1
+        tester.assertEqual(self._m.genus, genus, "wrong genus")
+        tester.assertEqual(self._m.decs[0], 1, "wrong decs[0]")
+        if self._m.conductor != 1:
+            tester.assertEqual(self._m.decs[self._m.conductor-1], 0,
+                               "conductor in not minimal")
+        tester.assertTrue(all(self._m.decs[i] != 0
+                              for i in range(self._m.conductor, cmonoid.SIZE)),
+                          "wrong conductor")
+        tester.assertEqual(self, Monoid.from_generators(self.generators()))
+
+
+def _from_pickle(typ, sz, cond, mn, genus, decs):
+    r"""
+    sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from mon import *
+    sage: TestSuite(Full).run()                            # indirect doctest
+    sage: TestSuite(Full.remove_generator(1)).run()        # indirect doctest
+    sage: TestSuite(Monoid.from_generators([3,5,7])).run() # indirect doctest
+    """
+    cdef Monoid res
+    cdef int i
+
+    if sz != cmonoid.SIZE:
+        raise ValueError, "mon is compiled with different size (pickle size=%i)"%sz
+    res = Monoid.__new__(typ)
+    res._m.conductor = cond
+    res._m.min = mn
+    res._m.genus = genus
+    for i in range(cmonoid.SIZE):
+        res._m.decs[i] = decs[i]
+    return res
+
+
 Full = Monoid()
 
-MAX_SIZE = cmonoid.SIZE
-MAX_GENUS = cmonoid.MAX_GENUS
