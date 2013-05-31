@@ -19,7 +19,7 @@ The following bound are fixed at compile time::
     sage: MAX_GENUS
     40
 """
-from sage.rings.arith import gcd
+from sage.rings.integer import Integer, GCD_list
 from sage.structure.sage_object cimport SageObject
 
 SIZE = cmonoid.SIZE
@@ -107,6 +107,23 @@ cdef class NumericMonoid(SageObject):
         cdef int i
         for i in range(self._m.conductor+1):
             if self._m.decs[i] > 0:
+                res.append(i)
+        return res
+
+    cpdef list gaps(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: Full.gaps()
+        []
+        sage: NumericMonoid.from_generators([3,5]).gaps()
+        [1, 2, 4, 7]
+        sage: all(len(m.gaps())==m.genus() for i in range(6) for m in Full.nth_generation(i))
+        True
+        """
+        cdef list res = []
+        cdef int i
+        for i in range(self._m.conductor):
+            if self._m.decs[i] == 0:
                 res.append(i)
         return res
 
@@ -336,7 +353,7 @@ cdef class NumericMonoid(SageObject):
         cdef set gens = {int(i) for i in l}
         cdef NumericMonoid res = cls()
         cdef cmonoid.generator_iter iter
-        if gcd(l) != 1:
+        if GCD_list(l) != 1:
             raise ValueError, "gcd of generators must be 1"
         cmonoid.init_children_generator_iter(&res._m, &iter)
         gen = cmonoid.next_generator_iter(&res._m, &iter)
@@ -355,7 +372,9 @@ cdef class NumericMonoid(SageObject):
         sage: NumericMonoid.from_generators([3,5,7]).gcd_small_generator()
         3
         """
-        return gcd([i for i in self.generators() if i < self.conductor()])
+        if self._m.min == 1:     # self == Full
+            return Integer(0)
+        return GCD_list([i for i in self.generators() if i < self.conductor()])
 
     def has_finite_descendance(self):
         r"""

@@ -15,6 +15,7 @@ cdef class NumericMonoid(SageObject):
     cpdef list nth_generation(self, unsigned int n)
     cpdef list generators(self)
     cpdef list elements(self)
+    cpdef list gaps(self)
     cpdef unsigned char[:] _decomposition_numbers(self)
 
 cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, tuple decs)
