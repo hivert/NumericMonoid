@@ -15,9 +15,14 @@ And the each doctest series should start with::
 The following bound are fixed at compile time::
 
     sage: SIZE
-    128
+    256
     sage: MAX_GENUS
-    40
+    86
+
+.. warning::
+
+    Due to modular arithmetic the 255-th decomposition number of the full
+    monoid is considered as 0 instead of 256.
 """
 from sage.rings.integer import Integer, GCD_list
 from sage.structure.sage_object cimport SageObject
@@ -76,9 +81,9 @@ cdef class NumericMonoid(SageObject):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: Full._print()
-        min = 1, cond = 1, genus = 0, decs = 1 2 3 4 ...  128
+        min = 1, cond = 1, genus = 0, decs = 1 2 3 4 ...  254 255 0
         sage: NumericMonoid.from_generators([3,5])._print()
-        min = 3, cond = 8, genus = 4, decs = 1 0 0 2 0 2 3 0 4 4 3 6 5 6 8 8 9 10 ... 120
+        min = 3, cond = 8, genus = 4, decs = 1 0 0 2 0 2 3 0 4 4 3 6 5 6 8 8 9 10 ... 247 248
         """
         cmonoid.print_monoid(&self._m)
 
@@ -162,9 +167,9 @@ cdef class NumericMonoid(SageObject):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: Full.__reduce__()
-        (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 128, 1L, 1L, 0L, (1, 2, 3, 4, ..., 128)))
+        (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 256, 1L, 1L, 0L, (1, 2, 3, 4, ..., 254, 255, 0)))
         sage: NumericMonoid.from_generators([3,5]).__reduce__()
-        (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 128, 8L, 3L, 4L, (1, 0, 0, 2, 0, 2, 3, 0, 4, 4, 3, 6, 5, 6, 8, 8, 9, 10, 11, ..., 120)))
+        (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 256, 8L, 3L, 4L, (1, 0, 0, 2, 0, 2, 3, 0, 4, 4, 3, 6, 5, 6, 8, 8, 9, 10, 11, ..., 247, 248)))
         """
         return (_from_pickle,
                 (type(self), cmonoid.SIZE,
@@ -208,9 +213,11 @@ cdef class NumericMonoid(SageObject):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: Full.__hash__()
-        4104806067970577762
+        8613822843763349794
         sage: hash(NumericMonoid.from_generators([3,5,7]))
-        4956859272429548688
+        4901567534456338896
+        sage: set(Full.nth_generation(4))
+        set([< 3 7 8 >, < 2 9 >, < 4 5 6 >, < 5 6 7 8 9 >, < 3 5 >, < 4 6 7 9 >, < 4 5 7 >])
         """
         return hash((self.conductor(), self.min(), self.genus(),
                      tuple(self._decomposition_numbers())))
@@ -324,10 +331,10 @@ cdef class NumericMonoid(SageObject):
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: Full._decomposition_numbers()
         <MemoryView of 'array' at 0x...>
-        sage: list(Full._decomposition_numbers()) == range(1, 129)
+        sage: list(Full._decomposition_numbers()) == range(1, 256) + [0]
         True
         sage: lst = list(NumericMonoid.from_generators([3,5,7])._decomposition_numbers())
-        sage: lst == [1, 0, 0, 2, 0, 2, 3, 2, 4] + range(4, 123)
+        sage: lst == [1, 0, 0, 2, 0, 2, 3, 2, 4] + range(4, 251)
         True
         """
         cdef unsigned char[:] slice = (<unsigned char[:cmonoid.SIZE]>
@@ -453,30 +460,56 @@ cdef class NumericMonoid(SageObject):
         ...
         AssertionError: wrong genus
         """
-        cdef int i, genus
+        cdef int i, genus = 0
         tester = self._tester(**options)
-        tester.assertTrue(all(self._m.decs[i] == 0 for i in range(1, self._m.min)),
-                          "wrong min")
-        genus = 0
-        for i in range(cmonoid.SIZE):
-            if self._m.decs[i] == 0:
-                genus += 1
-        tester.assertEqual(self._m.genus, genus, "wrong genus")
-        tester.assertEqual(self._m.decs[0], 1, "wrong decs[0]")
-        if self._m.conductor != 1:
+        if self._m.conductor == 1:
+            tester.assertEqual(self._m.genus, 0, "wrong genus")
+            tester.assertEqual(self._m.min, 1, "wrong min")
+            tester.assertTrue(all(self._m.decs[i] == i+1
+                                  for i in range(0, cmonoid.SIZE-1)),
+                              "wrong decs")
+            tester.assertEqual(self._m.decs[255], 0, "wrong decs[255]")
+        else:
+            tester.assertTrue(all(self._m.decs[i] == 0 for i in range(1, self._m.min)),
+                              "wrong min")
+            for i in range(cmonoid.SIZE):
+                if self._m.decs[i] == 0:
+                    genus += 1
+            tester.assertEqual(self._m.genus, genus, "wrong genus")
+            tester.assertEqual(self._m.decs[0], 1, "wrong decs[0]")
             tester.assertEqual(self._m.decs[self._m.conductor-1], 0,
                                "conductor in not minimal")
-        tester.assertTrue(all(self._m.decs[i] != 0
-                              for i in range(self._m.conductor, cmonoid.SIZE)),
-                          "wrong conductor")
-        tester.assertEqual(self, NumericMonoid.from_generators(self.generators()))
+            tester.assertTrue(all(self._m.decs[i] != 0
+                                  for i in range(self._m.conductor, cmonoid.SIZE)),
+                              "wrong conductor")
+
+    def _test_generators(self, **options):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: Full._test_generators()
+        sage: m = NumericMonoid.from_generators([3,5,7])
+        sage: m._test_generators()
+        sage: m._decomposition_numbers()[2] = 2    # don't do this at home, kids
+        sage: m._test_generators()
+        Traceback (most recent call last):
+        ...
+        AssertionError: wrong generators
+        """
+        tester = self._tester(**options)
+        tester.assertEqual(self, NumericMonoid.from_generators(self.generators()),
+                           "wrong generators")
 
 
 cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, tuple decs):
     r"""
     sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
-    sage: TestSuite(Full).run()                            # indirect doctest
-    sage: TestSuite(Full.remove_generator(1)).run()        # indirect doctest
+    sage: TestSuite(Full).run(verbose=True)                       # indirect doctest
+    running ._test_category() . . . pass
+    running ._test_generators() . . . pass
+    running ._test_monoid() . . . pass
+    running ._test_not_implemented_methods() . . . pass
+    running ._test_pickling() . . . pass
+    sage: TestSuite(Full.remove_generator(1)).run()               # indirect doctest
     sage: TestSuite(NumericMonoid.from_generators([3,5,7])).run() # indirect doctest
     """
     cdef NumericMonoid res

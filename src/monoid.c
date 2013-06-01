@@ -143,7 +143,13 @@ inline void remove_generator(monoid *__restrict__ src,
 #if NBLOCKS > 13
       CASE_UNROLL(12);
 #endif
-#if NBLOCK > 14
+#if NBLOCKS > 14
+      CASE_UNROLL(13);
+#endif
+#if NBLOCKS > 15
+      CASE_UNROLL(14);
+#endif
+#if NBLOCKS > 16
 #error "Too many blocks"
 #endif
     }
