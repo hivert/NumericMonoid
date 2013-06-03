@@ -4,7 +4,7 @@
 
 #include "monoid.h"
 
-epi8 zero, block2, shift16[16], mask16[16];
+epi8 zero, block1, shift16[16], mask16[16];
 
 #define nth_block(st, i) (((epi8 *) st)[i])
 #define load_epi8(t) ((epi8) _mm_loadu_si128((__m128i *) (t)))
@@ -12,7 +12,7 @@ epi8 zero, block2, shift16[16], mask16[16];
 #define storeu_epi8(t, v) (_mm_storeu_si128((__m128i *) (t), (__m128i) (v)))
 
 epi8 zero   = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-epi8 block2 = {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2};
+epi8 block1 = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 epi8 shift16[16] =
   { { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
     {-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14},
@@ -85,7 +85,7 @@ inline void remove_generator(monoid *__restrict__ src,
   unsigned long int start_block, decal;
   epi8 block;
 
-  assert(src->decs[gen] == 2);
+  assert(src->decs[gen] == 1);
 
   dst->conductor = gen + 1;
   dst->genus = src->genus + 1;
@@ -98,14 +98,14 @@ inline void remove_generator(monoid *__restrict__ src,
   // Shift block by decal uchar
   block = (epi8) _mm_shuffle_epi8((__m128i) nth_block(src->decs, 0),
 				  (__m128i) shift16[decal]);
-  nth_block(dst->decs, start_block) -= ((block != zero) & block2);
+  nth_block(dst->decs, start_block) -= ((block != zero) & block1);
 
 #if NBLOCKS >= 5
 #warning "Using unrolled loop version"
 
 #define CASE_UNROLL(i_loop)			\
   case i_loop : \
-      nth_block(dst->decs, i_loop+1) -= ((load_epi8(srcblock) != zero) & block2); \
+      nth_block(dst->decs, i_loop+1) -= ((load_epi8(srcblock) != zero) & block1); \
       srcblock += 16
 
   {
@@ -162,10 +162,9 @@ inline void remove_generator(monoid *__restrict__ src,
       // The following won't work due to a bug in GCC 4.7.1
       // block = *((epi8*)(src->decs + ((i-start_block)<<4) - decal));
       block = load_epi8(src->decs + ((i-start_block)<<4) - decal);
-      nth_block(dst->decs, i) -= ((block != zero) & block2);
+      nth_block(dst->decs, i) -= ((block != zero) & block1);
     }
 #endif
-  if (2*gen<SIZE) dst->decs[2*gen]++;
 
   assert(dst->decs[dst->conductor-1] == 0);
 }
@@ -176,8 +175,8 @@ void init_full_N(monoid *pm)
   unsigned long int i;
   epi8 block;
 
-  for (i=0; i<16; i++) block[i] = i+1;
-  for (i=0; i<NBLOCKS; i++) nth_block(pm->decs, i) = block + ((char) (i<<4));
+  for (i=0; i<16; i++) block[i] = i/2+1;
+  for (i=0; i<NBLOCKS; i++) nth_block(pm->decs, i) = block + ((char) (i<<3));
   pm->genus = 0;
   pm->conductor = 1;
   pm->min = 1;
@@ -189,7 +188,7 @@ inline void init_all_generator_iter(monoid *pm, generator_iter *scan)
 
   scan->iblock = 0;
   block = nth_block(pm->decs, 0);
-  scan->mask  = _mm_movemask_epi8((__m128i) (block == block2));
+  scan->mask  = _mm_movemask_epi8((__m128i) (block == block1));
   scan->gen = - 1;
   scan->iblock++;
   scan->bound = (pm->conductor+pm->min+15) >> 4;
@@ -202,7 +201,7 @@ inline void init_children_generator_iter(monoid *pm, generator_iter *scan)
 
   scan->iblock = pm->conductor >> 4;
   block = nth_block(pm->decs, scan->iblock) & mask16[pm->conductor & 0xF];
-  scan->mask  = _mm_movemask_epi8((__m128i) (block == block2));
+  scan->mask  = _mm_movemask_epi8((__m128i) (block == block1));
   scan->gen = (scan->iblock << 4) - 1;
   scan->iblock++;
   scan->bound = (pm->conductor+pm->min+15) >> 4;
@@ -227,7 +226,7 @@ inline unsigned long int next_generator_iter(monoid *pm, generator_iter *scan)
 	  if (scan->iblock > scan->bound) return 0;
 	  scan->gen = (scan->iblock << 4) - 1;
 	  block = nth_block(pm->decs, scan->iblock);
-	  scan->mask  = _mm_movemask_epi8((__m128i) (block == block2));
+	  scan->mask  = _mm_movemask_epi8((__m128i) (block == block1));
 	  scan->iblock++;
 	}
     }
@@ -241,7 +240,7 @@ inline unsigned char count_generator_iter(monoid *pm, generator_iter *scan)
   for (/* nothing */ ; scan->iblock <= scan->bound; scan->iblock++)
     {
       block = nth_block(pm->decs, scan->iblock);
-      nbr += _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block2)));
+      nbr += _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block1)));
     }
   return nbr;
 }

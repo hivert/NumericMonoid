@@ -1,6 +1,7 @@
 CC   = gcc
 CILK = cilkc
-CYTHON = /home/data/Sage-Install/sage/local/bin/cython
+#CYTHON = /home/data/Sage-Install/sage/local/bin/cython
+CYTHON = `sage -root`/local/bin/cython
 GREP = grep
 
 

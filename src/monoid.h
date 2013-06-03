@@ -3,7 +3,7 @@
 
 typedef unsigned char epi8 __attribute__ ((vector_size (16)));
 
-#define MAX_GENUS 86
+#define MAX_GENUS 40
 #define SIZE_BOUND (3*(MAX_GENUS-1))
 #define NBLOCKS ((SIZE_BOUND+15) >> 4)
 #define SIZE (NBLOCKS << 4)
