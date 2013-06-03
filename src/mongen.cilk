@@ -20,6 +20,7 @@ Size = 1 2 4 7 12 23 39 67 118 204 343 592 1001 1693 2857 4806 8045 13467 22464 
 
 result *results_proc_local;
 monoid **stacks_proc_local;
+unsigned long int target_genus;
 
 // Optimal for n=40
 #define STACK_BOUND 10
@@ -32,7 +33,7 @@ cilk void walk_children(monoid *pm)
 
   init_children_generator_iter(pm, &scan);
 
-  if (pm->genus < MAX_GENUS-STACK_BOUND)
+  if (pm->genus < target_genus-STACK_BOUND)
     {
       while ((gen = next_generator_iter(pm, &scan)) != 0)
 	{
@@ -47,7 +48,7 @@ cilk void walk_children(monoid *pm)
     while ((gen = next_generator_iter(pm, &scan)) != 0)
       {
 	remove_generator(pm, stacks_proc_local[Self], gen);
-	walk_children_stack(stacks_proc_local[Self], MAX_GENUS, results_proc_local[Self]);
+	walk_children_stack(stacks_proc_local[Self], target_genus, results_proc_local[Self]);
 	nbr++;
       }
   results_proc_local[Self][pm->genus] += nbr;
@@ -59,7 +60,7 @@ void print_sizes()
   int i, proc;
 
   printf("Size = ");
-  for (i=0; i<MAX_GENUS; i++)
+  for (i=0; i<target_genus; i++)
     {
       unsigned long long int res = 0;
       for (proc=0; proc<nproc; proc++) res += results_proc_local[proc][i];
@@ -95,6 +96,7 @@ cilk int main(void)
   remove_generator(&N, &N1, 1);
   results_proc_local[0][0] = 1;
 
+  target_genus = MAX_GENUS;
   spawn walk_children(&N1);
   sync;
 
