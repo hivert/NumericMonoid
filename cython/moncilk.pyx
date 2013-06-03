@@ -12,6 +12,7 @@ cdef extern from "cilk.h":
 cdef extern from "../src/mongen.h":
     cdef cmonoid.result *results_proc_local
     cdef cmonoid.monoid **stacks_proc_local
+    cdef unsigned long int target_genus
     cdef int nproc
     cdef void walk_children_cilk "EXPORT(walk_children)"(CilkContext *, cmonoid.monoid *)
 
@@ -65,7 +66,7 @@ cpdef list callcilk(numeric_monoid.NumericMonoid m):
     cdef int proc, i
     cdef Integer res
     cdef list resl
-    global stacks_proc_local, results_proc_local, nproc
+    global stacks_proc_local, results_proc_local, target_genus, nproc
 
 
     if context == NULL:
@@ -77,6 +78,7 @@ cpdef list callcilk(numeric_monoid.NumericMonoid m):
 
     print "GOOOOOOO !!!!!!!!"
 
+    target_genus = cmonoid.MAX_GENUS
     start_alarm()
     walk_children_cilk(context, &m._m)
     stop_alarm()

@@ -81,9 +81,9 @@ cdef class NumericMonoid(SageObject):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: Full._print()
-        min = 1, cond = 1, genus = 0, decs = 1 2 3 4 ...  254 255 0
+        min = 1, cond = 1, genus = 0, decs = 1 1 2 2 3 3 4 4 ...  128 128
         sage: NumericMonoid.from_generators([3,5])._print()
-        min = 3, cond = 8, genus = 4, decs = 1 0 0 2 0 2 3 0 4 4 3 6 5 6 8 8 9 10 ... 247 248
+        min = 3, cond = 8, genus = 4, decs = 1 0 0 1 0 1 2 0 2 2 2 3 3 3 4 4 5 5 ... 124 124
         """
         cmonoid.print_monoid(&self._m)
 
@@ -167,9 +167,9 @@ cdef class NumericMonoid(SageObject):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: Full.__reduce__()
-        (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 256, 1L, 1L, 0L, (1, 2, 3, 4, ..., 254, 255, 0)))
+        (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 256, 1L, 1L, 0L, (1, 1, 2, 2, 3, 3, 4, 4, ..., 128)))
         sage: NumericMonoid.from_generators([3,5]).__reduce__()
-        (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 256, 8L, 3L, 4L, (1, 0, 0, 2, 0, 2, 3, 0, 4, 4, 3, 6, 5, 6, 8, 8, 9, 10, 11, ..., 247, 248)))
+        (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 256, 8L, 3L, 4L, (1, 0, 0, 1, 0, 1, 2, 0, 2, 2, ..., 124, 124)))
         """
         return (_from_pickle,
                 (type(self), cmonoid.SIZE,
@@ -213,11 +213,11 @@ cdef class NumericMonoid(SageObject):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: Full.__hash__()
-        8613822843763349794
+        7122582034698508706
         sage: hash(NumericMonoid.from_generators([3,5,7]))
-        4901567534456338896
-        sage: set(Full.nth_generation(4))
-        set([< 3 7 8 >, < 2 9 >, < 4 5 6 >, < 5 6 7 8 9 >, < 3 5 >, < 4 6 7 9 >, < 4 5 7 >])
+        7609276871119479011
+        sage: len(set(Full.nth_generation(4)))
+        7
         """
         return hash((self.conductor(), self.min(), self.genus(),
                      tuple(self._decomposition_numbers())))
@@ -237,7 +237,7 @@ cdef class NumericMonoid(SageObject):
         """
         cdef NumericMonoid res
         res = NumericMonoid.__new__(type(self))
-        if gen > cmonoid.SIZE or self._m.decs[gen] != 2:
+        if gen > cmonoid.SIZE or self._m.decs[gen] != 1:
             raise ValueError, "%i is not a generator for %s"%(gen, self)
         cmonoid.remove_generator(&self._m, &res._m, gen)
         return res
@@ -331,15 +331,30 @@ cdef class NumericMonoid(SageObject):
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: Full._decomposition_numbers()
         <MemoryView of 'array' at 0x...>
-        sage: list(Full._decomposition_numbers()) == range(1, 256) + [0]
+        sage: len(list(Full._decomposition_numbers())) == 256
         True
-        sage: lst = list(NumericMonoid.from_generators([3,5,7])._decomposition_numbers())
-        sage: lst == [1, 0, 0, 2, 0, 2, 3, 2, 4] + range(4, 251)
+        sage: len(list(NumericMonoid.from_generators([3,5,7])._decomposition_numbers())) == 256
         True
         """
         cdef unsigned char[:] slice = (<unsigned char[:cmonoid.SIZE]>
                                         <unsigned char *> self._m.decs)
         return slice
+
+    cpdef list multiplicities(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: Full.multiplicities() == range(1, 257)
+        True
+        sage: NumericMonoid.from_generators([3,5,7]).multiplicities()
+        [1, 0, 0, 2, 0, 2, 3, 2, 4, 4, 5, 6, 7, 8, 9, 10, 11, ..., 249, 250]
+
+        """
+        cdef list res = list(self._decomposition_numbers())
+        for i in range(1, len(res)):
+            res[i] <<= 1
+            if i % 2 == 0 and res[i/2] != 0:
+                res[i] -= 1
+        return res
 
     @classmethod
     def from_generators(cls, list l):
@@ -424,7 +439,7 @@ cdef class NumericMonoid(SageObject):
         sage: bound = 20
         sage: all( [(m.support_generating_series()^2).taylor(x, 0, bound-1).coefficient(x, i)
         ...         for i in range(bound)] ==
-        ...        list(m._decomposition_numbers())[:bound]
+        ...        list(m.multiplicities())[:bound]
         ...       for k in range(7) for m in Full.nth_generation(k))
         True
         """
@@ -463,25 +478,20 @@ cdef class NumericMonoid(SageObject):
         cdef int i, genus = 0
         tester = self._tester(**options)
         if self._m.conductor == 1:
-            tester.assertEqual(self._m.genus, 0, "wrong genus")
             tester.assertEqual(self._m.min, 1, "wrong min")
-            tester.assertTrue(all(self._m.decs[i] == i+1
-                                  for i in range(0, cmonoid.SIZE-1)),
-                              "wrong decs")
-            tester.assertEqual(self._m.decs[255], 0, "wrong decs[255]")
-        else:
-            tester.assertTrue(all(self._m.decs[i] == 0 for i in range(1, self._m.min)),
-                              "wrong min")
-            for i in range(cmonoid.SIZE):
-                if self._m.decs[i] == 0:
-                    genus += 1
-            tester.assertEqual(self._m.genus, genus, "wrong genus")
-            tester.assertEqual(self._m.decs[0], 1, "wrong decs[0]")
+        tester.assertTrue(all(self._m.decs[i] == 0 for i in range(1, self._m.min)),
+                          "wrong min")
+        for i in range(cmonoid.SIZE):
+            if self._m.decs[i] == 0:
+                genus += 1
+        tester.assertEqual(self._m.genus, genus, "wrong genus")
+        tester.assertEqual(self._m.decs[0], 1, "wrong decs[0]")
+        if self._m.conductor != 1:
             tester.assertEqual(self._m.decs[self._m.conductor-1], 0,
                                "conductor in not minimal")
-            tester.assertTrue(all(self._m.decs[i] != 0
-                                  for i in range(self._m.conductor, cmonoid.SIZE)),
-                              "wrong conductor")
+        tester.assertTrue(all(self._m.decs[i] != 0
+                              for i in range(self._m.conductor, cmonoid.SIZE)),
+                          "wrong conductor")
 
     def _test_generators(self, **options):
         r"""

@@ -188,6 +188,7 @@ inline void init_all_generator_iter(monoid *pm, generator_iter *scan)
 
   scan->iblock = 0;
   block = nth_block(pm->decs, 0);
+  block[0] = 0; // 0 is not a generator
   scan->mask  = _mm_movemask_epi8((__m128i) (block == block1));
   scan->gen = - 1;
   scan->iblock++;
