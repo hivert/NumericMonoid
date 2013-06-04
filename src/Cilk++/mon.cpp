@@ -1,8 +1,42 @@
 #include <reducer_opadd.h>
 #include <holder.h>
 #include <iostream>
-#include "monoid.hpp"
 
+using namespace std;
+typedef unsigned char epi8 __attribute__ ((vector_size (16)));
+
+#define MAX_GENUS 40
+#define SIZE_BOUND (3*(MAX_GENUS-1))
+#define NBLOCKS ((SIZE_BOUND+15) >> 4)
+#define SIZE (NBLOCKS << 4)
+
+
+typedef unsigned char nb_decompositions[SIZE] __attribute__ ((aligned (16)));
+typedef unsigned long long int result[MAX_GENUS];
+
+struct monoid
+{
+  nb_decompositions decs;
+  unsigned long int conductor, min, genus;
+};
+
+struct generator_iter
+{
+  unsigned long int iblock, mask, gen, bound;
+};
+
+void init_full_N(monoid &);
+void print_monoid(const monoid &);
+void print_epi8(epi8);
+inline void copy_decs(      nb_decompositions &__restrict__ dst,
+		      const nb_decompositions &__restrict__ src);
+inline monoid remove_generator(const monoid &__restrict__, unsigned long int);
+
+
+inline void init_all_generator_iter(const monoid &, generator_iter &);
+inline generator_iter init_children_generator_iter(const monoid &m);
+inline unsigned long int next_generator_iter(const monoid &, generator_iter &);
+inline unsigned char count_generator_iter(const monoid &, generator_iter &);
 
 const unsigned long int target_genus = MAX_GENUS;
 
@@ -60,16 +94,12 @@ const epi8 mask16[16] =
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,m1,m1},
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,m1} };
 
-monoid *alloc_monoid()
-{
-  return new monoid;
-}
 
-void print_monoid(monoid *pm)
+void print_monoid(const monoid &m)
 {
   unsigned int i;
-  cout<<"min = "<<pm->min<<", cond = "<<pm->conductor<<", genus = "<<pm->genus<<", decs = ";
-  for (i=0; i<SIZE; i++) cout<<((int) pm->decs[i])<<' ';
+  cout<<"min = "<<m.min<<", cond = "<<m.conductor<<", genus = "<<m.genus<<", decs = ";
+  for (i=0; i<SIZE; i++) cout<<((int) m.decs[i])<<' ';
   cout<<endl;
 }
 
@@ -82,43 +112,44 @@ void print_epi8(epi8 bl)
 }
 
 
-inline void copy_decs(nb_decompositions *dst, nb_decompositions *src)
+inline void copy_decs(      nb_decompositions &__restrict__ dst,
+		      const nb_decompositions &__restrict__ src)
 {
   unsigned long int i;
-  for (i=0; i<NBLOCKS; i++) nth_block(dst, i) = nth_block(src, i);
+  for (i=0; i<NBLOCKS; i++) nth_block(&dst, i) = nth_block(&src, i);
 }
 
 
-inline void remove_generator(monoid *__restrict__ src,
-		      monoid *__restrict__ dst,
-		      unsigned long int gen)
+inline void remove_generator(monoid &__restrict__ dst,
+			     const monoid &__restrict__ src,
+			     unsigned long int gen)
 {
   unsigned long int start_block, decal;
   epi8 block;
 
-  assert(src->decs[gen] == 1);
+  assert(src.decs[gen] == 1);
 
-  dst->conductor = gen + 1;
-  dst->genus = src->genus + 1;
-  dst->min = gen == src->min ? dst->conductor : src->min;
+  dst.conductor = gen + 1;
+  dst.genus = src.genus + 1;
+  dst.min = gen == src.min ? dst.conductor : src.min;
 
-  copy_decs(&dst->decs, &src->decs);
+  copy_decs(dst.decs, src.decs);
 
   start_block = gen >> 4;
   decal = gen & 0xF;
   // Shift block by decal uchar
-  block = (epi8) _mm_shuffle_epi8((__m128i) nth_block(src->decs, 0),
+  block = (epi8) _mm_shuffle_epi8((__m128i) nth_block(src.decs, 0),
 				  (__m128i) shift16[decal]);
-  update_epi8(nth_block(dst->decs,start_block),block)
+  update_epi8(nth_block(dst.decs,start_block),block)
 #if NBLOCKS >= 5
 
 #define CASE_UNROLL(i_loop)			\
   case i_loop : \
-      update_epi8(nth_block(dst->decs, i_loop+1),load_epi8(srcblock)); \
+      update_epi8(nth_block(dst.decs, i_loop+1),load_epi8(srcblock)); \
       srcblock += 16
 
   {
-    unsigned char *srcblock = src->decs + 16 - decal;
+    const unsigned char *srcblock = src.decs + 16 - decal;
   switch(start_block)
     {
       CASE_UNROLL(0);
@@ -170,94 +201,103 @@ inline void remove_generator(monoid *__restrict__ src,
   for (i=start_block+1; i<NBLOCKS; i++)
     {
       // The following won't work due to a bug in GCC 4.7.1
-      // block = *((epi8*)(src->decs + ((i-start_block)<<4) - decal));
-      block = load_epi8(src->decs + ((i-start_block)<<4) - decal);
-      update_epi8(nth_block(dst->decs,i),block);
+      // block = *((epi8*)(src.decs + ((i-start_block)<<4) - decal));
+      block = load_epi8(src.decs + ((i-start_block)<<4) - decal);
+      update_epi8(nth_block(dst.decs,i),block);
     }
 #endif
 
-  assert(dst->decs[dst->conductor-1] == 0);
+  assert(dst.decs[dst.conductor-1] == 0);
 }
 
+inline monoid remove_generator(const monoid &__restrict__ src, unsigned long int gen)
+{
+  monoid dst;
+  remove_generator(dst, src, gen);
+  return dst;
+}
 
-void init_full_N(monoid *pm)
+void init_full_N(monoid &m)
 {
   unsigned long int i;
   epi8 block ={1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8};
   epi8 block8={8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8};
   for(i=0; i<NBLOCKS; i++){
-    nth_block(pm->decs, i) = block;
-    block=(epi8) _mm_add_epi8( (__m128i) block, (__m128i) block8);  
-  }  
-  pm->genus = 0;
-  pm->conductor = 1;
-  pm->min = 1;
+    nth_block(m.decs, i) = block;
+    block=(epi8) _mm_add_epi8( (__m128i) block, (__m128i) block8);
+  }
+  m.genus = 0;
+  m.conductor = 1;
+  m.min = 1;
 }
 
-inline void init_all_generator_iter(monoid *pm, generator_iter *scan)
+inline void init_all_generator_iter(const monoid &m, generator_iter &scan)
 {
   epi8 block;
-  scan->iblock = 0;
-  block = nth_block(pm->decs, 0);
-  ((unsigned char*)(&block))[0]=0;// 0 is not a generator 
-  scan->mask  = _mm_movemask_epi8((__m128i) _mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
-  scan->gen = - 1;
-  scan->iblock++;
-  scan->bound = (pm->conductor+pm->min+15) >> 4;
+  scan.iblock = 0;
+  block = nth_block(m.decs, 0);
+  ((unsigned char*)(&block))[0]=0; // 0 is not a generator
+  scan.mask  = _mm_movemask_epi8((__m128i) _mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
+  scan.gen = - 1;
+  scan.iblock++;
+  scan.bound = (m.conductor+m.min+15) >> 4;
 }
 
 
-inline void init_children_generator_iter(monoid *pm, generator_iter *scan)
+inline generator_iter init_children_generator_iter(const monoid &m)
 {
+  generator_iter scan;
   epi8 block;
-  scan->iblock = pm->conductor >> 4;
-  block = nth_block(pm->decs, scan->iblock) & mask16[pm->conductor & 0xF];
-  scan->mask  = _mm_movemask_epi8(_mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
-  scan->gen = (scan->iblock << 4) - 1;
-  scan->iblock++;
-  scan->bound = (pm->conductor+pm->min+15) >> 4;
+  scan.iblock = m.conductor >> 4;
+  block = nth_block(m.decs, scan.iblock) & mask16[m.conductor & 0xF];
+  scan.mask  = _mm_movemask_epi8(_mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
+  scan.gen = (scan.iblock << 4) - 1;
+  scan.iblock++;
+  scan.bound = (m.conductor+m.min+15) >> 4;
+  return scan;
 }
 
-inline unsigned long int next_generator_iter(monoid *pm, generator_iter *scan)
+inline unsigned long int next_generator_iter(const monoid &m, generator_iter &scan)
 {
   unsigned long int shift;
   epi8 block;
 
   do
     {
-      if (scan->mask)
+      if (scan.mask)
 	{
-	  shift = __bsfd (scan->mask) + 1;
-	  scan->gen += shift;
-	  scan->mask >>= shift;
-	  return scan->gen;
+	  shift = __bsfd (scan.mask) + 1;
+	  scan.gen += shift;
+	  scan.mask >>= shift;
+	  return scan.gen;
 	}
       else
 	{
-	  if (scan->iblock > scan->bound) return 0;
-	  scan->gen = (scan->iblock << 4) - 1;
-	  block = nth_block(pm->decs, scan->iblock);
-	  scan->mask  = _mm_movemask_epi8(_mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
-	  scan->iblock++;
+	  if (scan.iblock > scan.bound) return 0;
+	  scan.gen = (scan.iblock << 4) - 1;
+	  block = nth_block(m.decs, scan.iblock);
+	  scan.mask  = _mm_movemask_epi8(_mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
+	  scan.iblock++;
 	}
     }
   while (1);
 }
 
-inline unsigned char count_generator_iter(monoid *pm, generator_iter *scan)
+inline unsigned char count_generator_iter(const monoid &m, generator_iter &scan)
 {
   epi8 block;
-  unsigned char nbr = _mm_popcnt_u32(scan->mask);
-  for (/* nothing */ ; scan->iblock <= scan->bound; scan->iblock++)
+  unsigned char nbr = _mm_popcnt_u32(scan.mask);
+  for (/* nothing */ ; scan.iblock <= scan.bound; scan.iblock++)
     {
-      block = nth_block(pm->decs, scan->iblock);
+      block = nth_block(m.decs, scan.iblock);
       nbr += _mm_popcnt_u32(_mm_movemask_epi8(_mm_cmpeq_epi8((__m128i) block, (__m128i) block1)));
     }
   return nbr;
 }
 
+cilk::reducer_opadd<unsigned long int> cilk_result[target_genus];
 
-void walk_children_stack(monoid m, unsigned long int bound, unsigned long int res[])
+inline void walk_children_stack(const monoid &m, unsigned long int bound)
 {
   unsigned long int stack_pointer = 1, nbr, gen;
   generator_iter scan;
@@ -274,22 +314,22 @@ void walk_children_stack(monoid m, unsigned long int bound, unsigned long int re
 	  current.genus = stack[stack_pointer].genus;
 	  current.conductor = stack[stack_pointer].conductor;
 	  current.min = stack[stack_pointer].min;
-	  copy_decs(&current.decs, &(stack[stack_pointer].decs));
+	  copy_decs(current.decs, stack[stack_pointer].decs);
 
-	  init_children_generator_iter(&current, &scan);
+	  scan = init_children_generator_iter(current);
 
-	  while ((gen = next_generator_iter(&current, &scan)) != 0)
+	  while ((gen = next_generator_iter(current, scan)) != 0)
 	    {
-	      remove_generator(&current, &(stack[stack_pointer++]), gen);
+	      remove_generator(stack[stack_pointer++], current, gen);
 	      nbr++;
 	    }
-	  res[current.genus] += nbr;
+	  cilk_result[current.genus] += nbr;
 	}
       else
 	{
-	  init_children_generator_iter(&stack[stack_pointer], &scan);
-	  res[stack[stack_pointer].genus] +=
-	    count_generator_iter(&stack[stack_pointer], &scan);
+	  scan = init_children_generator_iter(stack[stack_pointer]);
+	  cilk_result[stack[stack_pointer].genus] +=
+	    count_generator_iter(stack[stack_pointer], scan);
 	}
     }
 }
@@ -297,35 +337,23 @@ void walk_children_stack(monoid m, unsigned long int bound, unsigned long int re
 
 ////////////////////////////////////////////
 
-
-cilk::reducer_opadd<unsigned long int> cilk_result[target_genus+1];
-cilk::holder<monoid> newmonoid[target_genus+1];
-
-void walk_children(monoid &pm)
+void walk_children(const monoid &m)
 {
   unsigned long int nbr = 0, gen;
   generator_iter scan;
 
-
-  if (pm.genus < target_genus - 10)
+  if (m.genus < target_genus - 10)
     {
-      init_children_generator_iter(&pm, &scan);
-      while ((gen = next_generator_iter(&pm, &scan)) != 0)
+      scan = init_children_generator_iter(m);
+      while ((gen = next_generator_iter(m, scan)) != 0)
 	{
-	  remove_generator(&pm, &newmonoid[pm.genus].view(), gen);
-	  cilk_spawn walk_children(newmonoid[pm.genus].view());
+	  cilk_spawn walk_children(remove_generator(m, gen));
 	  nbr++;
 	}
+      cilk_result[m.genus] += nbr;
      }
   else
-    {
-      unsigned long int res[target_genus+1];
-      unsigned long int i;
-      for (i=0; i <= target_genus; i++) res[i] = 0;
-      walk_children_stack(pm, target_genus, res);
-      for (i=0; i <= target_genus; i++) cilk_result[pm.genus] += res[i];
-    }
-  cilk_result[pm.genus] += nbr;
+    walk_children_stack(m, target_genus);
 }
 
 
@@ -335,17 +363,15 @@ int main(void)
 
   std::cout << "Computing number of numeric monoids for genus <= "
 	    << target_genus << std::endl;
-  init_full_N(&N);
-  remove_generator(&N, &N1, 1);
+  init_full_N(N);
+  N1 = remove_generator(N, 1);
   cilk_result[0]++;
-
-  print_monoid(&N1);
 
   cilk_spawn walk_children(N1);
   cilk_sync;
 
   std::cout << std::endl << "============================" << std::endl << std::endl;
-  for (unsigned int i=0; i<target_genus+1; i++)
+  for (unsigned int i=0; i<target_genus; i++)
     std::cout << cilk_result[i].get_value() << " ";
   std::cout << std::endl;
   return EXIT_SUCCESS;
