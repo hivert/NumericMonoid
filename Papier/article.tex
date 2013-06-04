@@ -1,0 +1,888 @@
+\documentclass[reqno,11pt]{amsart}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{url}
+\usepackage{pst-tree}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{pgfplots}
+\theoremstyle{plain}
+\newtheorem{prop}{Proposition}[section]
+\theoremstyle{definition}
+\newtheorem{defi}[prop]{Definition}
+\newtheorem{nota}[prop]{Notation}
+\newtheorem{exam}[prop]{Example}
+\newtheorem{lem}[prop]{Lemma}
+\newtheorem{fact}[prop]{Fact}
+
+\title{Exploring the tree of numerical semigroups}
+\author{XXXX}
+
+\newcommand{\gr}[1]{{\color{gray} #1}}
+%\newcommand{\card}{\#}
+\newcommand{\ie}{\emph{i.e.}}
+\newcommand{\kkp}{{k+1}}
+\newcommand{\gen}[1]{\left<#1\right>}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\newcommand{\NN}{\mathbb{N}}
+\renewcommand{\tt}[1]{\texttt{#1}}
+\newcommand{\sgnode}[1]{\TR{\bf \left<#1\right>}}
+\renewcommand{\ie}{\emph{i.e}}
+\DeclareMathOperator{\Irr}{Irr}
+\DeclareMathOperator{\App}{App}
+\DeclareMathOperator{\card}{card}
+
+
+\begin{document}
+
+\begin{abstract}
+In this paper we describe an algorithm visiting all the numerical semigroups up to a given genus using a new representation of numerical semigroups. 
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+A \emph{numerical semigroup} $S$ is a subset of $\NN$ containing $0$, close under addition and of finite complement in $\NN$.  
+For example the set 
+\begin{equation}
+\label{E:NSG}
+S_E=\{0,3,6,7,9,10\}\cup[12,+\infty[
+\end{equation}
+is a numerical semigroup.
+The \emph{genus} of a numerical semigroup $S$, denoted by~$g(S)$, is the cardinality of $\NN\setminus S$, \ie, $g(S)=\card(\NN\setminus S)$. 
+ For example the genus of $S_E$ defined in \eqref{E:NSG} is $6$,  the cardinality of $\{1,2,4,5,8,11\}$
+
+For a given positive integer $g$, the number of numerical semigroups  is finite and is denoted by $n_g$. 
+In  J.A. Sloane's \emph{on-line encyclopedia of integer}~\cite{OEIS} we find the values of $n_g$ for $g\leq 52$. 
+These values have been obtain by M. Bras-Amor\'os (view \cite{BrasAmoros2008} for more details for $g\leq 50)$. 
+On his home page \cite{Delgado}, M. Delgado  gives the value of $n_{55}$ without specifying the values of $n_{53}$ and $n_{54}$. 
+M.~-Bras Amor\'os used a depth first search exploration of the tree of numerical semigroups up to a given genus.
+This tree was introduced by J.C. Rosales and al. in \cite{Rosales} and it is the subject of the Section~\ref{S:Tree}.
+
+Starting with all the numerical semigroups of genus $49$ she obtained the number of numerical semigroups of genus $50$ in $18$ days on a pentium D runing at $3$GHz. 
+In the package~\tt{NumericalSgs} \cite{NumericalSgps} of \tt{GAP} \cite{GAP}, M. Delgado together with P.A.~Garcia-Sanchez and J. Morais used the same method of exploration.
+
+The paper is divided as follows.
+In section~\ref{S:Tree} we describe the tree of numerical semigroups and give bounds for some parameters attached to a numerical semigroup.
+In Section~\ref{S:DecNumber} we describe a new representation of numerical semigroups that is well suited to the construction of the tree. 
+In Section~\ref{S:Algo} we describe an algorithm based on the representation given in Section~\ref{S:DecNumber} and give its complexity. 
+Section~\ref{S:Opti} is more technical, and is devoted to the optimisation of the algorithm introduced in Section~\ref{S:Algo}.
+
+\section{The tree of numerical semigroups}
+\label{S:Tree}
+We first start by some notations.
+
+\begin{defi}
+Let $S$ be a numerical semigroup. We define 
+
+$i)$ $m(S)=\min(S\setminus\{0\})$, the \emph{multiplicity} of $S$;
+
+$ii)$ $g(S)=\card(\NN\setminus S)$, the \emph{genus} of $S$;
+
+$iii)$ $c(S)=1+\max(\NN\setminus S)$, the \emph{conductor} of $S$ for $S$ different from $\NN$. By convention the conductor of $\NN$ is $0$. 
+\end{defi}
+
+By definition a numerical semigroup is an infinite object. 
+We need a finite description of such a semigroup. 
+That is the role of generating sets.
+
+
+\begin{defi}
+A subset $X$ of a semigroup is a \emph{generating set} of $S$ if every element of $S$ can be express as a sum of elements in $X$. 
+\end{defi}
+
+
+\begin{nota}
+A numerical semigroup admitting $X=\{x_1<x_2<...<x_n\}$ as generating set is denoted  by $S=\left<x_1,...,x_\ell\right>$.
+\end{nota}
+
+We now introduce a specific generating set.
+
+\begin{defi}
+A non-zero element $x$ of a numerical semigroup $S$ is said to be \emph{irreducible} if it cannot be expressed as a sum of two non-zeros elements of $S$.  
+We denote by $\Irr(S)$ the set of all irreducible elements of $S$.
+\end{defi}
+
+
+\begin{prop}
+Let $S$ be a numerical semigroup.
+Then $\Irr(S)$ is the minimal generating set of $S$.
+\end{prop} 
+
+\begin{proof}
+Assume for a contradiction, that there exists an integer  $x$ in $S$ than cannot be decomposed as a sum of irreducible elements. 
+We may assume that $x$ is  minimal with this property. 
+As  $x$ cannot be irreducible, there exist $y$ and $z$ in~$S\setminus\{0\}$ satisfying $x=y+z$. 
+Since we have $y<x$ and $z<x$, the integers $y$ and $z$ can be expressed as a sum of irreducible elements of $S$ and so $x=y+z$ is a sum of irreducible elements, in contradiction to hypothesis. 
+
+As irreducible elements of $S$ cannot be decomposed as the sum of two non-zeros integers in $S$, they must occur in each generating set of $S$.
+\end{proof}
+
+We recall that Ap\'ery elements of a numerical semigroup $S$ associated to $m(S)$ are the integers $x$ in $S$ such that $x-m(S)$ is no longer in $S$.
+We denote by~$\App(S)$ the set of these elements. 
+It is well known that the cardinality of $\App(S)$ is exactly $m(S)$ (see~\cite{Book} for example). 
+Note that the set $\Irr(S)$ is in included in $\App(S)$.
+In particular, the set $\Irr(S)$ is finite and its cardinality is at most $m(S)$. 
+
+
+If we reconsider the numerical semigroup of \eqref{E:NSG}, we obtain
+\begin{equation}
+\label{E:GNSG}
+S_E=\{0,3,6,7,9,10\}\cup[12,+\infty[=\left<3,7\right>
+\end{equation}
+
+Let  $S$ be a numerical semigroup. The set $T=S\cup\{c(S)-1\}$ is also a numerical  semigroup and its genus is $g(S)-1$. 
+As  $[c(S)-1,+\infty[$ is included in $T$ we have $c(T)\leq c(S)-1$. 
+Therefore every semigroup $S$ of genus $g$ can be obtained from a semigroup $T$ of genus $g-1$ by removing an element of $T$ greater than or equal to $c(T)$.
+
+\begin{prop}
+\label{P:Sx}
+Let $S$ be a numerical semigroup and $x$ an element of $S$. The set~$S^x=S\setminus\{x\}$ is a numerical semigroup if and only if $x$ is irreducible in $S$.
+\end{prop}
+
+\begin{proof}
+If $x$ is not irreducible in  $S$, then there exist $a$ and $b$ in $S\setminus{0}$ such that $x=a+b$. 
+Since $a\not=0$ and $b\not=0$ hold, the integers  $a$ and $b$ belong to $S\setminus\{x\}$. 
+Since $x=a+b$ and $x\not\in S^x$, it follows that  $S^x$ is not stable under addition. 
+
+Conversely, assume that $x$ is irreducible in  $S$. 
+As $0$ is never irreducible, the set~$S^x$ contains~$0$. 
+Let $a$ and $b$ be two integers belonging to $S^x$. 
+The set $S$ is stable under addition, hence $a+b$ lies in $S$. 
+As $S$ is equal to $S^x\cup\{x\}$, the integer $a+b$ also lies in $S^x$ except if it is equal to $x$. 
+The latter is impossible since $a$ and $b$ are different from $x$ and $x$ is irreducible.
+\end{proof}
+
+Proposition~\ref{P:Sx} implies that every semigroup $T$ of genus $g$ can be obtained from a semigroup $S$ by removing a generator $x$ of $S$ that is greater than $c(S)$.
+Hence relations~$T=S^x=S\setminus\{x\}$ hold.
+
+We construct the tree of numerical semigroups, denoted by $\mathcal{T}$ as follows. 
+The root of the tree is the unique semigroup of genus $0$, \ie, $\left<1\right>$ that is equal to $\NN$. 
+If~$S$ is a semigroup in the tree,  the sons of $S$ are exactly the semigroup $S^x$ where $x$ belongs to $\Irr(S)\cap[c(s),+\infty[$. 
+By convention, when depicting the tree, the ,numerical semigroup $S^x$ is in the left of $S^y$ if $x$ is smaller than $y$. 
+
+The above remarks imply that a semigroup $S$ has depth $g$ in $≠mathcal{T}$ if and only if its genus is~$g$, see Figure~\ref{F:Tree}.
+We denote by $\mathcal{T}^{\leq g}$ the subtree of $\mathcal{T}$ resticted to all semigroup of genus $\leq g$.
+
+
+ \begin{figure}[htf!]
+ \[
+ \pstree[,nodesep=3pt]{\sgnode{1}}{
+ 	\pstree[nodesep=3pt]{\sgnode{2,3} \tlput1}{
+ 		\pstree[treesep=4pt,nodesep=2pt]{\sgnode{3,4,5} \tlput2}{
+ 			\pstree[treesep=3pt,nodesep=3pt]{\sgnode{4,5,6,7} \tlput3}{
+ 				\pstree{\sgnode{5,6,7,8,9} \tlput4}{}
+ 				\pstree{\sgnode{\gr 4,6,7,9} \tlput5}{}
+ 				\pstree{\sgnode{\gr 4,\gr 5,7} \trput6}{}
+ 				\pstree{\sgnode{\gr 4,\gr 5,\gr 6} \trput7}{}					
+ 			}
+ 			\pstree[treesep=3pt,nodesep=3pt]{\sgnode{\gr 3,5,7} \tlput4}{
+ 				\pstree{\sgnode{\gr 3,7,8} \tlput 5}{}
+ 				\pstree{\sgnode{\gr 3,\gr 5} \trput 7}{}
+ 			}
+ 			\pstree[treesep=10pt]{\sgnode{\gr 3,\gr 4} \trput5}{\Tn \Tn \Tn}
+ 		}
+ 		\pstree[nodesep=3pt]{~\hspace{-5em}\sgnode{\gr2,5} \trput3}{
+ 			\pstree[nodesep=3pt]{\sgnode{\gr2,7} \trput5}{
+ 				\pstree[nodesep=3pt]{\sgnode{\gr2,9} \trput7}{}
+ 			}
+ 		}
+ 	}
+ }
+ \vspace{-5em}
+ \]
+\caption{The first five layers of the tree $\mathcal{T}$ of numerical semigroups, corresponding to $\mathcal{T}^{\leq 5}$. A generator of a semigroup is in gray if it is not in $[c(S),+\infty[$. An edge between a semigroup $S$ and its son $S'$ is labelled by  $x$ is $S'$ is obtained from $S$ by removing~$x$, that is $S'=S^x$.}
+\label{F:Tree}
+\end{figure}
+
+As the reader can check, the main difficulty to characterize the sond of a semigroup is to determine its irreducible elements.
+ In \cite{NumericalSgps}, the semigroup are given by their Ap\'ery set $\App(S)$ and then the main difficulty is to describe $\App(S_x)$ from $\App(S)$. 
+ This approach is elegant but not sufficiently \emph{basic} for our optimisations.
+
+
+We conclude this section with some basic results on numerical semigroups of a given genus.
+Let $S$ be a numerical semigroup. 
+We first prove :
+\begin{equation}
+\label{E:Irr}
+x\in \Irr(S)\quad\textrm{implies}\quad x\leq c(S)+m(S).
+\end{equation}
+If $y$ is a positive integer with $y \geq c(S)+m(S)$ then $y$ lies in $S$ (as $y\geq c(S)$ holds). Moreover, we always have $y-m(S)\geq c(s)$ and so $y$ is not irreducible.
+
+As $\NN\setminus{S}$ contains $\{1,..,m(S)-1\}$ we have 
+\begin{equation}
+\label{E:m}
+m(S)\leq g(S)+1.
+\end{equation}
+Let $x$ be an element of $S\cap[0,c(S)-1]$. 
+The integer $y=c(S)-1-x$ lies in $[0,c(S)-1]$. 
+Moreover $y$ is not in $S$, for otherwise  we write $c(S)-1=y+x$ where $x,y$ are elements of $S$ implying $c(S)-1\in S$. 
+In contradiction with the definition of conductor. 
+Thus we define an involution 
+\[
+\begin{array}{rcl}
+\psi:[0,c(S)-1]&\to&[0,c(S)-1]\\
+x&\mapsto&c(S)-1-x
+\end{array}
+\]
+that send $S\cap[0,c(S)-1]$ into $[0,c(S)-1]\setminus S$.
+The cardinality of $[0,c(S)[\setminus S$ is exactly $g(S)$. Let us denote by $k$ the cardinality  of $S\cap[0,c(S)-1]$. 
+Since $\psi$ is injective we must have $k\leq g(S)$. 
+>From the relation 
+\[
+[0,c(S)[=S\cap[0,c(S)[\sqcup[0,c(S)[\setminus S
+\]
+ we obtain $c(S)=k+g(S)$ and so 
+\begin{equation}
+\label{E:c}
+c(S)\leq 2 g(S).
+\end{equation}
+
+\section{Decomposition number}
+\label{S:DecNumber}
+
+The aim of this section is to describe a new representation of numerical semigroups.
+which is well suited to a efficient exploration of the tree~$\mathcal{T}$ of numerical semigroups. 
+
+\begin{defi}
+Let $S$ be a numerical semigroup.
+For every $x$ of $\NN$  we set
+\[
+D_S(x)=\{y \in S\ |\ x-y\in S\ \text{and}\ 2y\leq x\}
+\]
+and $d_S(x)=\card D_S(x)$.
+We called $d_S(x)$ the $S$-\emph{decomposition number} of $x$.
+The application $d_S:\NN\to\NN$ is the $S$-\emph{decomposition numbers function}.
+\end{defi}
+
+Assume that $y$ is an element of $D_S(x)$.
+By very definition of $D_S(x)$, the integer~$z=x-y$ also belongs to $S$. 
+Then $x$ can be decomposed as $x=y+z$ with $y$ and $z$ in~$S$. 
+Moreover the condition $2y\leq x$ implies $y\leq z$. 
+In other words if we define~$D'_S(x)$ to be the set of all $(y,z)\in S\times S$ with $x=y+z$ and $y\leq z$ then~$D_S(x)$ is the image of $D'_S(x)$ under the projection on the first coordinate.
+ Hence~$D_S(x)$ describes how~$x$ can be decomposed as sums of two elements of $S$,-.
+ This is why $d_S(x)$ is called the $S$-decomposition number of $x$.
+
+\begin{exam}
+Reconsider the semigroup $S_E$ given at \eqref{E:NSG}.
+The integer $14$ admits three decompositions as sums of two elements of $S$, namely $14=0+14$, $14=3+11$ and $14=7+7$. 
+Thus the set $D_{S_E}(14)$ is equal to $\{0,3,7\}$ and $d_{S_E}$ equals $3$.
+\end{exam}
+
+
+\begin{lem}
+\label{L:RepN}
+For every numerical semigroup $S$ and every integer $x\in \NN$,  we have $d_S(x)\leq 1+\left\lfloor \dfrac{x}2\right\rfloor$ and the equality holds for $S=\NN$.
+\end{lem}
+
+\begin{proof}
+As the set $D_S(x)$ is included in $\{0,...,\left\lfloor\frac x2\right\rfloor\}$, the relation $d_S(x)\leq 1+\left\lfloor \frac{x}2\right\rfloor$ holds.
+For $S=\NN$ we have the equality for $D_S(x)$ and so for $d_S(x)$.
+\end{proof}
+
+
+\begin{prop}
+\label{P:Dandd}
+Let $S$ be a numerical semigroup and $x\in\NN\setminus\{0\}$.  We have:
+
+ $i)$ $x$ lies in $S$ if and only if $d_S(x)>0$.
+
+ $ii)$ $x$ is in $\Irr(S)$ if and only if $d_S(x)=1$.
+\end{prop}
+
+\begin{proof}
+We start with $i)$. If $x$ is an element of $S$ then $x$ equals $0+x$. 
+The relation~$2\times 0\leq x$ and $0\in S$ imply that $D_S(x)$ contains $0$, and so $d_S(x)>0$ holds.
+Conversely, the relation  $d_S(x)>0$  implies that $D_S(x)$ is non-empty. 
+Let $y$ be an element of~$D_S(x)$. 
+As $y$ and $x-y$ belong to  $S$, by definition, the integer $x=(x-y)+y$ is in $S$  (since $S$ is stable by addition).
+
+Let us show $ii)$. 
+Assume $x$ is irreducible in $S$.
+There cannot exist $y$ and $z$ in~$(S\setminus\{0\})^2$ such that $x=y+z$. 
+The only possible decomposition of $x$ as a sum of two elements of $S$ is $x=0+x$. 
+Hence, the set $D_S(x)$ is equal to~$\{0\}$ and we have $d_S(x)=1$. 
+Conversely, let $x$ such that $d_S(x)=1$. 
+By  $i)$ the  integer $x$ must be in $S$. 
+As $x=0+x$ is always a decomposition of $x$ as a sum of two elements in $S$, we obtain $D_S(x)=\{0\}$.
+If there exist $y$ and $z$ in $S$ such that $y\leq z$ and $x=y+z$ hold then $y$ lies in $D_S(x)$. 
+This implies $y=0$ and $z=x$. 
+Hence $x$ is irreducible in~$S$.
+\end{proof}
+
+We note  that $0$ is never irreducible despite the fact $d_S(0)$ is $1$ for all numerical semigroup $S$.
+
+We now explain how to compute the $S$-decomposition numbers function of a numerical semigroup  from these of its father.
+
+\begin{prop}
+Let $S$ be a numerical semigroup and $x$ be an irreducible element of $S$. 
+Then for all $y\in \NN\setminus\{0\}$ we have
+\[
+d_{S^x}(y)=\begin{cases}
+d_S(y)-1&\text{if $y\geq x$ and $d_S(y-x)>0$,}\\
+d_S(y) &\text{otherwise.}
+\end{cases}
+\] 
+\end{prop}
+
+
+\begin{proof}
+Let $y$ be in $\NN\setminus\{0\}$. We have 
+\[
+D_{S^x}(y)=\{z \in S^x\ |\ y-z\in S^x\ \text{and}\  2z\leq y\}
+\]
+and $D_{S^x}(y)$ is a subset of $D_S(y)$.
+We have $D_S(y)\setminus D_{S^x}(y)=E\sqcup F$ where
+\begin{align*}
+E&=\begin{cases}
+\{x\} &\text{if $y-x\in S^x$ and $2x\leq y$,}\\
+\emptyset & \text{otherwise.}
+\end{cases}\\
+F&=\{z\in S\ |\ y-z=x\ \text{and}\ 2z\leq y\}
+\end{align*}
+Since  the relation $y-x\in S^x$ can be rewritten as the conjunction of $y-x\in S$ and $y\not=2x$, we obtain
+\[
+E=\begin{cases}
+\{x\} &\text{if $y-x\in S$ and $2x< y$,}\\
+\emptyset & \text{otherwise.}
+\end{cases}
+\]
+By Proposition~\ref{P:Dandd}, the relation $y-x\in S$ is equivalent to $y\geq x$ and $d_S(y-x)>0$, we have
+\[
+E=\begin{cases}
+\{x\} &\text{if $y\geq x$ and $d_S(y-x)>0$ and $2x< y$,}\\
+\emptyset & \text{otherwise.}
+\end{cases}
+\]
+On the other hand, we have 
+\begin{align*}
+F&=\{z\in S\ |\ y-z=x\ \text{and}\ 2z\leq y\}\\
+&=\{z\in S\ |\ z=y-x\ \text{and}\ y\leq 2x\}\\
+&=\begin{cases}
+\{y-x\} & \text{if $y-x\in S$ and $y\leq 2x$,}\\
+\emptyset & \text{otherwise.}
+\end{cases}
+\end{align*}
+As in the case of $E$, we get 
+\[
+F=\begin{cases}
+\{y-x\} & \text{if $y\geq x$ and $d_S(y-x)>0$ and $y\leq 2x$,}\\
+\emptyset & \text{otherwise.}
+\end{cases}
+\]
+In $E$ we have the constraint $2x<y$ while in $F$ we have $y\leq 2x$, hence only one of the sets $E$ or $F$ can be non-empty. 
+This implies
+\[
+D_S(y)\setminus D_{S^x}(y)=
+\begin{cases}
+\{x\} & \text{if $y\geq x$ and $d_S(y-x)>0$ and $y\leq 2x$,}\\
+\{y-x\} & \text{if $y\geq x$ and $d_S(y-x)>0$ and $y>2x$,}\\
+\emptyset & \text{otherwise.}
+\end{cases}
+\]
+Therefore we obtain
+\[
+d_{S^x}(y)=\begin{cases}
+d_S(y)-1&\text{if $y\geq x$ and $d_S(y-x)>0$,}\\
+d_S(y)& \text{otherwise.}
+\end{cases}
+\]
+\end{proof}
+
+\section{A new algorithm}
+\label{S:Algo}
+We can easily explore the tree of numerical semigroups up to a genus $G$ using a depth search first algorithm using a stack (see~\ref{A:Exp}). 
+This approach does not seem to have been used before. 
+In particular,  M. Bras-Amor\'os and M. Delgado use instead a breadth search first exploration. 
+The main advantage in our approach is the small memory needs. 
+The cost to pay is that, if we want to explore the tree deepero, we must restart from the root.
+
+\begin{algorithm}
+\caption{Depth search first exploration of the tree of numerical semigroups}\label{A:Exp}
+\begin{algorithmic}[1]
+\Procedure{Explore}{\tt{G}}
+\State Stack \tt{stack} \Comment{the empty stack}
+\State $\tt{S} \gets\left<1\right>$
+\While{stack is not empty} 
+	\State $\tt{S} \gets \tt{stack.top()}$
+	\State \tt{stack.pop()}
+	\If{$g(\tt{S})< \tt{G}$}
+		\For{\tt{x} from $c(\tt{S})$ to $c(\tt{S})+m(\tt{S})$}
+			\If{$\tt{x}\in \Irr(\tt{S})$}
+				\State $\tt{S.push}(\tt{S}^\tt{x})$
+			\EndIf
+		\EndFor
+	\EndIf
+\EndWhile
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+In Algorithm~\ref{A:Exp} we do not specify how to compute $c(S)$, $g(S)$ and $m(S)$  from $S$ neither how to test if an integer is irreducible. 
+It also miss  the characterisation of $S^x$ from $S$.
+These items depend heavily of the representation of $S$.
+Our choice is to use the $S$-decomposition numbers function. 
+The first task is to use a finite set of such numbers to characterise the whole semigroup.
+
+\begin{prop}
+\label{P:delta}
+Let $G$ be an integer and $S$ be a numerical semigroup of genus $g\leq G$.
+Then $S$ is entirely described by $\delta_S=(d_S(0),...,d_S(3\,G))$. More precisely we can obtain $c(S), g(S), m(S)$ and $\Irr(S)$ from $\delta_S$.
+\end{prop} 
+
+\begin{proof}
+By~\eqref{E:c} we have $c(S)\leq g(S)$ and so the $S$-decomposition number of $c(S)$ occurs in $\delta_S$.
+Since $c(S)$ is equal to $\max(\NN\setminus S)$, Proposition~\ref{P:delta} implies 
+\[
+c(S)=1+\max\{i\in[0,...,3G],\ d_S(i)=0\}.
+\]
+As all elements of $\NN\setminus S$ are smaller than $c(S)$, their $S$-decomposition numbers are in $\delta_S$ and we obtain
+\[
+g(S)=\card\{i\in[0,..,3G],\ d_S(i)=0\}.
+\]
+By \eqref{E:m} the relation $m(S)\leq g(S)+1$ holds. 
+This implies that the $S$-decomposition number of $m(S)$ appears in $\delta_S$ : 
+\[
+m(S)=\min\{i\in[0,...,3G],\ d_S(i)>0\}.
+\]
+Since, by \eqref{E:Irr},  all irreducible elements are smaller than $c(S)+m(S)-1$, which is itself smaller than $3G$, equations  \eqref{E:m} and \eqref{E:c} give
+\[
+\Irr(S)=\{i\in[0,...,3G],\ d_S(i)=1\}.
+\]
+\end{proof}
+
+Even though it is quite simple, the computation of $c(S),m(S)$ and $g(S)$ from $\delta_S$ has a non negligible cost.
+We represent a numerical semigroup $S$ of genus $g\leq G$ by $(c(S),g(S),c(S),\delta_S)$. 
+In an algorithmic context, if the variable \texttt{S} stands for a numerical semigroup  we use:
+
+-- \tt{S.c}, \tt{S.g} and \tt{S.m} for the integers $c(S)$, $g(S)$ and $m(S)$;
+
+-- \tt{S.d[i]} for the integer $d_S(i)$.
+
+For example the following Algorithm initializes a representation of the semigroup $\NN$ ready for an exploration up to genus $G$.
+
+\begin{algorithm}
+\caption{Return the root of $\mathcal{T}$ for an exploration up to genus \tt{G}}\label{A:Root}
+\begin{algorithmic}
+\Function{Root}{\tt{G}}
+\State \tt{R.c} $\gets$ 1 \Comment{\tt{R} stands for $\NN$}
+\State \tt{R.g} $\gets$ 0
+\State \tt{R.m} $\gets$ 1 
+\For{\tt{x} from $1$ to $3\,\tt{G}$}
+	\State\tt{R.d[x]}$\gets1+\left\lfloor\frac{\tt{x}}2\right\rfloor$
+\EndFor
+\State{\textbf{return} \tt{R}}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+We can now describe an algorithm that returns the representation of the semigroup $S^x$ from that of the semigroup $S$ where $x$ is an irreducible element of $S$ greater than $c(S)$.
+
+\begin{algorithm}
+\caption{Returns the son $S_x$ of $S$ with $x\in\Irr(S)\cap[c(S),c(S)+m(S)[$.}\label{A:Son}
+\begin{algorithmic}[1]
+\Function{Son}{\tt{S},\tt{x},\tt{G}}
+\State \tt{T.c} $\gets$ $\tt{x}+1$ \Comment{\tt{T}  stands for $\tt{S}_x$}
+\State \tt{T.g} $\gets$ $\tt{S.g}+1$
+\If{$\tt{x}>\tt{S.m}$}
+	\State \tt{T.M} $\gets$ \tt{S.m}
+\Else
+	\State \tt{T.M} $\gets$ $\tt{S.m}+1$
+\EndIf
+\State\tt{T.d} $\gets$ \tt{S.d}
+\For{\tt{y} from \tt{x} to $3\,\tt{G}$}
+	\If{$\tt{S.d}[\tt{y}-\tt{x}]>0$}
+		\State $\tt{T.d}[\tt{y}]\gets\tt{T.d}[\tt{y}]-1$
+	\EndIf
+\EndFor
+\State{\textbf{return} \tt{T}}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{prop}
+\label{P:Son}
+Running on $(S,x,G)$ with $g(S)\leq G$, $x\in \Irr(S)$ and~$x\leq c(S)$, Algorithm~\ref{A:Son} returns the numerical semigroup $S_x$ in time $O(\log(G)\times G)$.
+\end{prop}
+
+\begin{proof}
+By construction $S^x$ is the semigroup $S\setminus\{x\}$.
+Thus the genus $S^x$ is $g(S)+1$, see Line~\tt{1}.
+Every integer of $I=[x+1,+\infty[$ lies in $S$ since $x$ is greater than $c(S)$, so the interval $I$ is included in $S^x$.
+As $x$ does not belong to $S$, the conductor of $S^x$ is $x+1$, see Line \tt{2}.
+For the multiplicity of $S^x$ we have two cases. 
+First, if $x>m(S)$ holds  then $m(S)$ is also in $S^x$ and so $m(S^x)$ is equal to $m(S)$.
+Assume now $x=m(S)$. 
+The relation $x(S)\geq c(S)$ and the characterisation of~$m(S)$ implies $x=m(S)=c(S)$.
+Thus $S^x$ contains $m(S)+1$ which is $m(S^x)$.
+The initialisation of $m(S^x)$ is done by Lines \tt{4} to \tt{8}. 
+The correctness of the computation of $\delta_{S^x}$ (see Proposition~\ref{P:delta}) done from Line \tt{9} to Line \tt{15} is a direct consequence of~Proposition~\ref{P:Dandd}. 
+
+Let us now prove the complexity statement. 
+Since by \eqref{E:c} and \eqref{E:m} we have $x\leq 3G$ together with $m(S)\leq G+1$, each line from \tt{2} to \tt{8} is done in time $O(\log(G))$.
+The \textbf{for} loop needs $O(G)$ steps and each step is done in time $O(\log(G))$. 
+Summarizing, these results give that the algorithm runs in time $O(\log(G)\times G)$.
+\end{proof}
+
+\begin{algorithm}
+\caption{Returns an array containing the value of $n_g$ for $g\leq G$}\label{A:Count}
+\begin{algorithmic}[1]
+\Function{Count}{\tt{G}}
+\State \tt{n} $\gets [0,...,0]$ \Comment $\tt{n[g]}$ stands for $n_g$ and is initialised to $0$
+\State Stack \tt{stack} \Comment{the empty stack}
+\State $\tt{S} \gets \textsc{Root}(\tt{G})$
+\While{stack is not empty} 
+	\State $\tt{S} \gets \tt{stack.top()}$
+	\State \tt{stack.pop()}
+	\State $\tt{n[S.g]}\gets\tt{n[S.g]}+1$
+	\If{$\tt{S.g}< \tt{G}$}
+		\For{\tt{x} from $\tt{S.c}$ to $\tt{S.c}+\tt{S.m}$}
+			\If{$\tt{S.d[x]\,=\,1}$}
+				\State $\tt{S.push}(\textsc{Son}(\tt{S},\tt{x},\tt{G}))$
+			\EndIf
+		\EndFor
+	\EndIf
+\EndWhile
+\State{\textbf{return} \tt{n}}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{prop}
+Running on $G\in\NN$, Algorithm \textsc{Count} returns the array~$[n_0,...,n_G]$ in time
+\[
+O\left(\log(G)\times G \times \sum_{g=0}^G n_g\right)
+\]
+and its space complexity is $O(\log(G)\times G^3)$.
+\end{prop}
+
+\begin{proof}
+The correctness of the algorithm is a consequence of Proposition~\ref{P:Son} and of the description of the tree~$\mathcal{T}$ of numerical semigroups.
+
+For the time complexity, let us remark that Algorithm~\textsc{Son} is called for every semigroup of the tree $\mathcal{T}^{\leq G}$ (the restriction of $\mathcal{T}$ to semigroup of genus $\leq G$). 
+Since there are exactly $N=\sum_{g=0}^G n_g$ such semigroups, the time complexity of \textsc{Son} established in Proposition~\ref{P:Son} guarantees that the running time of \textsc{Count} is in~$O(\log(G)\times G\times N)$, as stated.
+
+Let us now prove the space complexity statement.
+For  this we need to describe the stack through  the run of the algorithm.
+Since the stack is filled  with a depth first search algorithm, it has two properties.
+The first one is that reading the stack from the bottom to the top, the genus of  semigroup increases.  
+The second one is that, for all $g\in[0,G]$, every semigroup of genus $g$ in the stack has the same father.
+As the number of sons of a  semigroup $S$ is the number of $S$-irreducible elements in $[c(S),c(S)+m(S)-1]$,  a semigroup $S$ has at most $m(S)$ sons. 
+By~\eqref{E:m}, this implies that a semigroup of genus $g$ as at most $g+1$ sons.
+Therefore the stack contains at most $g+1$ semigroup of genus $g+1$ for $g\leq G$. 
+So the size of the stack is bounded~by 
+\[
+S=\sum_{g=0}^Gg=\frac{G(G+1)}2
+\]
+A semigroup is represented by a quadruple $(c(S),g(S),m(S),\delta_S)$. 
+By equations~\eqref{E:c} and~\eqref{E:m}, we have $c\leq 2g(S)$ and $m\leq g(S)+1$. 
+As $g(S)\leq G$ holds, the integers~$c$, $g$  and $m$ of the representation of $S$ require a memory space in $O(\log(G))$. 
+The size of~$\delta_S=(d_S(0),...,d_S(3G))$ is exactly~$3G+1$. 
+Each entry of $\delta_S$ is the $S$-decomposition number of an integer smaller than $3G$ and hence
+requires $\log(G)$ bytes of memory space.
+Therefore the space complexity of $\delta_S$ is in~$O(\log(G)\times G)$, which implies that the space complexity of the \textsc{Count} algorithm is
+\[
+O(\log(G)\times G\times S)= O(\log(G)\times G^3).
+\]
+\end{proof}
+
+\section{Technical optimizations and results}
+\label{S:Opti}
+
+Assume for example that we want to construct the tree $\mathcal{T}^{\leq 100}$ of all  numerical semigroup of  genus smaller than $100$. 
+In this case, the representation of  numerical  semigroup given in Section~\ref{S:DecNumber} uses decomposition numbers of integers smaller than~$300$.
+By Lemma~\ref{L:RepN}, such a decomposition number is smaller than $151$ and requires~$1$ byte of memory.
+Thus at each \textbf{for} step of Algorithm~\textsc{Son}, the CPU actually works on $1$ byte. 
+However current CPUs work on $8$ bytes.
+The first optimization uses this point.
+
+To go further we must specify that the array of decomposition numbers in the representation of a semigroup corresponds to consecutive bytes in memory. 
+In the \textbf{for} loop of Algorithm~\textsc{Son} we may imagine two cursors: the first one, denoted \texttt{src}  pointing to the memory byte of $\texttt{S.d[0]}$  and the second one, denoted \texttt{dst} pointing to the memory byte $\texttt{T.d[y]}$.
+Using these two cursors, Lines \tt{10} to \tt{14} of Algorithm~\textsc{Son} can be rewritten as follows
+
+\begin{algorithmic}
+\State $\tt{src}\gets \text{address}(\tt{S.d[0]})$
+\State $\tt{dst}\gets \text{address}(\tt{T.d[x]})$
+\State $\tt{i}\gets 0$
+\While{$\tt{i}\leq \tt{3G}-\tt{x}$}
+\If{$\text{content}(\tt{src})>0$}
+\State $\textbf{decrease}\ \text{content}(\tt{dst})$ \textbf{by} $1$\EndIf
+\State \textbf{increase} \tt{src},\tt{dst},\tt{i} \textbf{by} $1$
+
+\EndWhile
+\end{algorithmic}
+
+\noindent In this version we can see that the cursors \texttt{src} and \texttt{dst} move at the same time and that the modification of  the  value pointed by \texttt{dst}   only  needs to access the values pointed by \tt{src} and \tt{dst}. 
+We can therefore work in multiple entries at the same time without collision. 
+Current CPUs allow this thanks to the SIMD technologies as MMX, SSE, etc.
+The acronym SIMD stands for Single Operation Multiple Data. 
+
+The MMX technology  permits to work on $8$ bytes in parallel while the SSE works in $16$ bytes. 
+As the rest of the CPU works on $8$ bytes, the SSE technology needs some constraint on memory access than cannot be fulfilled in our algorithm. 
+This motivate our choice to use the MMX technology. 
+More precisely, we use three commands: \tt{pcmpeqb}, \tt{pandn} and \tt{psubb}.
+ These commands work on two arrays of $8$ bytes, called~\tt{s} and \tt{d} here. 
+ In each case the array \tt{d} is modified. 
+ We denote bytes by $\{\tt{0},\tt{1}\}$-words of length $8$.
+ After a call to \tt{pcmpeqb(s,d)} the $i$th entry of $d$ contains \tt{11111111} if $\tt{s}[i]=\tt{d}[i]$ holds and \tt{00000000} otherwise. 
+ The command \tt{pand(s,d)}  store in $\tt{d}[i]$  the value of the byte-logic operation \tt{s}[i] \tt{and} (\tt{not} \tt{d}[i]).
+  When \tt{pand(s,d)} is called the new value of $\tt{d}[i]$ is $\tt{s}[i]-\tt{d}[i]$.  
+  Glueing all the pieces together we obtain the following version of the \textbf{for} loop of Algorithm~\textsc{Son} :
+
+\begin{algorithmic}[1]
+\State $\tt{src}\gets \text{address}(\tt{S.d[0]})$
+\State $\tt{dst}\gets \text{address}(\tt{T.d[x]})$
+\State $\tt{i}\gets 0$
+\While{$\tt{i}\leq \tt{3G}-\tt{x}$}
+\State $\tt{t}\gets [\tt{00000000},...,\tt{00000000}]$ \Comment{$8$ bytes equal to \tt{00000000}}
+\State \tt{pcmpeqb(\tt{src},t)}
+\State \tt{pandn([00000001,...,00000001],t)}
+\State \tt{psub(\tt{dst},t)}
+\State $\tt{dst}\gets \tt{t}$ \Comment{copy the array $[\tt{t}[0],...,\tt{t}[7]]$ to $[\tt{d}[0],...,\tt{d}[7]]$}
+\State \textbf{increase} \tt{src},\tt{dst},\tt{i} \textbf{by} $8$
+\EndWhile
+\end{algorithmic}
+
+Let us explain how this works in more details. 
+Let $i$ be an integer in $\{0,...,7\}$.  
+After Line~\tt{5}, the value of $\tt{t}[i]$ is \tt{0000000}. 
+After Line~\tt{6}, we have 
+\[
+\tt{t}[i]=\begin{cases}
+\tt{11111111}&\text{if $\tt{src}[i]=\tt{00000000}$ (corresponding to $0$)}\\
+\tt{00000000}&\text{otherwise}
+\end{cases}
+\]
+Line \tt{7} performs a logical \tt{and} between $\tt{00000001}$ and $\tt{not t}[i]$. Hence the result byte is \tt{00000001} if the last byte of \tt{t}[i] is $0$ and \tt{00000000} otherwise: 
+\[
+\tt{t}[i]=\begin{cases}
+\tt{00000000}&\text{if $\tt{src}[i]=\tt{00000000}$ (corresponding to $0$)}\\
+\tt{00000001}&\text{otherwise}
+\end{cases}
+\]
+ Line \tt{8} subtracts \tt{t}[i] (which is equal to $0$ or $1$) from $\tt{dst}[i]$ according to Proposition~\ref{P:Sx}. 
+Finally we shift the cursor \tt{src} and \tt{dst} by eight cases. 
+
+Our second optimization  is to use parallelism on exploration of the tree.
+Today, CPU of personal computer have several cores (2, 4 or more). 
+The given version of our exploration algorithm  uses a single core and so a fraction only of the power of a CPU.
+
+Our method of parallelism is very simple: for $G\in \NN$,  we cut the tree $\mathcal{T}^{\leq G}$ in sub-trees $\mathcal{T}_1,...,\mathcal{T}_n$ and we launch our algorithm on these sub-trees. 
+The advantage of this method is that there is no communication between the instances of our algorithm. 
+The disadvantage is that the cutting controls the efficiency of the parallelism. 
+Assume for example that we want to explore the tree~$\mathcal{T}^{\leq 40}$.
+We first determine all numerical semigroups $S_1,...S_{n_{20}}$ of genus $20$. 
+To explore $\mathcal{T}$ it remains to explore the tree $\mathcal{T}_i$ rooted in $S_i$ for $i=1,...,n_{20}$. 
+This works but the time to explore $\mathcal{T}_1$ is similar to the time need to explore the tree $\mathcal{T}^{\leq 40}$. 
+And in this case, using many cores does not reduce the time to explore the tree.
+
+Let us now explain in more detail how we cut the tree $\mathcal{T}^{\leq G}$ in order to use parallelism.
+Semigroups of the form $\left<g+1,...,2g+1\right>$, which are of genus $g$, are called \emph{ordinary} in~\cite{Elizalde}. 
+Each ordinary semigroup has a unique son that is also ordinary. 
+We define $X$ to be the set of all the non-ordinary sons of an ordinary semigroup and $X^{\leq G}$ the restriction of $X$ to semigroup of genus $\leq G$. 
+We then denote by  $\mathcal{T}_i$ the tree rooted on $S_i$ where $X^{\leq G}=\{S_1,...,S_n\}$. 
+The time needed to explore $\mathcal{T}_i$ is very heterogeneous but there are many tree $T_i$ with maximal time. 
+This cutting is more efficient than the previous one.
+
+Figure~\ref{F:Time} summarizes the time complexity of various exploration algorithms.
+
+The version $\small depth-expl-\delta-mmx$ of our algorithm compute the value of $n_g$ for $g\leq 50$ in $196$ minutes on the \tt{i5-3570K} CPU while the parallel version running on the $4$ cores of the same CPU end the work in $50$ minutes.
+
+Using two \tt{i7} based computers and our  parallel algorithm  we computed in two days the values of $n_g$ for $g\leq 60$, confirming the values given by M.Bras-Amor\'os and M.Delgado : 
+
+\begin{minipage}{0.5\textwidth}
+\begin{tabular}{|r|r|r|}
+\hline
+g & $n_g$ & $n_g/n_{g-1}$\\
+\hline
+0 & 1 &  \\
+1 & 1 & 1.0 \\
+2 & 2 & 2.0 \\
+3 & 4 & 2.0 \\
+4 & 7 & 1.75 \\
+5 & 12 & 1.71428 \\
+6 & 23 & 1.91666 \\
+7 & 39 & 1.69565 \\
+8 & 67 & 1.71794 \\
+9 & 118 & 1.76119 \\
+10 & 204 & 1.72881 \\
+11 & 343 & 1.68137 \\
+12 & 592 & 1.72594 \\
+13 & 1001 & 1.69087 \\
+14 & 1693 & 1.69130 \\
+15 & 2857 & 1.68753 \\
+16 & 4806 & 1.68218 \\
+17 & 8045 & 1.67394 \\
+18 & 13467 & 1.67395 \\
+19 & 22464 & 1.66807 \\
+20 & 37396 & 1.66470 \\
+21 & 62194 & 1.66311 \\
+22 & 103246 & 1.66006 \\
+23 & 170963 & 1.65588 \\
+24 & 282828 & 1.65432 \\
+25 & 467224 & 1.65197 \\
+26 & 770832 & 1.64981 \\
+27 & 1270267 & 1.64791 \\
+28 & 2091030 & 1.64613 \\
+29 & 3437839 & 1.64408 \\
+\hline
+\end{tabular}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\begin{tabular}{|r|r|r|}
+\hline
+g & $n_g$ & $n_g/n_{g-1}$\\
+\hline
+30 & 5646773 & 1.64253 \\
+31 & 9266788 & 1.64107 \\
+32 & 15195070 & 1.63973 \\
+33 & 24896206 & 1.63843 \\
+34 & 40761087 & 1.63724 \\
+35 & 66687201 & 1.63605 \\
+36 & 109032500 & 1.63498 \\
+37 & 178158289 & 1.63399 \\
+38 & 290939807 & 1.63304 \\
+39 & 474851445 & 1.63212 \\
+40 & 774614284 & 1.63127 \\
+41 & 1262992840 & 1.63047 \\
+42 & 2058356522 & 1.62974 \\
+43 & 3353191846 & 1.62906 \\
+44 & 5460401576 & 1.62841 \\
+45 & 8888486816 & 1.62780 \\
+46 & 14463633648 & 1.62723 \\
+47 & 23527845502 & 1.62668 \\
+48 & 38260496374 & 1.62617 \\
+49 & 62200036752 & 1.62569 \\
+50 & 101090300128 & 1.62524 \\
+51 & 164253200784 & 1.62481 \\
+52 & 266815155103 & 1.62441 \\
+53 & 433317458741 & 1.62403 \\
+54 & 703569992121 & 1.62368 \\
+55 & 1142140736859 & 1.62335 \\
+56 & 1853737832107 & 1.62303 \\
+57 & 3008140981820 & 1.62274 \\
+58 & 4880606790010 & 1.62246 \\
+59 & 7917344087695 & 1.62220 \\
+60 & 12841603251351 & 1.62195 \\
+\hline
+\end{tabular}
+\end{minipage}
+\vspace{2em}
+
+In \cite{Zhai}, A.Zhai establishes that the limit of the quotient   $\frac{n_g}{n_{g-1}}$, when $g$ go to $+\infty$, is the golden ratio $\phi\approx 1.618$. 
+As the reader can see the convergence is very slow.
+
+\begin{figure}[b]
+\begin{tikzpicture}[scale=1.3]
+        \begin{semilogyaxis}[xlabel=\small genus,ylabel=time,legend pos=north west,legend cell align=left]
+        \addplot [color=blue,mark=x] coordinates {
+            (20,0.02)
+            (21,0.04)
+            (22,0.07)
+            (23,0.12)
+            (24,0.2)
+            (25,0.35)
+            (26,0.61)
+            (27,1.04)
+            (28,1.76)
+            (29,2.96)
+            (30,4.96)
+            (31,8.26)
+            (32,13.77)
+            (33,22.95)
+            (34,38.22)
+            (35,1250.88)
+        };
+       \addplot [color=black,mark=x] coordinates {
+			(20,0.02)	
+            (21,0.04)
+            (22,0.06)
+            (23,0.09)
+            (24,0.16)
+            (25,0.26)
+            (26,0.45)
+            (27,0.72)
+            (28,1.25)
+            (29,2.1)
+            (30,3.39)
+            (31,5.85)
+            (32,9.25)
+            (33,16.34)
+            (34,27.23)
+            (35,45.39)
+            (36,75.58)
+            (37,125.59)
+            (38,203.56)
+            (39,346.02)
+            (40,557.51)
+        };
+         \addplot [color=red,mark=x] coordinates {
+			(20,0.02)	
+            (21,0.02)
+            (22,0.04)
+            (23,0.06)
+            (24,0.1)
+            (25,0.18)
+            (26,0.29)
+            (27,0.48)
+            (28,0.81)
+            (29,1.34)
+            (30,2.25)
+            (31,3.73)
+            (32,6.2)
+            (33,10.35)
+            (34,17.11)
+            (35,28.35)
+            (36,46.99)
+            (37,77.89)
+            (38,128.53)
+            (39,212.1)
+            (40,349.98)
+        };
+        \addplot [color=magenta,mark=x] coordinates {
+			(20,0.01)	
+            (21,0.01)
+            (22,0.01)
+            (23,0.01)
+            (24,0.02)
+            (25,0.03)
+            (26,0.05)
+            (27,0.08)
+            (28,0.12)
+            (29,0.21)
+            (30,0.35)
+            (31,0.57)
+            (32,0.97)
+            (33,1.65)
+            (34,2.69)
+            (35,4.18)
+            (36,7.36)
+            (37,11.66)
+            (38,20.35)
+            (39,32.55)
+            (40,74.46)
+        };
+	%\legend style={anchor=north,at={(20,1000)}}  
+        \legend{\tiny breadth-expl,\tiny depth-expl,\tiny depth-expl-$\delta$,\tiny depth-expl-$\delta$-mmx}
+        \end{semilogyaxis}
+    \end{tikzpicture}
+    \label{F:Time}
+    \caption{Comparison of time executions of different exploration algorithms of the tree $\mathcal{T}^{\leq g}$ on an Intel \tt{i5-3570K} CPU with $8GB$ of memory. 
+The scale is logarithmic in time. 
+The first version is based on a breadth-first search exploration and the peak at genus~$35$ is due to the consumption of all the memory and use of swap. 
+The second version uses a depth first search exploration.
+The third is based on the second one with use of decomposition numbers, it corresponds to the algorithm given in Section~\ref{S:Algo}. 
+The last one is an optimisation of the third one with MMX.}
+\end{figure}
+
+
+\footnotesize
+\bibliographystyle{ieeetr}
+\bibliography{biblio}
+
+
+\end{document}
+
+
