@@ -29,18 +29,18 @@ struct generator_iter
   unsigned long int iblock, mask, gen, bound;
 };
 
-void init_full_N(monoid *pm);
+extern "C" void init_full_N(monoid *pm);
 monoid *alloc_monoid(void);
 void print_monoid(monoid *);
 void print_epi8(epi8);
-inline void copy_decs(nb_decompositions *src, nb_decompositions *dst) NOINLINE;
-void remove_generator(monoid *__restrict__, monoid *__restrict__, unsigned long int);
+void copy_decs(nb_decompositions *src, nb_decompositions *dst) NOINLINE;
+extern "C" void remove_generator(monoid *__restrict__, monoid *__restrict__, unsigned long int);
 
 
-inline void init_all_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
-inline void init_children_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
-inline unsigned long int next_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
-inline unsigned char count_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
+void init_all_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
+extern "C" void init_children_generator_iter(monoid *pm, generator_iter *scan);
+extern "C" unsigned long int next_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
+extern "C" unsigned char count_generator_iter(monoid *pm, generator_iter *scan) NOINLINE;
 
 void walk_children_stack(monoid stack[], unsigned long int bound, result results);
 

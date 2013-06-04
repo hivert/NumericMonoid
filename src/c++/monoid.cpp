@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <x86intrin.h>
+//#include <xmmintrin.h>
 #include "monoid.hpp"
 
 #define nth_block(st, i) (((epi8 *) st)[i])

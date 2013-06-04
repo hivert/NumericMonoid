@@ -1,0 +1,56 @@
+#include <alloca.h>
+#include "monoid.hpp"
+#include <reducer_opadd.h>
+#include <iostream>
+#include <cilk.h>
+const unsigned long int target_genus = 36;
+
+cilk::reducer_opadd<unsigned long int> cilk_result[target_genus+1];
+
+
+void walk_children(monoid *pm)
+{
+  generator_iter scan;
+
+  init_children_generator_iter(pm, &scan);
+
+  if (pm->genus < target_genus)
+    {
+      unsigned long int nbr = 0, gen;
+      while ((gen = next_generator_iter(pm, &scan)) != 0)
+	{
+	  monoid *newmonoid = newmonoid = (monoid *) alloca(sizeof(monoid));
+	  remove_generator(pm, newmonoid, gen);
+	  cilk_spawn walk_children(newmonoid);
+	  nbr++;
+	}
+      cilk_result[pm->genus] += nbr;
+    }
+  else
+    cilk_result[pm->genus] += count_generator_iter(pm, &scan);
+}
+
+
+int cilk_main(int argc,char* argv[])
+{
+  unsigned long int i;
+  int proc;
+  monoid N, N1;
+
+  std::cout << "Computing number of numeric monoids for genus <= "
+	    << target_genus << std::endl;
+
+  init_full_N(&N);
+  remove_generator(&N, &N1, 1);
+  cilk_result[0]++;
+
+  cilk_spawn walk_children(&N1);
+  cilk_sync;
+
+  std::cout << std::endl << "============================" << std::endl << std::endl;
+  for (int i=0; i<target_genus+1; i++)
+    std::cout << cilk_result[i].get_value() << " ";
+  std::cout << std::endl;
+  return EXIT_SUCCESS;
+}
+
