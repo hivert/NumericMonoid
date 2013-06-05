@@ -91,20 +91,20 @@ class generator_iter
   generator_iter(const monoid &mon) : m(mon), bound((mon.conductor+mon.min+15) >> 4) {};
 
     public:
-  static inline generator_iter all(const monoid &m)
+  static inline generator_iter all_count(const monoid &m)
   {
     epi8 block;
     generator_iter it(m);
     it.iblock = 0;
     block = nth_block(m.decs, 0);
-    ((unsigned char*)(&block))[0]=0; // 0 is not a generator
     it.mask  = _mm_movemask_epi8((__m128i) _mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
+    it.mask &= 0xFE; // 0 is not a generator
     it.gen = - 1;
     it.iblock++;
     return it;
   };
 
-  static inline generator_iter children(const monoid &m)
+  static inline generator_iter children_count(const monoid &m)
   {
     generator_iter it(m);
     epi8 block;
@@ -116,7 +116,12 @@ class generator_iter
     return it;
   };
 
-  inline generator_iter next()
+  static inline generator_iter all(const monoid &m)
+  { return ++generator_iter::all_count(m); };
+  static inline generator_iter children(const monoid &m)
+  { return ++generator_iter::children_count(m); };
+
+  inline generator_iter operator++()
   {
     unsigned long int shift;
     epi8 block;
@@ -318,15 +323,15 @@ void init_full_N(monoid &m)
 
 ResultsReducer cilk_results;
 
-#define STACK_SIZE 40
-inline void walk_children_stack(const monoid &m, unsigned long int bound)
+#define STACK_SIZE 50
+inline void walk_children_stack(monoid m, unsigned long int bound)
 {
   unsigned long int stack_pointer = 1, nbr;
   monoid data[STACK_SIZE-1], *stack[STACK_SIZE], *current;
   Results & res = cilk_results.get_array();
 
   for (int i=1; i<STACK_SIZE; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
-  stack[0] = & ((monoid &)m);
+  stack[0] = &m;
   while (stack_pointer)
     {
       --stack_pointer;
@@ -334,9 +339,9 @@ inline void walk_children_stack(const monoid &m, unsigned long int bound)
       if (current->genus < bound - 1)
 	{
 	  nbr = 0;
-	  for (auto it = generator_iter::children(*current).next();
+	  for (auto it = generator_iter::children(*current);
 	       not it.is_finished();
-	       it.next())
+	       ++it)
 	    {
 	      // exchange top with top+1
 	      stack[stack_pointer] = stack[stack_pointer+1];
@@ -350,7 +355,7 @@ inline void walk_children_stack(const monoid &m, unsigned long int bound)
       else
 	{
 	  res.values[current->genus] +=
-	    generator_iter::children(*current).count();
+	    generator_iter::children_count(*current).count();
 	}
     }
 }
@@ -364,9 +369,9 @@ void walk_children(const monoid &m)
 
   if (m.genus < target_genus - stack_bound)
     {
-      for (auto it = generator_iter::children(m).next();
+      for (auto it = generator_iter::children(m);
 	   not it.is_finished();
-	   it.next())
+	   ++it)
 	{
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
 	  nbr++;
