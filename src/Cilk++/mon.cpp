@@ -12,7 +12,6 @@ typedef unsigned char epi8 __attribute__ ((vector_size (16)));
 
 
 typedef unsigned char nb_decompositions[SIZE] __attribute__ ((aligned (16)));
-typedef unsigned long long int result[MAX_GENUS];
 
 struct monoid
 {
@@ -148,9 +147,37 @@ class generator_iter
     return nbr;
   };
 
-  inline bool const is_finished() { return  (iblock > bound); };
-  inline unsigned long int const get_gen() {return gen;}
+  inline bool is_finished() const { return  (iblock > bound); };
+  inline unsigned long int get_gen() const {return gen; };
 };
+
+extern "C++"
+{
+  struct Results
+  {
+    unsigned long int values[MAX_GENUS];
+    Results() {for(int i=0; i<MAX_GENUS; i++) values[i] = 0;};
+  };
+
+  class ResultsReducer
+  {
+    struct Monoid: cilk::monoid_base<Results>
+    {
+      static void reduce (Results *left, Results *right){
+	for(int i=0; i<MAX_GENUS; i++) left->values[i] += right->values[i];
+      };
+    };
+  private:
+    cilk::reducer<Monoid> imp_;
+  public:
+    ResultsReducer() : imp_() {};
+    inline unsigned long int & operator[](int i) {
+      return imp_.view().values[i];
+    };
+    inline Results &get_array() {return imp_.view();}
+  };
+};
+
 
 void print_monoid(const monoid &m)
 {
@@ -289,39 +316,41 @@ void init_full_N(monoid &m)
 }
 
 
-cilk::reducer_opadd<unsigned long int> cilk_result[target_genus];
+ResultsReducer cilk_results;
 
+#define STACK_SIZE 100
 inline void walk_children_stack(const monoid &m, unsigned long int bound)
 {
   unsigned long int stack_pointer = 1, nbr;
-  monoid current, stack[100];
+  monoid data[STACK_SIZE-1], *stack[STACK_SIZE], *tmp;
+  Results & res = cilk_results.get_array();
 
-  stack[0] = m;
+  for (int i=1; i<STACK_SIZE; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
+  stack[0] = & ((monoid &)m);
   while (stack_pointer)
     {
       --stack_pointer;
-      if (stack[stack_pointer].genus < bound - 1)
+      if (stack[stack_pointer]->genus < bound - 1)
 	{
 	  nbr = 0;
-
-	  current.genus = stack[stack_pointer].genus;
-	  current.conductor = stack[stack_pointer].conductor;
-	  current.min = stack[stack_pointer].min;
-	  copy_decs(current.decs, stack[stack_pointer].decs);
-
-	  for (auto it = generator_iter::children(current).next();
+	  for (auto it = generator_iter::children(*stack[stack_pointer]).next();
 	       not it.is_finished();
 	       it.next())
 	    {
-	      remove_generator(stack[stack_pointer++], current, it.get_gen());
+	      // exchange top with top+1
+	      tmp = stack[stack_pointer];
+	      stack[stack_pointer] = stack[stack_pointer+1];
+	      stack[stack_pointer+1] = tmp;
+	      remove_generator(*stack[stack_pointer], *stack[stack_pointer+1], it.get_gen());
+	      stack_pointer++;
 	      nbr++;
 	    }
-	  cilk_result[current.genus] += nbr;
+	  res.values[stack[stack_pointer]->genus] += nbr;
 	}
       else
 	{
-	  cilk_result[stack[stack_pointer].genus] +=
-	    generator_iter::children(stack[stack_pointer]).count();
+	  res.values[stack[stack_pointer]->genus] +=
+	    generator_iter::children(*stack[stack_pointer]).count();
 	}
     }
 }
@@ -342,7 +371,7 @@ void walk_children(const monoid &m)
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
 	  nbr++;
 	}
-      cilk_result[m.genus] += nbr;
+      cilk_results[m.genus] += nbr;
      }
   else
     walk_children_stack(m, target_genus);
@@ -357,14 +386,14 @@ int main(void)
 	    << target_genus << std::endl;
   init_full_N(N);
   N1 = remove_generator(N, 1);
-  cilk_result[0]++;
+  cilk_results[0]++;
 
   cilk_spawn walk_children(N1);
   cilk_sync;
 
   std::cout << std::endl << "============================" << std::endl << std::endl;
   for (unsigned int i=0; i<target_genus; i++)
-    std::cout << cilk_result[i].get_value() << " ";
+    std::cout << cilk_results[i] << " ";
   std::cout << std::endl;
   return EXIT_SUCCESS;
 }
