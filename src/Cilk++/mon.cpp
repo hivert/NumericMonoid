@@ -3,6 +3,19 @@
 #include <iostream>
 
 using namespace std;
+
+
+/*
+Note: for some reason the code using gcc vector variables is 2-3% faster than
+the code using gcc intrinsic instructions.
+Here are the results of two runs:
+data_mmx =  [9.757, 9.774, 9.757, 9.761, 9.811, 9.819, 9.765, 9.888, 9.774, 9.771]
+data_epi8 = [9.592, 9.535, 9.657, 9.468, 9.460, 9.679, 9.458, 9.461, 9.629, 9.474]
+*/
+
+extern "C++"
+{
+
 typedef unsigned char epi8 __attribute__ ((vector_size (16)));
 
 #define MAX_GENUS 40
@@ -38,10 +51,7 @@ const unsigned long int target_genus = MAX_GENUS;
 #include <x86intrin.h>
 
 #define nth_block(st, i) (((epi8 *) st)[i])
-#define load_epi8(t) ((epi8) _mm_loadu_si128((__m128i *) (t)))
-#define store_epi8(t, v) (_mm_store_si128((__m128i *) (t), (__m128i) (v)))
-#define storeu_epi8(t, v) (_mm_storeu_si128((__m128i *) (t), (__m128i) (v)))
-#define update_epi8(d,s) (d)=(epi8) _mm_sub_epi8((__m128i) (d),  _mm_andnot_si128(_mm_cmpeq_epi8((__m128i) (s), (__m128i)zero),(__m128i) block1));
+#define load_unaligned_epi8(t) ((epi8) _mm_loadu_si128((__m128i *) (t)))
 
 
 
@@ -97,7 +107,7 @@ class generator_iter
     generator_iter it(m);
     it.iblock = 0;
     block = nth_block(m.decs, 0);
-    it.mask  = _mm_movemask_epi8((__m128i) _mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
+    it.mask  = _mm_movemask_epi8((__m128i) (block == block1));
     it.mask &= 0xFE; // 0 is not a generator
     it.gen = - 1;
     it.iblock++;
@@ -110,7 +120,7 @@ class generator_iter
     epi8 block;
     it.iblock = m.conductor >> 4;
     block = nth_block(m.decs, it.iblock) & mask16[m.conductor & 0xF];
-    it.mask  = _mm_movemask_epi8(_mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
+    it.mask  = _mm_movemask_epi8((__m128i) (block == block1));
     it.gen = (it.iblock << 4) - 1;
     it.iblock++;
     return it;
@@ -131,7 +141,7 @@ class generator_iter
 	if (iblock > bound) return *this;
 	gen = (iblock << 4) - 1;
 	block = nth_block(m.decs, iblock);
-	mask  = _mm_movemask_epi8(_mm_cmpeq_epi8((__m128i) block, (__m128i) block1));
+	mask  = _mm_movemask_epi8((__m128i) (block == block1));
 	iblock++;
       }
     shift = __bsfd (mask) + 1;
@@ -147,7 +157,7 @@ class generator_iter
     for (/* nothing */ ; iblock <= bound; iblock++)
       {
 	block = nth_block(m.decs, iblock);
-	nbr += _mm_popcnt_u32(_mm_movemask_epi8(_mm_cmpeq_epi8((__m128i) block, (__m128i) block1)));
+	nbr += _mm_popcnt_u32(_mm_movemask_epi8((__m128i) (block == block1)));
       }
     return nbr;
   };
@@ -155,34 +165,6 @@ class generator_iter
   inline bool is_finished() const { return  (iblock > bound); };
   inline unsigned long int get_gen() const {return gen; };
 };
-
-extern "C++"
-{
-  struct Results
-  {
-    unsigned long int values[MAX_GENUS];
-    Results() {for(int i=0; i<MAX_GENUS; i++) values[i] = 0;};
-  };
-
-  class ResultsReducer
-  {
-    struct Monoid: cilk::monoid_base<Results>
-    {
-      static void reduce (Results *left, Results *right){
-	for(int i=0; i<MAX_GENUS; i++) left->values[i] += right->values[i];
-      };
-    };
-  private:
-    cilk::reducer<Monoid> imp_;
-  public:
-    ResultsReducer() : imp_() {};
-    inline unsigned long int & operator[](int i) {
-      return imp_.view().values[i];
-    };
-    inline Results &get_array() {return imp_.view();}
-  };
-};
-
 
 void print_monoid(const monoid &m)
 {
@@ -229,13 +211,13 @@ inline void remove_generator(monoid &__restrict__ dst,
   // Shift block by decal uchar
   block = (epi8) _mm_shuffle_epi8((__m128i) nth_block(src.decs, 0),
 				  (__m128i) shift16[decal]);
-  update_epi8(nth_block(dst.decs,start_block),block)
+  nth_block(dst.decs, start_block) -= ((block != zero) & block1);
 #if NBLOCKS >= 5
 
 #define CASE_UNROLL(i_loop)			\
   case i_loop : \
-      update_epi8(nth_block(dst.decs, i_loop+1),load_epi8(srcblock)); \
-      srcblock += 16
+    nth_block(dst.decs, i_loop+1) -= ((load_unaligned_epi8(srcblock) != zero) & block1); \
+    srcblock += 16
 
   {
     const unsigned char *srcblock = src.decs + 16 - decal;
@@ -291,8 +273,8 @@ inline void remove_generator(monoid &__restrict__ dst,
     {
       // The following won't work due to a bug in GCC 4.7.1
       // block = *((epi8*)(src.decs + ((i-start_block)<<4) - decal));
-      block = load_epi8(src.decs + ((i-start_block)<<4) - decal);
-      update_epi8(nth_block(dst.decs,i),block);
+      block = load_unaligned_epi8(src.decs + ((i-start_block)<<4) - decal);
+      nth_block(dst->decs, i) -= ((block != zero) & block1);
     }
 #endif
 
@@ -321,6 +303,32 @@ void init_full_N(monoid &m)
 }
 
 
+  struct Results
+  {
+    typedef unsigned long int type[MAX_GENUS];
+    type values;
+    Results() {for(int i=0; i<MAX_GENUS; i++) values[i] = 0;};
+  };
+
+  class ResultsReducer
+  {
+    struct Monoid: cilk::monoid_base<Results>
+    {
+      static void reduce (Results *left, Results *right){
+	for(int i=0; i<MAX_GENUS; i++) left->values[i] += right->values[i];
+      };
+    };
+  private:
+    cilk::reducer<Monoid> imp_;
+  public:
+    ResultsReducer() : imp_() {};
+    inline unsigned long int & operator[](int i) {
+      return imp_.view().values[i];
+    };
+    inline Results::type &get_array() {return imp_.view().values;}
+  };
+};
+
 ResultsReducer cilk_results;
 
 #define STACK_SIZE 50
@@ -328,7 +336,7 @@ inline void walk_children_stack(monoid m, unsigned long int bound)
 {
   unsigned long int stack_pointer = 1, nbr;
   monoid data[STACK_SIZE-1], *stack[STACK_SIZE], *current;
-  Results & res = cilk_results.get_array();
+  Results::type &res = cilk_results.get_array();
 
   for (int i=1; i<STACK_SIZE; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
   stack[0] = &m;
@@ -350,11 +358,11 @@ inline void walk_children_stack(monoid m, unsigned long int bound)
 	      nbr++;
 	    }
 	  stack[stack_pointer] = current;
-	  res.values[current->genus] += nbr;
+	  res[current->genus] += nbr;
 	}
       else
 	{
-	  res.values[current->genus] +=
+	  res[current->genus] +=
 	    generator_iter::children_count(*current).count();
 	}
     }
