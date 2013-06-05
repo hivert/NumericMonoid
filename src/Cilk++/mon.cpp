@@ -318,11 +318,11 @@ void init_full_N(monoid &m)
 
 ResultsReducer cilk_results;
 
-#define STACK_SIZE 100
+#define STACK_SIZE 40
 inline void walk_children_stack(const monoid &m, unsigned long int bound)
 {
   unsigned long int stack_pointer = 1, nbr;
-  monoid data[STACK_SIZE-1], *stack[STACK_SIZE], *tmp;
+  monoid data[STACK_SIZE-1], *stack[STACK_SIZE], *current;
   Results & res = cilk_results.get_array();
 
   for (int i=1; i<STACK_SIZE; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
@@ -330,39 +330,39 @@ inline void walk_children_stack(const monoid &m, unsigned long int bound)
   while (stack_pointer)
     {
       --stack_pointer;
-      if (stack[stack_pointer]->genus < bound - 1)
+      current = stack[stack_pointer];
+      if (current->genus < bound - 1)
 	{
 	  nbr = 0;
-	  for (auto it = generator_iter::children(*stack[stack_pointer]).next();
+	  for (auto it = generator_iter::children(*current).next();
 	       not it.is_finished();
 	       it.next())
 	    {
 	      // exchange top with top+1
-	      tmp = stack[stack_pointer];
 	      stack[stack_pointer] = stack[stack_pointer+1];
-	      stack[stack_pointer+1] = tmp;
-	      remove_generator(*stack[stack_pointer], *stack[stack_pointer+1], it.get_gen());
+	      remove_generator(*stack[stack_pointer], *current, it.get_gen());
 	      stack_pointer++;
 	      nbr++;
 	    }
-	  res.values[stack[stack_pointer]->genus] += nbr;
+	  stack[stack_pointer] = current;
+	  res.values[current->genus] += nbr;
 	}
       else
 	{
-	  res.values[stack[stack_pointer]->genus] +=
-	    generator_iter::children(*stack[stack_pointer]).count();
+	  res.values[current->genus] +=
+	    generator_iter::children(*current).count();
 	}
     }
 }
 
 
 ////////////////////////////////////////////
-
+const int stack_bound = 11;
 void walk_children(const monoid &m)
 {
   unsigned long int nbr = 0;
 
-  if (m.genus < target_genus - 10)
+  if (m.genus < target_genus - stack_bound)
     {
       for (auto it = generator_iter::children(m).next();
 	   not it.is_finished();
