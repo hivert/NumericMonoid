@@ -100,8 +100,7 @@ int main(void)
 
   init_full_N(N);
   cilk_results[0]++;
-  cilk_spawn walk_children(N);
-  cilk_sync;
+  walk_children(N);
 
   std::cout << std::endl << "============================" << std::endl << std::endl;
   for (unsigned int i=0; i<target_genus; i++)
