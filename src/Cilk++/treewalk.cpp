@@ -99,7 +99,6 @@ int main(void)
 	    << target_genus << std::endl;
 
   init_full_N(N);
-  cilk_results[0]++;
   walk_children(N);
 
   std::cout << std::endl << "============================" << std::endl << std::endl;
