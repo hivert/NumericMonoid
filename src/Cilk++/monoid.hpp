@@ -1,9 +1,20 @@
-#include <reducer_opadd.h>
-#include <holder.h>
+#ifndef MONOID_HPP
+#define MONOID_HPP
+
 #include <iostream>
 
 using namespace std;
 
+#define MAX_GENUS 40
+#define SIZE_BOUND (3*(MAX_GENUS-1))
+#define NBLOCKS ((SIZE_BOUND+15) >> 4)
+#define SIZE (NBLOCKS << 4)
+
+#include <x86intrin.h>
+
+typedef unsigned char epi8 __attribute__ ((vector_size (16)));
+typedef unsigned char dec_numbers[SIZE] __attribute__ ((aligned (16)));
+typedef epi8 dec_blocks[NBLOCKS];
 
 /*
 Note: for some reason the code using gcc vector variables is 2-3% faster than
@@ -12,47 +23,6 @@ Here are the results of two runs:
 data_mmx =  [9.757, 9.774, 9.757, 9.761, 9.811, 9.819, 9.765, 9.888, 9.774, 9.771]
 data_epi8 = [9.592, 9.535, 9.657, 9.468, 9.460, 9.679, 9.458, 9.461, 9.629, 9.474]
 */
-
-extern "C++"
-{
-#define MAX_GENUS 40
-#define SIZE_BOUND (3*(MAX_GENUS-1))
-#define NBLOCKS ((SIZE_BOUND+15) >> 4)
-#define SIZE (NBLOCKS << 4)
-
-typedef unsigned char epi8 __attribute__ ((vector_size (16)));
-typedef unsigned char dec_numbers[SIZE] __attribute__ ((aligned (16)));
-typedef epi8 dec_blocks[NBLOCKS];
-
-struct monoid
-{
-  union {
-    dec_numbers decs;
-    dec_blocks blocks;
-  };
-  unsigned long int conductor, min, genus;
-};
-
-void init_full_N(monoid &);
-void print_monoid(const monoid &);
-void print_epi8(epi8);
-inline void copy_blocks(      dec_blocks &__restrict__ dst,
-			const dec_blocks &__restrict__ src);
-inline void remove_generator(monoid &__restrict__ dst,
-			     const monoid &__restrict__ src,
-			     unsigned long int gen)  __attribute__((always_inline));
-monoid remove_generator(const monoid &src, unsigned long int gen);
-
-
-const unsigned long int target_genus = MAX_GENUS;
-
-
-////////////////////////////////////////////
-
-
-#include <stdio.h>
-#include <assert.h>
-#include <x86intrin.h>
 
 extern inline epi8 load_unaligned_epi8(const unsigned char *t)
 { return (epi8) _mm_loadu_si128((__m128i *) (t)); };
@@ -101,14 +71,38 @@ const epi8 mask16[16] =
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,m1,m1},
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,m1} };
 
+struct monoid
+{
+  union {
+    dec_numbers decs;
+    dec_blocks blocks;
+  };
+  unsigned long int conductor, min, genus;
+};
+
+void init_full_N(monoid &);
+void print_monoid(const monoid &);
+void print_epi8(epi8);
+inline void copy_blocks(      dec_blocks &__restrict__ dst,
+			const dec_blocks &__restrict__ src) __attribute__((always_inline));
+inline void remove_generator(monoid &__restrict__ dst,
+		      const monoid &__restrict__ src,
+		      unsigned long int gen) __attribute__((always_inline));
+inline monoid remove_generator(const monoid &src, unsigned long int gen);
+
+
+const unsigned long int target_genus = MAX_GENUS;
+
+
 class generator_iter
 {
+private:
   const monoid &m;
   unsigned long int iblock, mask, gen, bound;
 
-  generator_iter(const monoid &mon) : m(mon), bound((mon.conductor+mon.min+15) >> 4) {};
+  inline generator_iter(const monoid &mon) : m(mon), bound((mon.conductor+mon.min+15) >> 4) {};
 
-    public:
+public:
   static inline generator_iter all_count(const monoid &m)
   {
     epi8 block;
@@ -174,6 +168,8 @@ class generator_iter
   inline unsigned long int get_gen() const {return gen; };
 };
 
+#include <assert.h>
+
 void print_monoid(const monoid &m)
 {
   unsigned int i;
@@ -198,9 +194,9 @@ inline void copy_blocks(dec_blocks &dst, dec_blocks const &src)
 }
 
 
-inline void remove_generator(monoid &__restrict__ dst,
-			     const monoid &__restrict__ src,
-			     unsigned long int gen)
+void remove_generator(monoid &__restrict__ dst,
+		      const monoid &__restrict__ src,
+		      unsigned long int gen)
 {
   unsigned long int start_block, decal;
   epi8 block;
@@ -287,7 +283,7 @@ inline void remove_generator(monoid &__restrict__ dst,
   assert(dst.decs[dst.conductor-1] == 0);
 }
 
-monoid remove_generator(const monoid &src, unsigned long int gen)
+inline monoid remove_generator(const monoid &src, unsigned long int gen)
 {
   monoid dst;
   remove_generator(dst, src, gen);
@@ -307,112 +303,4 @@ void init_full_N(monoid &m)
   m.min = 1;
 }
 
-
-  struct Results
-  {
-    typedef unsigned long int type[MAX_GENUS];
-    type values;
-    Results() {for(int i=0; i<MAX_GENUS; i++) values[i] = 0;};
-  };
-
-  class ResultsReducer
-  {
-    struct Monoid: cilk::monoid_base<Results>
-    {
-      static void reduce (Results *left, Results *right){
-	for(int i=0; i<MAX_GENUS; i++) left->values[i] += right->values[i];
-      };
-    };
-  private:
-    cilk::reducer<Monoid> imp_;
-  public:
-    ResultsReducer() : imp_() {};
-    inline unsigned long int & operator[](int i) {
-      return imp_.view().values[i];
-    };
-    inline Results::type &get_array() {return imp_.view().values;}
-  };
-};
-
-ResultsReducer cilk_results;
-
-#define STACK_SIZE 50
-void walk_children_stack(monoid m, unsigned long int bound)
-{
-  unsigned long int stack_pointer = 1, nbr;
-  monoid data[STACK_SIZE-1], *stack[STACK_SIZE], *current;
-  Results::type &res = cilk_results.get_array();
-
-  for (int i=1; i<STACK_SIZE; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
-  stack[0] = &m;
-  while (stack_pointer)
-    {
-      --stack_pointer;
-      current = stack[stack_pointer];
-      if (current->genus < bound - 1)
-	{
-	  nbr = 0;
-	  for (auto it = generator_iter::children(*current);
-	       not it.is_finished();
-	       ++it)
-	    {
-	      // exchange top with top+1
-	      stack[stack_pointer] = stack[stack_pointer+1];
-	      remove_generator(*stack[stack_pointer], *current, it.get_gen());
-	      stack_pointer++;
-	      nbr++;
-	    }
-	  stack[stack_pointer] = current;
-	  res[current->genus] += nbr;
-	}
-      else
-	{
-	  res[current->genus] +=
-	    generator_iter::children_count(*current).count();
-	}
-    }
-}
-
-
-////////////////////////////////////////////
-const int stack_bound = 11;
-void walk_children(const monoid &m)
-{
-  unsigned long int nbr = 0;
-
-  if (m.genus < target_genus - stack_bound)
-    {
-      for (auto it = generator_iter::children(m);
-	   not it.is_finished();
-	   ++it)
-	{
-	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
-	  nbr++;
-	}
-      cilk_results[m.genus] += nbr;
-     }
-  else
-    walk_children_stack(m, target_genus);
-}
-
-
-int main(void)
-{
-  monoid N, N1;
-
-  std::cout << "Computing number of numeric monoids for genus <= "
-	    << target_genus << std::endl;
-  init_full_N(N);
-  N1 = remove_generator(N, 1);
-  cilk_results[0]++;
-
-  cilk_spawn walk_children(N1);
-  cilk_sync;
-
-  std::cout << std::endl << "============================" << std::endl << std::endl;
-  for (unsigned int i=0; i<target_genus; i++)
-    std::cout << cilk_results[i] << " ";
-  std::cout << std::endl;
-  return EXIT_SUCCESS;
-}
-
+#endif
