@@ -95,9 +95,11 @@ int main(void)
 {
   monoid N;
 
-  std::cout << "Computing number of numeric monoids for genus <= "
-	    << target_genus << std::endl;
+  if (__cilkrts_set_param("nworkers", "0") != __CILKRTS_SET_PARAM_SUCCESS)
+    std::cerr << "Failed to set the number of workers" << endl;
 
+  std::cout << "Computing number of numeric monoids for genus <= "
+	    << target_genus << " using " << __cilkrts_get_nworkers() << " workers" << endl;
   init_full_N(N);
   walk_children(N);
 
