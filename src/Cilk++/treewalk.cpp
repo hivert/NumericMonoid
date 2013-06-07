@@ -96,17 +96,17 @@ int main(void)
   monoid N;
 
   if (__cilkrts_set_param("nworkers", "0") != __CILKRTS_SET_PARAM_SUCCESS)
-    std::cerr << "Failed to set the number of workers" << endl;
+    cerr << "Failed to set the number of workers" << endl;
 
-  std::cout << "Computing number of numeric monoids for genus <= "
+  cout << "Computing number of numeric monoids for genus <= "
 	    << target_genus << " using " << __cilkrts_get_nworkers() << " workers" << endl;
   init_full_N(N);
   walk_children(N);
 
-  std::cout << std::endl << "============================" << std::endl << std::endl;
+  cout << endl << "============================" << endl << endl;
   for (unsigned int i=0; i<target_genus; i++)
-    std::cout << cilk_results[i] << " ";
-  std::cout << std::endl;
+    cout << cilk_results[i] << " ";
+  cout << endl;
   return EXIT_SUCCESS;
 }
 
