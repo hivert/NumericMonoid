@@ -30,14 +30,12 @@ public:
   inline Results::type &get_array() {return imp_.view().values;}
 };
 
-
-#define STACK_SIZE 50
 void walk_children_stack(monoid m, unsigned long int bound, Results::type &res)
 {
   unsigned long int stack_pointer = 1, nbr;
-  monoid data[STACK_SIZE-1], *stack[STACK_SIZE], *current;
+  monoid data[bound-1], *stack[bound], *current;
 
-  for (int i=1; i<STACK_SIZE; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
+  for (unsigned long int i=1; i<bound; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
   stack[0] = &m;
   while (stack_pointer)
     {
