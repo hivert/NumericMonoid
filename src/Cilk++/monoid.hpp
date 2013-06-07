@@ -2,8 +2,14 @@
 #define MONOID_HPP
 
 #include <iostream>
+#include <cstdint>
 
 using namespace std;
+
+// const uint_fast8_t MAX_GENUS = 40;
+// const uint_fast8_t SIZE_BOUND = (3*(MAX_GENUS-1));
+// const uint_fast8_t NBLOCKS = ((SIZE_BOUND+15) >> 4);
+// const uint_fast8_t SIZE = (NBLOCKS << 4);
 
 #define MAX_GENUS 40
 #define SIZE_BOUND (3*(MAX_GENUS-1))
@@ -12,10 +18,10 @@ using namespace std;
 
 #include <x86intrin.h>
 
-typedef unsigned char epi8 __attribute__ ((vector_size (16)));
-typedef unsigned char dec_numbers[SIZE] __attribute__ ((aligned (16)));
+typedef uint8_t epi8 __attribute__ ((vector_size (16)));
+typedef uint8_t dec_numbers[SIZE] __attribute__ ((aligned (16)));
 typedef epi8 dec_blocks[NBLOCKS];
-
+typedef uint_fast64_t ind_t;  // The type used for array indexes
 /*
 Note: for some reason the code using gcc vector variables is 2-3% faster than
 the code using gcc intrinsic instructions.
@@ -24,10 +30,10 @@ data_mmx =  [9.757, 9.774, 9.757, 9.761, 9.811, 9.819, 9.765, 9.888, 9.774, 9.77
 data_epi8 = [9.592, 9.535, 9.657, 9.468, 9.460, 9.679, 9.458, 9.461, 9.629, 9.474]
 */
 
-extern inline epi8 load_unaligned_epi8(const unsigned char *t)
+extern inline epi8 load_unaligned_epi8(const uint8_t *t)
 { return (epi8) _mm_loadu_si128((__m128i *) (t)); };
 
-extern inline epi8 shuffle_epi8(epi8 b, epi8 sh)
+extern inline epi8 shuffle_epi8(epi8 b, epi8 sh)    // Require SSE 3
 { return (epi8) _mm_shuffle_epi8((__m128i) b, (__m128i) sh);}
 
 extern inline int movemask_epi8(epi8 b)
@@ -35,7 +41,7 @@ extern inline int movemask_epi8(epi8 b)
 
 const epi8 zero   = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 const epi8 block1 = zero + 1;
-const unsigned char m1 = 255;
+const uint8_t m1 = 255;
 const epi8 shift16[16] =
   { { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
     {m1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14},
@@ -77,7 +83,8 @@ struct monoid
     dec_numbers decs;
     dec_blocks blocks;
   };
-  unsigned long int conductor, min, genus;
+  // Dont use char as they have to be promoted to 64 bits to do pointer arithmetic.
+  ind_t conductor, min, genus;
 };
 
 void init_full_N(monoid &);
@@ -87,18 +94,16 @@ inline void copy_blocks(      dec_blocks &__restrict__ dst,
 			const dec_blocks &__restrict__ src) __attribute__((always_inline));
 inline void remove_generator(monoid &__restrict__ dst,
 		      const monoid &__restrict__ src,
-		      unsigned long int gen) __attribute__((always_inline));
-inline monoid remove_generator(const monoid &src, unsigned long int gen);
-
-
-const unsigned long int target_genus = MAX_GENUS;
+		      ind_t gen) __attribute__((always_inline));
+inline monoid remove_generator(const monoid &src, ind_t gen);
 
 
 class generator_iter
 {
 private:
   const monoid &m;
-  unsigned long int iblock, mask, gen, bound;
+  unsigned int mask;   // movemask_epi8 returns a 32 bits values
+  ind_t iblock, gen, bound;
 
   inline generator_iter(const monoid &mon) : m(mon), bound((mon.conductor+mon.min+15) >> 4) {};
 
@@ -110,7 +115,7 @@ public:
     it.iblock = 0;
     block = m.blocks[0];
     it.mask  = movemask_epi8(block == block1);
-    it.mask &= 0xFE; // 0 is not a generator
+    it.mask &= 0xFFFE; // 0 is not a generator
     it.gen = - 1;
     it.iblock++;
     return it;
@@ -135,7 +140,6 @@ public:
 
   inline generator_iter operator++()
   {
-    unsigned long int shift;
     epi8 block;
 
     while (!mask)
@@ -146,17 +150,17 @@ public:
 	mask  = movemask_epi8(block == block1);
 	iblock++;
       }
-    shift = __bsfd (mask) + 1;
+    unsigned char shift = __bsfd (mask) + 1; // Bit Scan Forward
     gen += shift;
     mask >>= shift;
     return *this;
   };
 
-  inline unsigned char count()
+  inline uint8_t count()
   {
     epi8 block;
-    unsigned char nbr = _mm_popcnt_u32(mask);
-    for (/* nothing */ ; iblock <= bound; iblock++)
+    uint8_t nbr = _mm_popcnt_u32(mask);
+    for (/* nothing */ ; iblock < bound; iblock++)
       {
 	block = m.blocks[iblock];
 	nbr += _mm_popcnt_u32(movemask_epi8(block == block1));
@@ -165,10 +169,10 @@ public:
   };
 
   inline bool is_finished() const { return  (iblock > bound); };
-  inline unsigned long int get_gen() const {return gen; };
+  inline ind_t get_gen() const {return gen; };
 };
 
-#include <assert.h>
+#include <cassert>
 
 void print_monoid(const monoid &m)
 {
@@ -182,23 +186,24 @@ void print_monoid(const monoid &m)
 void print_epi8(epi8 bl)
 {
   unsigned int i;
-  for (i=0; i<16; i++) cout<<((unsigned char*)&bl)[i]<<' ';
+  for (i=0; i<16; i++) cout<<((uint8_t*)&bl)[i]<<' ';
   cout<<endl;
 }
 
 
 inline void copy_blocks(dec_blocks &dst, dec_blocks const &src)
 {
-  unsigned long int i;
+  ind_t i;
   for (i=0; i<NBLOCKS; i++) dst[i] = src[i];
 }
 
 
+
 void remove_generator(monoid &__restrict__ dst,
 		      const monoid &__restrict__ src,
-		      unsigned long int gen)
+		      ind_t gen)
 {
-  unsigned long int start_block, decal;
+  ind_t start_block, decal;
   epi8 block;
 
   assert(src.decs[gen] == 1);
@@ -219,16 +224,22 @@ void remove_generator(monoid &__restrict__ dst,
 #define CASE_UNROLL(i_loop)			\
   case i_loop : \
     dst.blocks[i_loop+1] -= (load_unaligned_epi8(srcblock) != zero) & block1; \
-    srcblock += 16
+    srcblock += sizeof(epi8);
 
   {
-    const unsigned char *srcblock = src.decs + 16 - decal;
+    const uint8_t *srcblock = src.decs + sizeof(epi8) - decal;
   switch(start_block)
     {
       CASE_UNROLL(0);
+#if NBLOCKS > 2
       CASE_UNROLL(1);
+#endif
+#if NBLOCKS > 3
       CASE_UNROLL(2);
+#endif
+#if NBLOCKS > 4
       CASE_UNROLL(3);
+#endif
 #if NBLOCKS > 5
       CASE_UNROLL(4);
 #endif
@@ -269,11 +280,10 @@ void remove_generator(monoid &__restrict__ dst,
   }
 #else
 #warning "Loop not unrolled"
-  
-  unsigned long int i;
-  for (i=start_block+1; i<NBLOCKS; i++)
+
+  for (auto i=start_block+1; i<NBLOCKS; i++)
     {
-      // The following won't work due to a bug in GCC 4.7.1
+      // The following won't work due to some alignment problem (bug in GCC 4.7.1?)
       // block = *((epi8*)(src.decs + ((i-start_block)<<4) - decal));
       block = load_unaligned_epi8(src.decs + ((i-start_block)<<4) - decal);
       dst.blocks[i] -= ((block != zero) & block1);
@@ -283,7 +293,7 @@ void remove_generator(monoid &__restrict__ dst,
   assert(dst.decs[dst.conductor-1] == 0);
 }
 
-inline monoid remove_generator(const monoid &src, unsigned long int gen)
+inline monoid remove_generator(const monoid &src, ind_t gen)
 {
   monoid dst;
   remove_generator(dst, src, gen);
@@ -292,9 +302,8 @@ inline monoid remove_generator(const monoid &src, unsigned long int gen)
 
 void init_full_N(monoid &m)
 {
-  unsigned long int i;
   epi8 block ={1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8};
-  for(i=0; i<NBLOCKS; i++){
+  for(auto i=0; i<NBLOCKS; i++){
     m.blocks[i] = block;
     block = block + 8;
   }
