@@ -3,6 +3,7 @@
 
 using namespace std;
 
+#define MAX_GENUS 40
 #include "monoid.hpp"
 
 struct Results
@@ -45,9 +46,8 @@ void walk_children_stack(monoid m, Results::type &res)
       if (current->genus < MAX_GENUS - 1)
 	{
 	  nbr = 0;
-	  for (auto it = generator_iter::children(*current);
-	       not it.is_finished();
-	       ++it)
+	  auto it = generator_iter(*current, generator_iter::CHILDREN);
+	  while (it.move_next())
 	    {
 	      // exchange top with top+1
 	      stack[stack_pointer] = stack[stack_pointer+1];
@@ -60,14 +60,14 @@ void walk_children_stack(monoid m, Results::type &res)
 	}
       else
 	{
-	  res[current->genus] +=
-	    generator_iter::children_count(*current).count();
+	  auto it = generator_iter(*current, generator_iter::CHILDREN);
+	  res[current->genus] += it.count();
 	}
     }
 }
 
 ResultsReducer cilk_results;
-////////////////////////////////////////////
+
 #define STACK_BOUND 11
 void walk_children(const monoid &m)
 {
@@ -75,9 +75,8 @@ void walk_children(const monoid &m)
 
   if (m.genus < MAX_GENUS - STACK_BOUND)
     {
-      for (auto it = generator_iter::children(m);
-	   not it.is_finished();
-	   ++it)
+      auto it = generator_iter(m, generator_iter::CHILDREN);
+      while (it.move_next())
 	{
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
 	  nbr++;
@@ -87,6 +86,7 @@ void walk_children(const monoid &m)
   else
     walk_children_stack(m, cilk_results.get_array());
 }
+
 
 #include <cpuid.h>
 #include <cilk/cilk_api.h>

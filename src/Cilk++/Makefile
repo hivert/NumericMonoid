@@ -9,7 +9,9 @@ TARGET = treewalk
 
 all: $(TARGET)
 
-treewalk: treewalk.cpp monoid.hpp
+treewalk.o: treewalk.cpp monoid.hpp
+treewalk: treewalk.o
+	$(CXX) $(LDFLAGS) $< $(LOADLIBES) $(LDLIBS) -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) *.o
