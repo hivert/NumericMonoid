@@ -9,7 +9,10 @@ using namespace std;
 // We cant have those as C++ constant because of the #define used below in
 // remove_generator manual loop unrolling. I don't know if the unrolling is
 // doable using template metaprogamming. I didn't manage to figure out how.
+
+#ifndef MAX_GENUS
 #define MAX_GENUS 40
+#endif
 #define SIZE_BOUND (3*(MAX_GENUS-1))
 #define NBLOCKS ((SIZE_BOUND+15) >> 4)
 #define SIZE (NBLOCKS << 4)
@@ -132,16 +135,17 @@ inline generator_iter::generator_iter(const monoid &mon, generator_type tp)
     case ALL:
       iblock = 0;
       block = m.blocks[0];
+      mask  = movemask_epi8(block == block1);
       mask &= 0xFFFE; // 0 is not a generator
       gen = - 1;
       break;
     case CHILDREN:
       iblock = m.conductor >> 4;
       block = m.blocks[iblock] & mask16[m.conductor & 0xF];
+      mask  = movemask_epi8(block == block1);
       gen = (iblock << 4) - 1;
       break;
     }
-  mask  = movemask_epi8(block == block1);
   iblock++;
 };
 
