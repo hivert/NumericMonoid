@@ -23,3 +23,24 @@ cdef extern from "cmonoid.h":
         uint8_t count()
         ind_t get_gen() const
 
+from libcpp.list cimport list as stl_list
+
+cdef extern from "../treewalk.hpp":
+    ctypedef unsigned long int results_type[MAX_GENUS]
+    void walk_children_stack(monoid m, results_type &res)
+    void walk_children_stack(monoid m, ind_t bound, results_type &res)
+
+    cdef cppclass ResultsReducer:
+        unsigned long int & operator[](int i)
+        results_type &get_array()
+        void reset()
+
+    cdef cppclass ListReducer "cilk::reducer_list_append<monoid>":
+        stl_list[monoid] get_value()
+        stl_list[monoid] &get_reference()
+    ResultsReducer cilk_results
+    ListReducer cilk_list_results
+    void walk_children(const monoid &m)
+    void walk_children(const monoid &m, ind_t bound)
+    void list_children(const monoid &m, ind_t bound)
+

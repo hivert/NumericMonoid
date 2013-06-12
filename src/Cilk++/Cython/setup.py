@@ -10,7 +10,7 @@ from sage.env import *
 
 SAGE_INC = os.path.join(SAGE_LOCAL, 'include')
 SAGE_C   = os.path.join(SAGE_SRC, 'c_lib', 'include')
-CILK_INC = '/usr/local/include/cilk/'
+CILK_DIR = '/home/florent/install/Cilk-gcc/gcc-cilk'
 
 import Cython.Compiler.Options
 Cython.Compiler.Options.annotate = True
@@ -21,23 +21,16 @@ setup(
         Extension('numeric_monoid',
                   sources = ['numeric_monoid.pyx'],
                   language="c++", 
-                  include_dirs = [SAGE_INC, SAGE_C],
+                  include_dirs = [SAGE_C],
                   extra_compile_args = ['-std=c++0x', '-O3', '-march=native', '-mtune=native'],
+                  library_dirs = [CILK_DIR + '/lib64'],
+                  #  'cilkrts' should be here
+                  # but then sage needs to be run with the correct LD_LIBRARY_PATH            
+                  libraries = ['csage',],
                   depends = ['../monoid.hpp', 'cmonoid.pxd'],
                   define_macros = [('NDEBUG', '1')],
-                  #extra_objects = ['../src/monoid.o']
+                  extra_objects = ['../monoid-cy.o', '../treewalk-cy.o',
+                                   CILK_DIR + '/lib64/' + 'libcilkrts.a']
                   ),
-        # Extension('moncilk',
-        #           sources = ['moncilk.pyx'],
-        #           include_dirs = [SAGE_INC, SAGE_C, CILK_INC],
-        #           extra_compile_args = ['-flto', '-march=native', '-mtune=native'],
-        #           depends = ['../src/monoid.c', '../src/monoid.h',
-        #                      '../src/monoid.c', '../src/alarm.h',
-        #                      '../src/mongen.cilk','../src/mongen.h',
-        #                      'cmonoid.pxd', 'numeric_monoid.pxd'],
-        #           define_macros = [('NDEBUG', '1')],
-        #           extra_objects = ['../src/monoid.o', '../src/mongen.o', '../src/alarm.o'],
-        #           library_dirs = ['/usr/local/lib64/cilk'],
-        #           libraries = ['cilkrt0', 'cilk'])
         ])
 

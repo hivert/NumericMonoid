@@ -1,10 +1,7 @@
 #ifndef MONOID_HPP
 #define MONOID_HPP
 
-#include <iostream>
 #include <cstdint>
-
-using namespace std;
 
 // We cant have those as C++ constant because of the #define used below in
 // remove_generator manual loop unrolling. I don't know if the unrolling is
@@ -67,8 +64,13 @@ public:
   inline ind_t get_gen() const {return gen; };
 };
 
+
+
+///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 ////////////////   Implementation part here for inlining   ////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 
 /*
 Note: for some reason the code using gcc vector variables is 2-3% faster than
@@ -182,22 +184,6 @@ inline bool generator_iter::move_next()
 
 #include <cassert>
 
-void print_monoid(const monoid &m)
-{
-  unsigned int i;
-  cout<<"min = "<<m.min<<", cond = "<<m.conductor<<", genus = "<<m.genus<<", decs = ";
-  for (i=0; i<SIZE; i++) cout<<((int) m.decs[i])<<' ';
-  cout<<endl;
-}
-
-
-void print_epi8(epi8 bl)
-{
-  unsigned int i;
-  for (i=0; i<16; i++) cout<<((uint8_t*)&bl)[i]<<' ';
-  cout<<endl;
-}
-
 
 inline void copy_blocks(dec_blocks &dst, dec_blocks const &src)
 {
@@ -307,18 +293,5 @@ inline monoid remove_generator(const monoid &src, ind_t gen)
   remove_generator(dst, src, gen);
   return dst;
 }
-
-void init_full_N(monoid &m)
-{
-  epi8 block ={1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8};
-  for(auto i=0; i<NBLOCKS; i++){
-    m.blocks[i] = block;
-    block = block + 8;
-  }
-  m.genus = 0;
-  m.conductor = 1;
-  m.min = 1;
-}
-
 
 #endif

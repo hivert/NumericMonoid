@@ -1,6 +1,8 @@
 cimport cppmonoid
 from sage.structure.sage_object cimport SageObject
 
+cdef class MonoidList(object)
+
 cdef class NumericMonoid(SageObject):
     cdef cppmonoid.monoid _m
 
@@ -18,5 +20,18 @@ cdef class NumericMonoid(SageObject):
     cpdef list gaps(self)
     cpdef unsigned char[:] _decomposition_numbers(self)
     cpdef list multiplicities(self)
+    cpdef list walk_children_stack(self, int bound)
+    cpdef list walk_children(self, int bound)
+    cpdef MonoidList nth_generation_cilk(self, unsigned int genus)
 
 cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, tuple decs)
+
+from libcpp.list cimport list as stl_list
+
+cdef class MonoidList(object):
+    cdef stl_list[cppmonoid.monoid] _l
+
+cdef class MonoidListIterator(object):
+    cdef stl_list[cppmonoid.monoid] _l
+    cdef stl_list[cppmonoid.monoid].iterator _it, _end
+

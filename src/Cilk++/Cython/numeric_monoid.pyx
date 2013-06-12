@@ -28,7 +28,8 @@ import cython
 from sage.rings.integer import Integer, GCD_list
 from sage.structure.sage_object cimport SageObject
 
-cimport cppmonoid
+include 'sage/ext/interrupt.pxi'
+
 from cppmonoid cimport ind_t
 
 SIZE = cppmonoid.SIZE
@@ -321,6 +322,27 @@ cdef class NumericMonoid(SageObject):
             lst = [x for m in lst for x in m.children()]
         return lst
 
+
+    cpdef MonoidList nth_generation_cilk(self, unsigned int genus):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: list(Full.nth_generation_cilk(0))
+        [< 1 >]
+        sage: list(Full.nth_generation_cilk(1))
+        [< 2 3 >]
+        sage: list(Full.nth_generation_cilk(2))
+        [< 3 4 5 >, < 2 5 >]
+        sage: list(Full.nth_generation_cilk(4))
+        [< 5 6 7 8 9 >, < 4 6 7 9 >, < 4 5 7 >, < 4 5 6 >, < 3 7 8 >, < 3 5 >, < 2 9 >]
+        """
+        cdef MonoidList res = MonoidList.__new__(MonoidList)
+        cppmonoid.cilk_list_results.get_reference().clear()
+        sig_on()
+        cppmonoid.list_children(self._m, genus)
+        sig_off()
+        res._l = cppmonoid.cilk_list_results.get_value()
+        return res
+
     # don't know how to make it readonly !
     cpdef unsigned char[:] _decomposition_numbers(self):
         r"""
@@ -506,6 +528,34 @@ cdef class NumericMonoid(SageObject):
                            "wrong generators")
 
 
+    cpdef list walk_children_stack(NumericMonoid self, int bound):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: Full.walk_children_stack(5)
+        [1, 2, 4, 7, 12]
+        """
+        cdef cppmonoid.results_type res
+        cdef int i
+        for i in range(bound):
+            res[i] = 0
+        sig_on()
+        cppmonoid.walk_children_stack(self._m, bound, res)
+        sig_off()
+        return [int(res[i]) for i in range(bound)]
+
+    cpdef list walk_children(NumericMonoid self, int bound):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: Full.walk_children(15)
+        [1, 2, 4, 7, 12, 23, 39, 67, 118, 204, 343, 592, 1001, 1693, 2857]
+        """
+        cppmonoid.cilk_results.reset()
+        sig_on()
+        cppmonoid.walk_children(self._m, bound)
+        sig_off()
+        return [int(cppmonoid.cilk_results[i]) for i in range(bound)]
+
+
 cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, tuple decs):
     r"""
     sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
@@ -531,6 +581,66 @@ cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, 
         res._m.decs[i] = decs[i]
     return res
 
+
 Full = NumericMonoid()
 
+
+cdef class MonoidList(object):
+    def __len__(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: len(Full.nth_generation_cilk(4))
+        7
+        """
+        return self._l.size()
+
+    def __iter__(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: iter(Full.nth_generation_cilk(4))
+        <numeric_monoid.MonoidListIterator object at 0x...>
+        """
+        return MonoidListIterator(self)
+
+cdef class MonoidListIterator(object):
+    def __cinit__(self, MonoidList l):
+        self._l = l._l
+        self._it = self._l.begin()
+        self._end = self._l.end()
+
+    def __next__(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: it = iter(Full.nth_generation_cilk(2))
+        sage: it.__next__()
+        < 3 4 5 >
+        sage: it.__next__()
+        < 2 5 >
+        sage: it.__next__()
+        Traceback (most recent call last):
+        ...
+        StopIteration
+
+        sage: it = iter(Full.nth_generation_cilk(10))
+        sage: it.__next__()
+        < 11 12 13 14 15 16 17 18 19 20 21 >
+        sage: it.__next__()
+        < 10 12 13 14 15 16 17 18 19 21 >
+        """
+        cdef NumericMonoid res = NumericMonoid.__new__(NumericMonoid)
+        if self._it != self._end:
+            res._m = cython.operator.dereference(self._it)
+            cython.operator.preincrement(self._it)
+            return res
+        else:
+            raise StopIteration
+
+    def __iter__(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: it = iter(Full.nth_generation_cilk(0))
+        sage: iter(it) is it
+        True
+        """
+        return self
 
