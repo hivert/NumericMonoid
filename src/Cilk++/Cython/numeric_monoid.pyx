@@ -586,6 +586,20 @@ Full = NumericMonoid()
 
 
 cdef class MonoidList(object):
+    r"""
+    A wrapper for C++ STL list of monoids.
+    """
+
+    def __init__(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: MonoidList()
+        Traceback (most recent call last):
+        ...
+        RuntimeError: You are not supposed to call init
+        """
+        raise RuntimeError, "You are not supposed to call init"
+
     def __len__(self):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
@@ -604,9 +618,14 @@ cdef class MonoidList(object):
 
 cdef class MonoidListIterator(object):
     def __cinit__(self, MonoidList l):
-        self._l = l._l
-        self._it = self._l.begin()
-        self._end = self._l.end()
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: MonoidListIterator(Full.nth_generation_cilk(0))
+        <numeric_monoid.MonoidListIterator object at 0x...>
+        """
+        self._ml = l
+        self._it = self._ml._l.begin()
+        self._end = self._ml._l.end()
 
     def __next__(self):
         r"""

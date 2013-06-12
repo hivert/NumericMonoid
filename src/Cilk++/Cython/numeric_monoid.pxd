@@ -32,6 +32,6 @@ cdef class MonoidList(object):
     cdef stl_list[cppmonoid.monoid] _l
 
 cdef class MonoidListIterator(object):
-    cdef stl_list[cppmonoid.monoid] _l
+    cdef MonoidList _ml
     cdef stl_list[cppmonoid.monoid].iterator _it, _end
 
