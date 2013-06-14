@@ -117,7 +117,12 @@ void walk_children(const monoid &m, ind_t bound)
     walk_children_stack(m, bound, cilk_results.get_array());
 }
 
+#ifdef TBB
+#include <tbb/scalable_allocator.h>
+cilk::reducer_list_append<monoid, tbb::scalable_allocator<monoid>> cilk_list_results;
+#else
 cilk::reducer_list_append<monoid> cilk_list_results;
+#endif
 
 void list_children(const monoid &m, ind_t bound)
 {

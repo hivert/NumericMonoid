@@ -11,6 +11,7 @@ from sage.env import *
 SAGE_INC = os.path.join(SAGE_LOCAL, 'include')
 SAGE_C   = os.path.join(SAGE_SRC, 'c_lib', 'include')
 CILK_DIR = '/home/florent/install/Cilk-gcc/gcc-cilk'
+CILK_LIB = os.path.join(CILK_DIR, 'lib64')
 
 import Cython.Compiler.Options
 Cython.Compiler.Options.annotate = True
@@ -20,17 +21,16 @@ setup(
     ext_modules = [
         Extension('numeric_monoid',
                   sources = ['numeric_monoid.pyx'],
-                  language="c++", 
+                  language="c++",
                   include_dirs = [SAGE_C],
-                  extra_compile_args = ['-std=c++0x', '-O3', '-march=native', '-mtune=native'],
-                  library_dirs = [CILK_DIR + '/lib64'],
-                  #  'cilkrts' should be here
-                  # but then sage needs to be run with the correct LD_LIBRARY_PATH            
-                  libraries = ['csage',],
-                  depends = ['../monoid.hpp', 'cmonoid.pxd'],
-                  define_macros = [('NDEBUG', '1')],
-                  extra_objects = ['../monoid-cy.o', '../treewalk-cy.o',
-                                   CILK_DIR + '/lib64/' + 'libcilkrts.a']
+                  extra_compile_args = ['-std=c++0x', '-O3',
+                                        '-march=native', '-mtune=native'],
+                  library_dirs = [CILK_LIB],
+                  runtime_library_dirs = [CILK_LIB],
+                  libraries = ['csage', 'cilkrts'],
+                  depends = ['../monoid.hpp', '../treewalk.hpp', 'cmonoid.pxd'],
+                  define_macros = [('NDEBUG', '1'), ('MAX_GENUS','86')],
+                  extra_objects = ['../monoid-cy.o', '../treewalk-cy.o']
                   ),
         ])
 

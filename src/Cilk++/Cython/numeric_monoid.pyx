@@ -338,7 +338,8 @@ cdef class NumericMonoid(SageObject):
         cdef MonoidList res = MonoidList.__new__(MonoidList)
         cppmonoid.cilk_list_results.get_reference().clear()
         sig_on()
-        cppmonoid.list_children(self._m, genus)
+        with nogil:
+            cppmonoid.list_children(self._m, genus)
         sig_off()
         res._l = cppmonoid.cilk_list_results.get_value()
         return res
@@ -587,7 +588,7 @@ Full = NumericMonoid()
 
 cdef class MonoidList(object):
     r"""
-    A wrapper for C++ STL list of monoids.
+    A wrapper for C++ STL lists of monoids.
     """
 
     def __init__(self):
@@ -617,13 +618,16 @@ cdef class MonoidList(object):
         return MonoidListIterator(self)
 
 cdef class MonoidListIterator(object):
+    r"""
+    A wrapper for C++ STL iterator for list of monoids.
+    """
     def __cinit__(self, MonoidList l):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
         sage: MonoidListIterator(Full.nth_generation_cilk(0))
         <numeric_monoid.MonoidListIterator object at 0x...>
         """
-        self._ml = l
+        self._ml = l  # keep a reference on _ml to prevent _ml._l from being deallocated
         self._it = self._ml._l.begin()
         self._end = self._ml._l.end()
 

@@ -33,7 +33,14 @@ public:
 };
 
 extern ResultsReducer cilk_results;
+
+#ifdef TBB
+#include <tbb/scalable_allocator.h>
+extern cilk::reducer_list_append<monoid, tbb::scalable_allocator<monoid>> cilk_list_results;
+#else
 extern cilk::reducer_list_append<monoid> cilk_list_results;
+#endif
+
 
 void walk_children(const monoid &m);
 void walk_children(const monoid &m, ind_t bound);

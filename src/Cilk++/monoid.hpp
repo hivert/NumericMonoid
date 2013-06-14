@@ -8,7 +8,7 @@
 // doable using template metaprogamming. I didn't manage to figure out how.
 
 #ifndef MAX_GENUS
-#define MAX_GENUS 40
+#error "Please define the MAX_GENUS macro"
 #endif
 #define SIZE_BOUND (3*(MAX_GENUS-1))
 #define NBLOCKS ((SIZE_BOUND+15) >> 4)
