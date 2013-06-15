@@ -25,7 +25,7 @@ private:
   cilk::reducer<Monoid> imp_;
 public:
   ResultsReducer() : imp_() {};
-  inline unsigned long int & operator[](int i) {
+  inline unsigned long int & operator[](ind_t i) {
     return imp_.view().values[i];
   };
   inline results_type &get_array() {return imp_.view().values;}

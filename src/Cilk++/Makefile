@@ -34,5 +34,6 @@ numeric_monoid.so: treewalk.cpp treewalk.hpp monoid.cpp monoid.hpp numeric_monoi
 clean:
 	rm -rf $(TARGET) *.o build numeric_monoid.so numeric_monoid.html numeric_monoid.cpp
 
-test: numeric_monoid.so
+test: all
+	./treewalk
 	$(SAGE) -t --force-lib numeric_monoid.pyx
