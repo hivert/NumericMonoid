@@ -1,6 +1,6 @@
 from libc.stdint cimport uint8_t, uint_fast64_t
 
-cdef extern from "../monoid.hpp":
+cdef extern from "monoid.hpp":
     enum: MAX_GENUS
     enum: SIZE
     ctypedef uint_fast64_t ind_t
@@ -25,7 +25,7 @@ cdef extern from "../monoid.hpp":
 
 from libcpp.list cimport list as stl_list
 
-cdef extern from "../treewalk.hpp":
+cdef extern from "treewalk.hpp":
     ctypedef unsigned long int results_type[MAX_GENUS]
     void walk_children_stack(monoid m, results_type &res) nogil
     void walk_children_stack(monoid m, ind_t bound, results_type &res) nogil
