@@ -24,7 +24,7 @@ MAX_GENUS=$(DEFAULT_MAX_GENUS)
 all: $(TARGET)
 
 monoid.o: monoid.cpp monoid.hpp
-treewalk.o: treewalk.cpp monoid.hpp
+treewalk.o: treewalk.cpp treewalk.hpp monoid.hpp
 treewalk: treewalk.o monoid.o
 	$(CXX) $(LDFLAGS) $? $(LOADLIBES) $(LDLIBS) -o $@
 
