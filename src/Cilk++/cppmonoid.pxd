@@ -10,8 +10,9 @@ cdef extern from "monoid.hpp":
         ind_t conductor, min, genus
 
     void init_full_N(monoid &pm) nogil
-    void print_monoid(monoid &) nogil
-    inline void remove_generator(monoid &dst, monoid &src, ind_t) nogil
+    void print_monoid(const monoid &) nogil
+    inline void remove_generator(monoid &dst, const monoid &src, ind_t) nogil
+    inline monoid remove_generator(const monoid &src, ind_t) nogil
 
     enum generator_type "generator_iter::generator_type":
         ALL      "generator_iter::ALL"
