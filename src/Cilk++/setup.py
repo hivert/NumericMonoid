@@ -18,6 +18,7 @@ from sage.env import *
 
 SAGE_INC = os.path.join(SAGE_LOCAL, 'include')
 SAGE_C   = os.path.join(SAGE_SRC, 'c_lib', 'include')
+SAGE_DEV = os.path.join(SAGE_ROOT, 'devel', 'sage-main')
 CILK_LIB = os.path.join(CILK_ROOT, 'lib64')
 
 import Cython.Compiler.Options
@@ -29,7 +30,7 @@ setup(
         Extension('numeric_monoid',
                   sources = ['numeric_monoid.pyx', 'monoid.cpp', 'treewalk.cpp'],
                   language="c++",
-                  include_dirs = [SAGE_C],
+                  include_dirs = [SAGE_C,SAGE_DEV],
                   extra_compile_args = ['-std=c++0x', '-O3',
                                         '-march=native', '-mtune=native',
                                         '-fcilkplus'],
