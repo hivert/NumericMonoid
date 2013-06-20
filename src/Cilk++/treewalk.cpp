@@ -143,6 +143,7 @@ void list_children(const monoid &m, ind_t bound)
 int main(void)
 {
   monoid N;
+  unsigned long int total = 0;
 
   unsigned int ax, bx, cx, dx;
   if (!__get_cpuid(0x00000001, &ax, &bx, &cx, &dx))
@@ -171,8 +172,12 @@ int main(void)
 
   cout << endl << "============================" << endl << endl;
   for (unsigned int i=0; i<MAX_GENUS; i++)
-    cout << cilk_results[i] << " ";
+    {
+      cout << cilk_results[i] << " ";
+      total += cilk_results[i];
+    }
   cout << endl;
+  cout << "Total = " << total << endl;
   return EXIT_SUCCESS;
 }
 
