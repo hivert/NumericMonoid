@@ -1,10 +1,10 @@
-cimport cppmonoid
+from monoid cimport *
 from sage.structure.sage_object cimport SageObject
 
 cdef class MonoidList(object)
 
 cdef class NumericMonoid(SageObject):
-    cdef cppmonoid.monoid _m
+    cdef monoid _m
 
     cpdef int genus(self)
     cpdef int min(self)
@@ -29,9 +29,9 @@ cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, 
 from libcpp.list cimport list as stl_list
 
 cdef class MonoidList(object):
-    cdef stl_list[cppmonoid.monoid] _l
+    cdef stl_list[monoid] _l
 
 cdef class MonoidListIterator(object):
     cdef MonoidList _ml
-    cdef stl_list[cppmonoid.monoid].iterator _it, _end
+    cdef stl_list[monoid].iterator _it, _end
 

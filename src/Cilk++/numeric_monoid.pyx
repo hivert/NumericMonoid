@@ -30,10 +30,11 @@ from sage.structure.sage_object cimport SageObject
 
 include 'sage/ext/interrupt.pxi'
 
-from cppmonoid cimport ind_t
+from monoid cimport *
+from treewalk cimport *
 
-SIZE = cppmonoid.SIZE
-MAX_GENUS = cppmonoid.MAX_GENUS
+SIZE = cSIZE
+MAX_GENUS = cMAX_GENUS
 
 print_gen = True
 
@@ -50,7 +51,7 @@ cdef class NumericMonoid(SageObject):
         sage: NumericMonoid()
         < 1 >
         """
-        cppmonoid.init_full_N(self._m)
+        init_full_N(self._m)
 
     cpdef int genus(self):
         r"""
@@ -90,7 +91,7 @@ cdef class NumericMonoid(SageObject):
         sage: NumericMonoid.from_generators([3,5])._print()
         min = 3, cond = 8, genus = 4, decs = 1 0 0 1 0 1 2 0 2 2 2 3 3 3 4 4 5 5 ... 124 124
         """
-        cppmonoid.print_monoid(self._m)
+        print_monoid(self._m)
 
     def __contains__(self, unsigned int i):
         r"""
@@ -177,7 +178,7 @@ cdef class NumericMonoid(SageObject):
         (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 256, 8L, 3L, 4L, (1, 0, 0, 1, 0, 1, 2, 0, 2, 2, ..., 124, 124)))
         """
         return (_from_pickle,
-                (type(self), cppmonoid.SIZE,
+                (type(self), cSIZE,
                  self._m.conductor, self._m.min, self._m.genus,
                  tuple(self._decomposition_numbers())))
 
@@ -202,7 +203,7 @@ cdef class NumericMonoid(SageObject):
         eq = (self._m.conductor ==  other._m.conductor and
               self._m.min ==  other._m.min and
               self.genus ==  other.genus and
-              all(self._m.decs[i] == other._m.decs[i] for i in range(cppmonoid.SIZE)))
+              all(self._m.decs[i] == other._m.decs[i] for i in range(cSIZE)))
         if   op == 2: return eq
         elif op == 3: return not eq
         elif op < 2:
@@ -242,9 +243,9 @@ cdef class NumericMonoid(SageObject):
         """
         cdef NumericMonoid res
         res = NumericMonoid.__new__(type(self))
-        if gen > cppmonoid.SIZE or self._m.decs[gen] != 1:
+        if gen > cSIZE or self._m.decs[gen] != 1:
             raise ValueError, "%i is not a generator for %s"%(gen, self)
-        cppmonoid.remove_generator(res._m, self._m, gen)
+        remove_generator(res._m, self._m, gen)
         return res
 
     cpdef list generators(self):
@@ -257,7 +258,7 @@ cdef class NumericMonoid(SageObject):
         """
         cdef list res = []
         cdef int gen
-        cdef cppmonoid.generator_iter *iter = new cppmonoid.generator_iter(self._m, cppmonoid.ALL)
+        cdef generator_iter *iter = new generator_iter(self._m, ALL)
         while iter.move_next():
             res.append(int(iter.get_gen()))
         del iter
@@ -272,7 +273,7 @@ cdef class NumericMonoid(SageObject):
         2
         """
         cdef int res
-        cdef cppmonoid.generator_iter *iter = new cppmonoid.generator_iter(self._m, cppmonoid.CHILDREN)
+        cdef generator_iter *iter = new generator_iter(self._m, CHILDREN)
         res = iter.count()
         del iter
         return res
@@ -286,7 +287,7 @@ cdef class NumericMonoid(SageObject):
         [< 3 7 8 >, < 3 5 >]
         """
         cdef list res = []
-        cdef cppmonoid.generator_iter *iter = new cppmonoid.generator_iter(self._m, cppmonoid.CHILDREN)
+        cdef generator_iter *iter = new generator_iter(self._m, CHILDREN)
         while iter.move_next():
             res.append(self.remove_generator(iter.get_gen()))
         del iter
@@ -302,7 +303,7 @@ cdef class NumericMonoid(SageObject):
         """
         cdef list res = []
         cdef int gen
-        cdef cppmonoid.generator_iter *iter = new cppmonoid.generator_iter(self._m, cppmonoid.CHILDREN)
+        cdef generator_iter *iter = new generator_iter(self._m, CHILDREN)
         while iter.move_next():
             res.append(int(iter.get_gen()))
         del iter
@@ -336,12 +337,12 @@ cdef class NumericMonoid(SageObject):
         [< 5 6 7 8 9 >, < 4 6 7 9 >, < 4 5 7 >, < 4 5 6 >, < 3 7 8 >, < 3 5 >, < 2 9 >]
         """
         cdef MonoidList res = MonoidList.__new__(MonoidList)
-        cppmonoid.cilk_list_results.get_reference().clear()
+        cilk_list_results.get_reference().clear()
         sig_on()
         with nogil:
-            cppmonoid.list_children(self._m, genus)
+            list_children(self._m, genus)
         sig_off()
-        res._l = cppmonoid.cilk_list_results.get_value()
+        res._l = cilk_list_results.get_value()
         return res
 
     # don't know how to make it readonly !
@@ -355,7 +356,7 @@ cdef class NumericMonoid(SageObject):
         sage: len(list(NumericMonoid.from_generators([3,5,7])._decomposition_numbers())) == 256
         True
         """
-        cdef unsigned char[:] slice = (<unsigned char[:cppmonoid.SIZE]>
+        cdef unsigned char[:] slice = (<unsigned char[:cSIZE]>
                                         <unsigned char *> self._m.decs)
         return slice
 
@@ -393,7 +394,7 @@ cdef class NumericMonoid(SageObject):
         cdef int i
         cdef set gens = {int(i) for i in l}
         cdef NumericMonoid res = cls()
-        cdef cppmonoid.generator_iter *iter = new cppmonoid.generator_iter(res._m, cppmonoid.CHILDREN)
+        cdef generator_iter *iter = new generator_iter(res._m, CHILDREN)
         if GCD_list(l) != 1:
             raise ValueError, "gcd of generators must be 1"
         while iter.move_next():
@@ -401,7 +402,7 @@ cdef class NumericMonoid(SageObject):
             if gen not in gens:
                 res = res.remove_generator(gen)
                 del iter
-                iter = new cppmonoid.generator_iter(res._m, cppmonoid.CHILDREN)
+                iter = new generator_iter(res._m, CHILDREN)
         del iter
         return res
 
@@ -494,7 +495,7 @@ cdef class NumericMonoid(SageObject):
         ...
         AssertionError: wrong genus
         """
-        cdef ind_t i, genus = 0, size = cppmonoid.SIZE
+        cdef ind_t i, genus = 0, size = cSIZE
         tester = self._tester(**options)
         if self._m.conductor == 1:
             tester.assertEqual(self._m.min, 1, "wrong min")
@@ -509,7 +510,7 @@ cdef class NumericMonoid(SageObject):
             tester.assertEqual(self._m.decs[self._m.conductor-1], 0,
                                "conductor in not minimal")
         tester.assertTrue(all(self._m.decs[i] != 0
-                              for i in range(self._m.conductor, SIZE)),
+                              for i in range(self._m.conductor, cSIZE)),
                           "wrong conductor")
 
     def _test_generators(self, **options):
@@ -535,12 +536,12 @@ cdef class NumericMonoid(SageObject):
         sage: Full.walk_children_stack(5)
         [1, 2, 4, 7, 12]
         """
-        cdef cppmonoid.results_type res
+        cdef results_type res
         cdef int i
         for i in range(bound):
             res[i] = 0
         sig_on()
-        cppmonoid.walk_children_stack(self._m, bound, res)
+        walk_children_stack(self._m, bound, res)
         sig_off()
         return [int(res[i]) for i in range(bound)]
 
@@ -550,11 +551,11 @@ cdef class NumericMonoid(SageObject):
         sage: Full.walk_children(15)
         [1, 2, 4, 7, 12, 23, 39, 67, 118, 204, 343, 592, 1001, 1693, 2857]
         """
-        cppmonoid.cilk_results.reset()
+        cilk_results.reset()
         sig_on()
-        cppmonoid.walk_children(self._m, bound)
+        walk_children(self._m, bound)
         sig_off()
-        return [int(cppmonoid.cilk_results[i]) for i in range(bound)]
+        return [int(cilk_results[i]) for i in range(bound)]
 
 
 cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, tuple decs):
@@ -572,13 +573,13 @@ cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, 
     cdef NumericMonoid res
     cdef int i
 
-    if sz != cppmonoid.SIZE:
+    if sz != cSIZE:
         raise ValueError, "mon is compiled with different size (pickle size=%i)"%sz
     res = NumericMonoid.__new__(typ)
     res._m.conductor = cond
     res._m.min = mn
     res._m.genus = genus
-    for i in range(cppmonoid.SIZE):
+    for i in range(cSIZE):
         res._m.decs[i] = decs[i]
     return res
 

@@ -28,7 +28,7 @@ treewalk.o: treewalk.cpp treewalk.hpp monoid.hpp
 treewalk: treewalk.o monoid.o
 	$(CXX) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-numeric_monoid.so: treewalk.cpp treewalk.hpp monoid.cpp monoid.hpp numeric_monoid.pxd numeric_monoid.pyx cppmonoid.pxd
+numeric_monoid.so: treewalk.cpp treewalk.hpp monoid.cpp monoid.hpp numeric_monoid.pxd numeric_monoid.pyx monoid.pxd treewalk.pxd
 	$(PYTHON) setup.py build_ext --inplace
 
 clean:
