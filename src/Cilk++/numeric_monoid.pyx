@@ -510,7 +510,7 @@ cdef class NumericMonoid(SageObject):
             tester.assertEqual(self._m.decs[self._m.conductor-1], 0,
                                "conductor in not minimal")
         tester.assertTrue(all(self._m.decs[i] != 0
-                              for i in range(self._m.conductor, cSIZE)),
+                              for i in range(self._m.conductor, <unsigned int>cSIZE)),
                           "wrong conductor")
 
     def _test_generators(self, **options):
