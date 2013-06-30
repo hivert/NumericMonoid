@@ -407,13 +407,16 @@ cdef class NumericMonoid(SageObject):
         [1, 0, 0, 2, 0, 2, 3, 2, 4, 4, 5, 6, 7, 8, 9, 10, 11, ..., 249, 250]
 
         """
+        cdef unsigned char[:] decs = self._decomposition_numbers()
         cdef int i
-        cdef list res = list(self._decomposition_numbers())
-        for i in range(1, len(res)):
-            res[i] <<= 1
-            if i % 2 == 0 and res[i/2] != 0:
-                res[i] -= 1
-        return res
+        cdef int mults[cSIZE]
+        cdef int[:] mults_view = mults
+        mults[0] = 1
+        for i in range(1, cSIZE):
+            mults[i] = decs[i] << 1
+            if i % 2 == 0 and mults[i/2] != 0:
+                mults[i] -= 1
+        return list(mults_view)
 
     @classmethod
     def from_generators(cls, list l):
