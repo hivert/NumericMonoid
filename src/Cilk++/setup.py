@@ -29,16 +29,16 @@ setup(
     ext_modules = [
         Extension('numeric_monoid',
                   sources = ['numeric_monoid.pyx', 'monoid.cpp', 'treewalk.cpp'],
+                  depends = ['numeric_monoid.pxd', 'monoid.hpp', 'treewalk.hpp'],
                   language="c++",
-                  include_dirs = [SAGE_C,SAGE_DEV],
                   extra_compile_args = ['-std=c++0x', '-O3',
                                         '-march=native', '-mtune=native',
                                         '-fcilkplus'],
+                  define_macros = [('NDEBUG', '1'), ('MAX_GENUS','86')],
+                  include_dirs = [SAGE_C,SAGE_DEV],
                   library_dirs = [CILK_LIB],
                   runtime_library_dirs = [CILK_LIB],
                   libraries = ['csage', 'cilkrts'],
-                  depends = ['monoid.hpp', 'treewalk.hpp'],
-                  define_macros = [('NDEBUG', '1'), ('MAX_GENUS','86')],
                   ),
         ])
 
