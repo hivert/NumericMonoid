@@ -14,6 +14,8 @@ cdef class NumericMonoid(SageObject):
     cpdef int count_children(self)
     cpdef list children(self)
     cpdef list children_generators(self)
+    cpdef list successors(self)
+    cpdef list successor_generators(self)
     cpdef list nth_generation(self, unsigned int n)
     cpdef list generators(self)
     cpdef list elements(self)

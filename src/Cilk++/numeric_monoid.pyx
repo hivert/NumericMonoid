@@ -309,6 +309,43 @@ cdef class NumericMonoid(SageObject):
         del iter
         return res
 
+    cpdef list successors(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: Full.successors()
+        [< 2 3 >]
+        sage: NumericMonoid.from_generators([3,5,7]).successors()
+        [< 5 6 7 8 9 >, < 3 7 8 >, < 3 5 >]
+        """
+        cdef list res = []
+        cdef generator_iter *iter = new generator_iter(self._m, ALL)
+        while iter.move_next():
+            # Straigten a monoid obtained by removing an non children generators
+            try:
+                newmon = self.from_generators(self.remove_generator(iter.get_gen()).generators())
+            except ValueError:
+                pass # Ignore the result if GCD is not 1 anymore.
+            else:
+                res.append(newmon)
+        del iter
+        return res
+
+    cpdef list successor_generators(self):
+        r"""
+        sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
+        sage: Full.successor_generators()
+        [1]
+        sage: NumericMonoid.from_generators([3,5,7]).successor_generators()
+        [3, 5, 7]
+        """
+        cdef list res = []
+        cdef int gen
+        cdef generator_iter *iter = new generator_iter(self._m, ALL)
+        while iter.move_next():
+            res.append(int(iter.get_gen()))
+        del iter
+        return res
+
     cpdef list nth_generation(self, unsigned int genus):
         r"""
         sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *

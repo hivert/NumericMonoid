@@ -37,7 +37,7 @@ setup(
                   library_dirs = [CILK_LIB],
                   runtime_library_dirs = [CILK_LIB],
                   libraries = ['csage', 'cilkrts'],
-                  depends = ['monoid.hpp', 'treewalk.hpp', 'cppmonoid.pxd'],
+                  depends = ['monoid.hpp', 'treewalk.hpp'],
                   define_macros = [('NDEBUG', '1'), ('MAX_GENUS','86')],
                   ),
         ])
