@@ -25,7 +25,8 @@ The following bound are fixed at compile time::
     monoid is considered as 0 instead of 256.
 """
 import cython
-from sage.rings.integer import Integer, GCD_list
+from sage.rings.integer cimport Integer
+from sage.rings.integer import GCD_list
 from sage.structure.sage_object cimport SageObject
 
 include 'sage/ext/interrupt.pxi'
@@ -406,6 +407,7 @@ cdef class NumericMonoid(SageObject):
         [1, 0, 0, 2, 0, 2, 3, 2, 4, 4, 5, 6, 7, 8, 9, 10, 11, ..., 249, 250]
 
         """
+        cdef int i
         cdef list res = list(self._decomposition_numbers())
         for i in range(1, len(res)):
             res[i] <<= 1
