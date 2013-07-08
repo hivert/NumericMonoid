@@ -6,16 +6,16 @@ using namespace std;
 
 void walk_children_stack(monoid m, results_type &res)
 {
-  ind_t stack_pointer = 1;
   unsigned long int nbr;
   monoid data[MAX_GENUS-1], *stack[MAX_GENUS], *current;
+  monoid **stack_pointer = stack + 1;
 
   for (ind_t i=1; i<MAX_GENUS; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
   stack[0] = &m;
-  while (stack_pointer)
+  while (stack_pointer != stack)
     {
       --stack_pointer;
-      current = stack[stack_pointer];
+      current = *stack_pointer;
       if (current->genus < MAX_GENUS - 1)
 	{
 	  nbr = 0;
@@ -23,12 +23,12 @@ void walk_children_stack(monoid m, results_type &res)
 	  while (it.move_next())
 	    {
 	      // exchange top with top+1
-	      stack[stack_pointer] = stack[stack_pointer+1];
-	      remove_generator(*stack[stack_pointer], *current, it.get_gen());
+	      stack_pointer[0] = stack_pointer[1];
+	      remove_generator(**stack_pointer, *current, it.get_gen());
 	      stack_pointer++;
 	      nbr++;
 	    }
-	  stack[stack_pointer] = current;
+	  *stack_pointer = current;
 	  res[current->genus] += nbr;
 	}
       else
