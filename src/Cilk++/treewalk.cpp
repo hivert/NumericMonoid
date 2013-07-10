@@ -140,10 +140,24 @@ void list_children(const monoid &m, ind_t bound)
 #include <cpuid.h>
 #include <cilk/cilk_api.h>
 
-int main(void)
+static void show_usage(std::string name)
+{
+  std::cerr << "Usage: " << name << " [-n <proc_number>] " << std::endl;
+}
+
+
+int main(int argc, char **argv)
 {
   monoid N;
   unsigned long int total = 0;
+  string nproc = "0";
+
+  if (argc != 1 and argc != 3) { show_usage(argv[0]); return 1; }
+  if (argc == 3)
+    {
+      if (std::string(argv[1]) != "-n")  { show_usage(argv[0]); return 1; }
+      nproc = argv[2];
+    }
 
   unsigned int ax, bx, cx, dx;
   if (!__get_cpuid(0x00000001, &ax, &bx, &cx, &dx))
@@ -162,11 +176,11 @@ int main(void)
       return EXIT_FAILURE;
     }
 
-  if (__cilkrts_set_param("nworkers", "0") != __CILKRTS_SET_PARAM_SUCCESS)
+  if (__cilkrts_set_param("nworkers", nproc.c_str() ) != __CILKRTS_SET_PARAM_SUCCESS)
     cerr << "Failed to set the number of Cilk workers" << endl;
 
   cout << "Computing number of numeric monoids for genus <= "
-	    << MAX_GENUS << " using " << __cilkrts_get_nworkers() << " workers" << endl;
+       << MAX_GENUS << " using " << __cilkrts_get_nworkers() << " workers" << endl;
   init_full_N(N);
   walk_children(N);
 
