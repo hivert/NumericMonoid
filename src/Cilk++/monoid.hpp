@@ -137,7 +137,6 @@ template<> inline generator_iter<ALL>::generator_iter(const monoid &mon)
   mask  = movemask_epi8(block == block1);
   mask &= 0xFFFE; // 0 is not a generator
   gen = - 1;
-  iblock++;
 };
 
 template<> inline generator_iter<CHILDREN>::generator_iter(const monoid &mon)
@@ -148,32 +147,24 @@ template<> inline generator_iter<CHILDREN>::generator_iter(const monoid &mon)
   block = m.blocks[iblock] & mask16[m.conductor & 0xF];
   mask  = movemask_epi8(block == block1);
   gen = (iblock << 4) - 1;
-  iblock++;
 };
 
 template <generator_type T> inline uint8_t generator_iter<T>::count()
 {
-  epi8 block;
-  uint8_t nbr = _mm_popcnt_u32(mask);
-  for (/* nothing */ ; iblock < bound; iblock++)
-    {
-      block = m.blocks[iblock];
-      nbr += _mm_popcnt_u32(movemask_epi8(block == block1));
-    }
+  uint8_t nbr = _mm_popcnt_u32(mask); // popcnt returns a 8 bits value
+  for (iblock++; iblock < bound; iblock++)
+    nbr += _mm_popcnt_u32(movemask_epi8(m.blocks[iblock] == block1));
   return nbr;
 };
 
 template <generator_type T> inline bool generator_iter<T>::move_next()
 {
-  epi8 block;
-
   while (!mask)
     {
+      iblock++;
       if (iblock > bound) return false;
       gen = (iblock << 4) - 1;
-      block = m.blocks[iblock];
-      mask  = movemask_epi8(block == block1);
-      iblock++;
+      mask  = movemask_epi8(m.blocks[iblock] == block1);
     }
   unsigned char shift = __bsfd (mask) + 1; // Bit Scan Forward
   gen += shift;
@@ -182,16 +173,14 @@ template <generator_type T> inline bool generator_iter<T>::move_next()
 };
 
 
-#include <cassert>
-
 
 inline void copy_blocks(dec_blocks &dst, dec_blocks const &src)
 {
-  ind_t i;
-  for (i=0; i<NBLOCKS; i++) dst[i] = src[i];
+  for (ind_t i=0; i<NBLOCKS; i++) dst[i] = src[i];
 }
 
 
+#include <cassert>
 
 inline void remove_generator(monoid &__restrict__ dst,
 		      const monoid &__restrict__ src,
