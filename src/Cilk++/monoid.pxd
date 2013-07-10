@@ -14,12 +14,12 @@ cdef extern from "monoid.hpp":
     inline void remove_generator(monoid &dst, const monoid &src, ind_t) nogil
     inline monoid remove_generator(const monoid &src, ind_t) nogil
 
-    enum generator_type "generator_iter::generator_type":
-        ALL      "generator_iter::ALL"
-        CHILDREN "generator_iter::CHILDREN"
+    # Fake type since Cython only allows for instanciation of template by types.
+    ctypedef ALL "ALL"
+    ctypedef CHILDREN "CHILDREN"
 
-    cdef cppclass generator_iter:
-        generator_iter(const monoid &mon, generator_type tp) nogil
+    cdef cppclass generator_iter[T]:
+        generator_iter(const monoid &mon) nogil
         bint move_next() nogil
         uint8_t count() nogil
         ind_t get_gen() nogil

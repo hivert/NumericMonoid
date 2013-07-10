@@ -46,7 +46,9 @@ inline void remove_generator(monoid &__restrict__ dst,
 inline monoid remove_generator(const monoid &src, ind_t gen);
 
 
-class generator_iter
+typedef enum { ALL, CHILDREN } generator_type;
+
+template <generator_type T> class generator_iter
 {
 private:
 
@@ -56,9 +58,7 @@ private:
 
 public:
 
-  enum generator_type {ALL, CHILDREN};
-
-  generator_iter(const monoid &mon, generator_type tp);
+  generator_iter(const monoid &mon);
   bool move_next();
   uint8_t count();
   inline ind_t get_gen() const {return gen; };
@@ -128,30 +128,30 @@ const epi8 mask16[16] =
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,m1} };
 
 
-inline generator_iter::generator_iter(const monoid &mon, generator_type tp)
+template<> inline generator_iter<ALL>::generator_iter(const monoid &mon)
   : m(mon), bound((mon.conductor+mon.min+15) >> 4)
 {
   epi8 block;
-  switch (tp)  // This switch will be removed by inlining at compile time !
-    {
-    case ALL:
-      iblock = 0;
-      block = m.blocks[0];
-      mask  = movemask_epi8(block == block1);
-      mask &= 0xFFFE; // 0 is not a generator
-      gen = - 1;
-      break;
-    case CHILDREN:
-      iblock = m.conductor >> 4;
-      block = m.blocks[iblock] & mask16[m.conductor & 0xF];
-      mask  = movemask_epi8(block == block1);
-      gen = (iblock << 4) - 1;
-      break;
-    }
+  iblock = 0;
+  block = m.blocks[0];
+  mask  = movemask_epi8(block == block1);
+  mask &= 0xFFFE; // 0 is not a generator
+  gen = - 1;
   iblock++;
 };
 
-inline uint8_t generator_iter::count()
+template<> inline generator_iter<CHILDREN>::generator_iter(const monoid &mon)
+  : m(mon), bound((mon.conductor+mon.min+15) >> 4)
+{
+  epi8 block;
+  iblock = m.conductor >> 4;
+  block = m.blocks[iblock] & mask16[m.conductor & 0xF];
+  mask  = movemask_epi8(block == block1);
+  gen = (iblock << 4) - 1;
+  iblock++;
+};
+
+template <generator_type T> inline uint8_t generator_iter<T>::count()
 {
   epi8 block;
   uint8_t nbr = _mm_popcnt_u32(mask);
@@ -163,7 +163,7 @@ inline uint8_t generator_iter::count()
   return nbr;
 };
 
-inline bool generator_iter::move_next()
+template <generator_type T> inline bool generator_iter<T>::move_next()
 {
   epi8 block;
 

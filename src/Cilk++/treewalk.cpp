@@ -19,7 +19,7 @@ void walk_children_stack(monoid m, results_type &res)
       if (current->genus < MAX_GENUS - 1)
 	{
 	  nbr = 0;
-	  auto it = generator_iter(*current, generator_iter::CHILDREN);
+	  auto it = generator_iter<CHILDREN>(*current);
 	  while (it.move_next())
 	    {
 	      // exchange top with top+1
@@ -33,7 +33,7 @@ void walk_children_stack(monoid m, results_type &res)
 	}
       else
 	{
-	  auto it = generator_iter(*current, generator_iter::CHILDREN);
+	  auto it = generator_iter<CHILDREN>(*current);
 	  res[current->genus] += it.count();
 	}
     }
@@ -49,7 +49,7 @@ void walk_children(const monoid &m)
 
   if (m.genus < MAX_GENUS - STACK_BOUND)
     {
-      auto it = generator_iter(m, generator_iter::CHILDREN);
+      auto it = generator_iter<CHILDREN>(m);
       while (it.move_next())
 	{
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
@@ -79,7 +79,7 @@ void walk_children_stack(monoid m, ind_t bound, results_type &res)
       if (current->genus < bound - 1)
 	{
 	  nbr = 0;
-	  auto it = generator_iter(*current, generator_iter::CHILDREN);
+	  auto it = generator_iter<CHILDREN>(*current);
 	  while (it.move_next())
 	    {
 	      // exchange top with top+1
@@ -93,7 +93,7 @@ void walk_children_stack(monoid m, ind_t bound, results_type &res)
 	}
       else
 	{
-	  auto it = generator_iter(*current, generator_iter::CHILDREN);
+	  auto it = generator_iter<CHILDREN>(*current);
 	  res[current->genus] += it.count();
 	}
     }
@@ -105,7 +105,7 @@ void walk_children(const monoid &m, ind_t bound)
 
   if (bound > STACK_BOUND && m.genus < bound - STACK_BOUND)
     {
-      auto it = generator_iter(m, generator_iter::CHILDREN);
+      auto it = generator_iter<CHILDREN>(m);
       while (it.move_next())
 	{
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()), bound);
@@ -128,7 +128,7 @@ void list_children(const monoid &m, ind_t bound)
 {
   if (m.genus < bound)
     {
-      auto it = generator_iter(m, generator_iter::CHILDREN);
+      auto it = generator_iter<CHILDREN>(m);
       while (it.move_next())
 	cilk_spawn list_children(remove_generator(m, it.get_gen()), bound);
      }

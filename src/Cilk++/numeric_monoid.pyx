@@ -259,7 +259,7 @@ cdef class NumericMonoid(SageObject):
         """
         cdef list res = []
         cdef int gen
-        cdef generator_iter *iter = new generator_iter(self._m, ALL)
+        cdef generator_iter[ALL] *iter = new generator_iter[ALL](self._m)
         while iter.move_next():
             res.append(int(iter.get_gen()))
         del iter
@@ -274,7 +274,7 @@ cdef class NumericMonoid(SageObject):
         2
         """
         cdef int res
-        cdef generator_iter *iter = new generator_iter(self._m, CHILDREN)
+        cdef generator_iter[CHILDREN] *iter = new generator_iter[CHILDREN](self._m)
         res = iter.count()
         del iter
         return res
@@ -288,7 +288,7 @@ cdef class NumericMonoid(SageObject):
         [< 3 7 8 >, < 3 5 >]
         """
         cdef list res = []
-        cdef generator_iter *iter = new generator_iter(self._m, CHILDREN)
+        cdef generator_iter[CHILDREN] *iter = new generator_iter[CHILDREN](self._m)
         while iter.move_next():
             res.append(self.remove_generator(iter.get_gen()))
         del iter
@@ -304,7 +304,7 @@ cdef class NumericMonoid(SageObject):
         """
         cdef list res = []
         cdef int gen
-        cdef generator_iter *iter = new generator_iter(self._m, CHILDREN)
+        cdef generator_iter[CHILDREN] *iter = new generator_iter[CHILDREN](self._m)
         while iter.move_next():
             res.append(int(iter.get_gen()))
         del iter
@@ -319,7 +319,7 @@ cdef class NumericMonoid(SageObject):
         [< 5 6 7 8 9 >, < 3 7 8 >, < 3 5 >]
         """
         cdef list res = []
-        cdef generator_iter *iter = new generator_iter(self._m, ALL)
+        cdef generator_iter[ALL] *iter = new generator_iter[ALL](self._m)
         while iter.move_next():
             # Straigten a monoid obtained by removing an non children generators
             try:
@@ -341,7 +341,7 @@ cdef class NumericMonoid(SageObject):
         """
         cdef list res = []
         cdef int gen
-        cdef generator_iter *iter = new generator_iter(self._m, ALL)
+        cdef generator_iter[ALL] *iter = new generator_iter[ALL](self._m)
         while iter.move_next():
             res.append(int(iter.get_gen()))
         del iter
@@ -436,7 +436,7 @@ cdef class NumericMonoid(SageObject):
         cdef int i
         cdef set gens = {int(i) for i in l}
         cdef NumericMonoid res = cls()
-        cdef generator_iter *iter = new generator_iter(res._m, CHILDREN)
+        cdef generator_iter[CHILDREN] *iter = new generator_iter[CHILDREN](res._m)
         if GCD_list(l) != 1:
             raise ValueError, "gcd of generators must be 1"
         while iter.move_next():
@@ -444,7 +444,7 @@ cdef class NumericMonoid(SageObject):
             if gen not in gens:
                 res = res.remove_generator(gen)
                 del iter
-                iter = new generator_iter(res._m, CHILDREN)
+                iter = new generator_iter[CHILDREN](res._m)
         del iter
         return res
 
