@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <chrono>
 
 using namespace std;
@@ -68,16 +69,16 @@ void walk_children(const monoid &m)
 
 void walk_children_stack(monoid m, ind_t bound, results_type &res)
 {
-  ind_t stack_pointer = 1;
   unsigned long int nbr;
   monoid data[bound], *stack[bound], *current;
+  monoid **stack_pointer = stack + 1;
 
   for (ind_t i=1; i<bound; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
   stack[0] = &m;
-  while (stack_pointer)
+  while (stack_pointer != stack)
     {
       --stack_pointer;
-      current = stack[stack_pointer];
+      current = *stack_pointer;
       if (current->genus < bound - 1)
 	{
 	  nbr = 0;
@@ -85,12 +86,12 @@ void walk_children_stack(monoid m, ind_t bound, results_type &res)
 	  while (it.move_next())
 	    {
 	      // exchange top with top+1
-	      stack[stack_pointer] = stack[stack_pointer+1];
-	      remove_generator(*stack[stack_pointer], *current, it.get_gen());
+	      stack_pointer[0] = stack_pointer[1];
+	      remove_generator(**stack_pointer, *current, it.get_gen());
 	      stack_pointer++;
 	      nbr++;
 	    }
-	  stack[stack_pointer] = current;
+	  *stack_pointer = current;
 	  res[current->genus] += nbr;
 	}
       else
@@ -187,7 +188,7 @@ int main(int argc, char **argv)
   init_full_N(N);
   walk_children(N);
   auto end = high_resolution_clock::now();
-  auto ticks = duration_cast<microseconds>(end-begin);
+  duration<double> ticks = end-begin;
 
   cout << endl << "============================" << endl << endl;
   for (unsigned int i=0; i<MAX_GENUS; i++)
@@ -196,7 +197,8 @@ int main(int argc, char **argv)
       total += cilk_results[i];
     }
   cout << endl;
-  cout << "Total = " << total << ", computation time = " << ticks.count()*1.e-6 << " s." << endl;
+  cout << "Total = " << total <<
+       ", computation time = " << std::setprecision(4) << ticks.count() << " s."  << endl;
   return EXIT_SUCCESS;
 }
 
