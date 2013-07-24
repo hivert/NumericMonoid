@@ -2,7 +2,7 @@
 
 CXX         = $(CILK_ROOT)/bin/g++
 CPPFLAGS    = -DNDEBUG -DMAX_GENUS=$(MAX_GENUS)
-CXXFLAGS    = -std=c++0x -fcilkplus -g -Wall -O3 # -Winline
+CXXFLAGS    = -std=c++11 -fcilkplus -g -Wall -O3 # -Winline
 LDFLAGS     = -lcilkrts -Wl,-rpath=$(CILK_ROOT)/lib64
 TARGET_ARCH = -march=native -mtune=native
 TARGET = treewalk numeric_monoid.so

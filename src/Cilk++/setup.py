@@ -31,7 +31,7 @@ setup(
                   sources = ['numeric_monoid.pyx', 'monoid.cpp', 'treewalk.cpp'],
                   depends = ['numeric_monoid.pxd', 'monoid.hpp', 'treewalk.hpp'],
                   language="c++",
-                  extra_compile_args = ['-std=c++0x', '-O3',
+                  extra_compile_args = ['-std=c++11', '-O3',
                                         '-march=native', '-mtune=native',
                                         '-fcilkplus'],
                   define_macros = [('NDEBUG', '1'), ('MAX_GENUS','86')],
