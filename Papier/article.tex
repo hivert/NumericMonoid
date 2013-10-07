@@ -81,7 +81,7 @@ $i)$ $m(S)=\min(S\setminus\{0\})$, the \emph{multiplicity} of $S$;
 
 $ii)$ $g(S)=\card(\NN\setminus S)$, the \emph{genus} of $S$;
 
-$iii)$ $c(S)=1+\max(\NN\setminus S)$, the \emph{conductor} of $S$ for $S$ different from $\NN$. By convention the conductor of $\NN$ is $0$. 
+$iii)$ $c(S)=1+\max(\NN\setminus S)$, the \emph{conductor} of $S$ for $S$ different from $\NN$. By convention, the conductor of $\NN$ is $0$. 
 \end{defi}
 
 By definition a numerical semigroup is an infinite object. 
@@ -161,7 +161,7 @@ Hence relations~$T=S^x=S\setminus\{x\}$ hold.
 We construct the tree of numerical semigroups, denoted by $\mathcal{T}$ as follows. 
 The root of the tree is the unique semigroup of genus $0$, \ie, $\left<1\right>$ that is equal to $\NN$. 
 If~$S$ is a semigroup in the tree,  the sons of $S$ are exactly the semigroup $S^x$ where $x$ belongs to $\Irr(S)\cap[c(s),+\infty[$. 
-By convention, when depicting the tree, the ,numerical semigroup $S^x$ is in the left of $S^y$ if $x$ is smaller than $y$. 
+By convention, when depicting the tree, the numerical semigroup $S^x$ is in the left of $S^y$ if $x$ is smaller than $y$. 
 
 The above remarks imply that a semigroup $S$ has depth $g$ in $≠mathcal{T}$ if and only if its genus is~$g$, see Figure~\ref{F:Tree}.
 We denote by $\mathcal{T}^{\leq g}$ the subtree of $\mathcal{T}$ resticted to all semigroup of genus $\leq g$.
@@ -230,7 +230,7 @@ x&\mapsto&c(S)-1-x
 that send $S\cap[0,c(S)-1]$ into $[0,c(S)-1]\setminus S$.
 The cardinality of $[0,c(S)[\setminus S$ is exactly $g(S)$. Let us denote by $k$ the cardinality  of $S\cap[0,c(S)-1]$. 
 Since $\psi$ is injective we must have $k\leq g(S)$. 
->From the relation 
+From the relation 
 \[
 [0,c(S)[=S\cap[0,c(S)[\sqcup[0,c(S)[\setminus S
 \]
@@ -397,7 +397,7 @@ We can easily explore the tree of numerical semigroups up to a genus $G$ using a
 This approach does not seem to have been used before. 
 In particular,  M. Bras-Amor\'os and M. Delgado use instead a breadth search first exploration. 
 The main advantage in our approach is the small memory needs. 
-The cost to pay is that, if we want to explore the tree deepero, we must restart from the root.
+The cost to pay is that, if we want to explore the tree deeper, we must restart from the root.
 
 \begin{algorithm}
 \caption{Depth search first exploration of the tree of numerical semigroups}\label{A:Exp}
@@ -727,6 +727,12 @@ g & $n_g$ & $n_g/n_{g-1}$\\
 27 & 1270267 & 1.64791 \\
 28 & 2091030 & 1.64613 \\
 29 & 3437839 & 1.64408 \\
+30 & 5646773 & 1.64253 \\
+31 & 9266788 & 1.64107 \\
+32 & 15195070 & 1.63973 \\
+33 & 24896206 & 1.63843 \\
+34 & 40761087 & 1.63724 \\
+35 & 66687201 & 1.63605 \\
 \hline
 \end{tabular}
 \end{minipage}
@@ -735,12 +741,6 @@ g & $n_g$ & $n_g/n_{g-1}$\\
 \hline
 g & $n_g$ & $n_g/n_{g-1}$\\
 \hline
-30 & 5646773 & 1.64253 \\
-31 & 9266788 & 1.64107 \\
-32 & 15195070 & 1.63973 \\
-33 & 24896206 & 1.63843 \\
-34 & 40761087 & 1.63724 \\
-35 & 66687201 & 1.63605 \\
 36 & 109032500 & 1.63498 \\
 37 & 178158289 & 1.63399 \\
 38 & 290939807 & 1.63304 \\
@@ -766,7 +766,13 @@ g & $n_g$ & $n_g/n_{g-1}$\\
 58 & 4880606790010 & 1.62246 \\
 59 & 7917344087695 & 1.62220 \\
 60 & 12841603251351 & 1.62195 \\
-\hline
+61 & 20825558002053 & 1.62173 \\
+62 & 33768763536686 & 1.62151 \\
+63 & 54749244915730 & 1.62130 \\
+64 & 88754191073328 & 1.62110 \\
+65 & 143863484925550 & 1.62092 \\
+66 & 233166577125714 & 1.62075 \\
+67 & 377866907506273 & 1.62059 \\\hline
 \end{tabular}
 \end{minipage}
 \vspace{2em}
