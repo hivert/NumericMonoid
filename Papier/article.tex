@@ -1,7 +1,6 @@
 \documentclass[reqno,11pt]{amsart}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{url}
-\usepackage{pst-tree}
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
@@ -27,7 +26,7 @@
 \renewcommand{\geq}{\geqslant}
 \newcommand{\NN}{\mathbb{N}}
 \renewcommand{\tt}[1]{\texttt{#1}}
-\newcommand{\sgnode}[1]{\TR{\bf \left<#1\right>}}
+\newcommand{\sgnode}[1]{{\bf \left<#1\right>}}
 \renewcommand{\ie}{\emph{i.e}}
 \DeclareMathOperator{\Irr}{Irr}
 \DeclareMathOperator{\App}{App}
@@ -168,31 +167,73 @@ We denote by $\mathcal{T}^{\leq g}$ the subtree of $\mathcal{T}$ resticted to al
 
 
  \begin{figure}[htf!]
- \[
- \pstree[,nodesep=3pt]{\sgnode{1}}{
- 	\pstree[nodesep=3pt]{\sgnode{2,3} \tlput1}{
- 		\pstree[treesep=4pt,nodesep=2pt]{\sgnode{3,4,5} \tlput2}{
- 			\pstree[treesep=3pt,nodesep=3pt]{\sgnode{4,5,6,7} \tlput3}{
- 				\pstree{\sgnode{5,6,7,8,9} \tlput4}{}
- 				\pstree{\sgnode{\gr 4,6,7,9} \tlput5}{}
- 				\pstree{\sgnode{\gr 4,\gr 5,7} \trput6}{}
- 				\pstree{\sgnode{\gr 4,\gr 5,\gr 6} \trput7}{}					
- 			}
- 			\pstree[treesep=3pt,nodesep=3pt]{\sgnode{\gr 3,5,7} \tlput4}{
- 				\pstree{\sgnode{\gr 3,7,8} \tlput 5}{}
- 				\pstree{\sgnode{\gr 3,\gr 5} \trput 7}{}
- 			}
- 			\pstree[treesep=10pt]{\sgnode{\gr 3,\gr 4} \trput5}{\Tn \Tn \Tn}
- 		}
- 		\pstree[nodesep=3pt]{~\hspace{-5em}\sgnode{\gr2,5} \trput3}{
- 			\pstree[nodesep=3pt]{\sgnode{\gr2,7} \trput5}{
- 				\pstree[nodesep=3pt]{\sgnode{\gr2,9} \trput7}{}
- 			}
- 		}
- 	}
- }
- \vspace{-5em}
- \]
+ % \[
+ % \pstree[,nodesep=3pt]{\sgnode{1}}{
+ % 	\pstree[nodesep=3pt]{\sgnode{2,3} \tlput1}{
+ % 		\pstree[treesep=4pt,nodesep=2pt]{\sgnode{3,4,5} \tlput2}{
+ % 			\pstree[treesep=3pt,nodesep=3pt]{\sgnode{4,5,6,7} \tlput3}{
+ % 				\pstree{\sgnode{5,6,7,8,9} \tlput4}{}
+ % 				\pstree{\sgnode{\gr 4,6,7,9} \tlput5}{}
+ % 				\pstree{\sgnode{\gr 4,\gr 5,7} \trput6}{}
+ % 				\pstree{\sgnode{\gr 4,\gr 5,\gr 6} \trput7}{}
+ % 			}
+ % 			\pstree[treesep=3pt,nodesep=3pt]{\sgnode{\gr 3,5,7} \tlput4}{
+ % 				\pstree{\sgnode{\gr 3,7,8} \tlput 5}{}
+ % 				\pstree{\sgnode{\gr 3,\gr 5} \trput 7}{}
+ % 			}
+ % 			\pstree[treesep=10pt]{\sgnode{\gr 3,\gr 4} \trput5}{\Tn \Tn \Tn}
+ % 		}
+ % 		\pstree[nodesep=3pt]{~\hspace{-5em}\sgnode{\gr2,5} \trput3}{
+ % 			\pstree[nodesep=3pt]{\sgnode{\gr2,7} \trput5}{
+ % 				\pstree[nodesep=3pt]{\sgnode{\gr2,9} \trput7}{}
+ % 			}
+ % 		}
+ % 	}
+ % }
+ % \vspace{-5em}
+ % \]
+
+\[
+\begin{tikzpicture}[level distance=2cm, inner sep=2mm,
+  level/.style={sibling distance=1.55cm},
+%  edge from parent/.style={draw}
+  ]
+    \node {$\sgnode{1}$}
+    child {node {$\sgnode{2,3}$}
+      child [sibling distance=4.5cm] {node {$\sgnode{3,4,5}$}
+        child {node {$\sgnode{4,5,6,7}$}
+          child [sibling distance=2cm]{node {$\sgnode{5,6,7,8,9}$}  edge from parent node [left] {4}}
+          child [sibling distance=1.9cm]{node {$\sgnode{\gr 4,6,7,9}$}  edge from parent node [left] {5}}
+          child {node {$\sgnode{\gr 4,\gr 5,7}$}  edge from parent node [right] {6}}
+          child {node {$\sgnode{\gr 4,\gr 5,\gr 6}$}  edge from parent node [right] {7}}
+          edge from parent node [left] {3}
+        }
+        child{{} edge from parent[draw=none]}
+        child{{} edge from parent[draw=none]}
+        child {node {$\sgnode{\gr 3,5,7}$}
+          child {node {$\sgnode{\gr 3,7,8}$} edge from parent node [left] {5}}
+          child {node {$\sgnode{\gr 3,\gr 5}$} edge from parent node [right] {7}}
+          edge from parent node [left] {4}
+        }
+        child {node {$\sgnode{\gr 3,\gr 4}$}
+          edge from parent node [right] {5}
+        }
+        edge from parent node [left] {2}
+      }
+      child [sibling distance=4.5cm] {node {$\sgnode{\gr2,5}$}
+        child {node {$\sgnode{\gr2,7}$}
+          child {node {$\sgnode{\gr2,9}$}
+            edge from parent node [right] {7}
+          }
+          edge from parent node [right] {5}
+        }
+        edge from parent node [right] {3}
+      }
+      edge from parent node [left] {1}
+    }
+    ;
+  \end{tikzpicture}
+  \]
 \caption{The first five layers of the tree $\mathcal{T}$ of numerical semigroups, corresponding to $\mathcal{T}^{\leq 5}$. A generator of a semigroup is in gray if it is not in $[c(S),+\infty[$. An edge between a semigroup $S$ and its son $S'$ is labelled by  $x$ is $S'$ is obtained from $S$ by removing~$x$, that is $S'=S^x$.}
 \label{F:Tree}
 \end{figure}
