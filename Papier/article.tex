@@ -589,6 +589,35 @@ O(\log(G)\times G\times S)= O(\log(G)\times G^3).
 \end{proof}
 
 \section{Technical optimizations and results}
+
+
+Though there are asymptotically faster algorithm than the one presented here,
+thank to careful optimizations, we were able to compute $n_g$ for much larger
+genus than before. This is due to the fact that our algorithm is very well
+suited for the current processor architecture. In particular, it allows to use
+parallelism at various scale (parallel branch exploration, vectorization)...
+
+
+\subsection{Florent's rant}
+
+We use the following optimization tricks
+\begin{itemize}
+\item Vectorisation (MMX, SSE, GCC's 
+\verb|__attribute__ ((vector_size(16)));|
+) and careful memory alignment.
+\item Shared memory multicore computing using \texttt{CILK++} for low level
+  enumerating tree branching;
+\item Un-recursived algorithm using a stack;
+\item Avoiding all dynamic allocation during the computation: everything is
+  computed ``in place'';
+\item Avoiding all unnecessary copy (the cost of the \textsc{Son} algorithm is
+  roughly the same (even less) as for as copy !
+\item Aggressive loop unrolling. The main loop is unrolled by hand using some
+  kind of Duff's device.
+\item Carefull choice of data type (\verb|uint_fast8_t| for decomposition
+  number, vs \verb|uint_fast64_t| for all indexes).
+\end{itemize}
+
 \label{S:Opti}
 
 Assume for example that we want to construct the tree $\mathcal{T}^{\leq 100}$ of all  numerical semigroup of  genus smaller than $100$. 
