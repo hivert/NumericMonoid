@@ -1,7 +1,7 @@
 # call with
 # sage -python setup.py build_ext --inplace
 
-import os, sys
+import os, sys, platform
 
 try:
     CILK_ROOT = os.environ['CILK_ROOT']
@@ -9,6 +9,7 @@ except KeyError:
     raise EnvironmentError, "Please define the CILK_ROOT environment variable !"
 # setup the gcc/cilk compiler
 os.environ['CC'] = os.path.join(CILK_ROOT, 'bin', 'g++')
+
 
 from distutils.core import setup
 from distutils.extension import Extension
@@ -19,8 +20,18 @@ from sage.env import *
 SAGE_INC = os.path.join(SAGE_LOCAL, 'include')
 SAGE_C   = os.path.join(SAGE_SRC, 'c_lib', 'include')
 SAGE_DEV = os.path.join(SAGE_ROOT, 'devel', 'sage-main')
-CILK_LIB = os.path.join(CILK_ROOT, 'lib64')
 
+
+if platform.system()=="Darwin":
+    MARCH='-march=corei7'
+    MTUNE='-march=corei7'   
+    CILK_LIB = os.path.join(CILK_ROOT, 'lib') 
+    
+else:
+    MARCH='-march=native'
+    MTUNE='-march=native'
+    CILK_LIB = os.path.join(CILK_ROOT, 'lib64')
+ 
 import Cython.Compiler.Options
 Cython.Compiler.Options.annotate = True
 
@@ -32,7 +43,7 @@ setup(
                   depends = ['numeric_monoid.pxd', 'monoid.hpp', 'treewalk.hpp'],
                   language="c++",
                   extra_compile_args = ['-std=c++11', '-O3',
-                                        '-march=native', '-mtune=native',
+                                        MARCH, MTUNE,
                                         '-fcilkplus'],
                   define_macros = [('NDEBUG', '1'), ('MAX_GENUS','86')],
                   include_dirs = [SAGE_C,SAGE_DEV],
