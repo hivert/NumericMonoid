@@ -50,16 +50,16 @@ For example the set
 S_E=\{0,3,6,7,9,10\}\cup[12,+\infty[
 \end{equation}
 is a numerical semigroup.
-The \emph{genus} of a numerical semigroup $S$, denoted by~$g(S)$, is the cardinality of $\NN\setminus S$, \ie, $g(S)=\card(\NN\setminus S)$. 
- For example the genus of $S_E$ defined in \eqref{E:NSG} is $6$,  the cardinality of $\{1,2,4,5,8,11\}$
+The \emph{genus} of a numerical semigroup $S$, denoted by~$g(S)$, is the cardinality of $\NN\setminus S$.
+ For example the genus of $S_E$ is $6$,  the cardinality of $\{1,2,4,5,8,11\}$
 
-For a given positive integer $g$, the number of numerical semigroups  is finite and is denoted by $n_g$. 
+For a given positive integer $g$, the number of numerical semigroups of genus $g$ is finite and is denoted by $n_g$. 
 In  J.A. Sloane's \emph{on-line encyclopedia of integer}~\cite{OEIS} we find the values of $n_g$ for $g\leq 52$. 
 These values have been obtain by M. Bras-Amor\'os (view \cite{BrasAmoros2008} for more details for $g\leq 50)$. 
 On his home page~\cite{Delgado}, M. Delgado  gives the value of $n_{55}$ without specifying the values of $n_{53}$ and~$n_{54}$. 
 
 M.~Bras-Amor\'os used a depth first search exploration of the tree of numerical semigroups up to a given genus.
-This tree was introduced by J.C. Rosales and al. in \cite{Rosales} and it is the subject of the Section~\ref{S:Tree}.
+This tree was introduced by J.C.~Rosales and al. in \cite{Rosales} and it is the subject of the Section~\ref{S:Tree}.
 Starting with all the numerical semigroups of genus $49$ she obtained the number of numerical semigroups of genus $50$ in $18$ days on a pentium D runing at $3$GHz. 
 In the package~\tt{NumericalSgs} \cite{NumericalSgps} of \tt{GAP} \cite{GAP}, M. Delgado together with P.A.~Garcia-Sanchez and J. Morais used the same method of exploration.
 
@@ -92,7 +92,7 @@ That is the role of generating sets.
 
 \begin{defi}
 A subset $X=\{x_1<x_2<...<x_n\}$ of a semigroup is a \emph{generating set} of $S$ if every element of $S$ can be express as a sum of elements in $X$. 
-In this case we write $S=\left<x_1,...,x_\ell\right>$.
+In this case we write $S=\left<x_1,...,x_n\right>$.
 \end{defi}
 
 If we reconsider the numerical semigroup of \eqref{E:NSG}, we obtain
@@ -106,7 +106,7 @@ A non-zero element $x$ of a numerical semigroup $S$ is said to be \emph{irreduci
 We denote by $\Irr(S)$ the set of all irreducible elements of $S$.
 
 \begin{lem}[Lemma 2.3, Chap. I, \cite{BookNS}]
-Let $S$ be a numerical semigroup. The set $\Irr(S)$ is the minimal generating set of $S$.
+Let $S$ be a numerical semigroup. The set $\Irr(S)$ is the minimal generating set of $S$ relatively to the inclusion ordering.
 \end{lem} 
 
 
@@ -152,8 +152,8 @@ $iii)$ $c(S)\leq 2 g(S)$.
 
 \begin{proof}
 $i)$ Let $x$ ba a positive integer satisfying $x \geq c(S)+m(S)$. 
-As the relations $x\geq c(S)$ and $x-m(S)$ hold, the integers $x$ and $x-m(S)$ belong to $S$.
-Since $x=(x-m(S))+m(S)$ hold with $x-m(S)\not=0$ and $m(S)\not=0$, the integer $x$ could not be irreducible.
+As the integers $x$ and $x-m(S)$ are greater than $c(S)$, they belong to $S$.
+Since $x$ equals $(x-m(S))+m(S)$ with $x-m(S)\not=0$ and $m(S)\not=0$, it could not be irreducible.
 
 $ii)$ The set $\NN\setminus{S}$ of cardinality $g(S)$ contains $\{1,..,m(S)-1\}$ and so the relation $m(S)\leq g(S)+1$ holds.
 
@@ -168,8 +168,8 @@ Thus we define an involution
 x&\mapsto&c(S)-1-x
 \end{array}
 \]
-that send $S\cap[0,c(S)-1]$ into $[0,c(S)-1]\setminus S$.
-The cardinality of $[0,c(S)[\setminus S$ is exactly $g(S)$. Let us denote by $k$ the cardinality  of $S\cap[0,c(S)-1]$. 
+that send $S\cap[0,c(S)-1]$ into $[0,c(S)-1]\setminus S$ which is  of cardinality $g(S)$. 
+Let us denote by $k$ the cardinality  of $S\cap[0,c(S)-1]$. 
 Since $\psi$ is injective we must have $k\leq g(S)$. 
 From the relation 
 \[
@@ -178,10 +178,11 @@ From the relation
  we obtain $c(S)=k+g(S)$ and so $c(S)\leq 2 g(S)$.
 \end{proof}
 
-A consequence of Proposition~ \ref{P:Res}~$i)$ is that $\Irr(S)$ is finite of cardinality at most $c(S)+m(S)-1$.
-In fact, using Apéry set, we can prove that  the cardinality of $\Irr(S)$ is at most $m(S)$. See Section 2 of Chapter I of \cite{BookNS} for more details.
+A consequence of Proposition~ \ref{P:Res}~$i)$ is that $\Irr(S)$ is finite ant its cardinality is at most $c(S)+m(S)-1$.
+More precisely, using Ap\'ery set, we can prove that  the cardinality of $\Irr(S)$ is at most $m(S)$. See Section 2 of Chapter I of~\cite{BookNS} for more details.
 
-Let  $S$ be a numerical semigroup. The set $T=S\cup\{c(S)-1\}$ is also a numerical  semigroup and its genus is $g(S)-1$. 
+We now explain the construction of the tree of numerical semigroups.
+Let~$S$ be a numerical semigroup. The set $T=S\cup\{c(S)-1\}$ is also a numerical  semigroup and its genus is $g(S)-1$. 
 As  $[c(S)-1,+\infty[$ is included in $T$ we have $c(T)\leq c(S)-1$. 
 Therefore every semigroup $S$ of genus $g$ can be obtained from a semigroup $T$ of genus $g-1$ by removing an element of~$T$ greater than or equal to $c(T)$.
 
@@ -211,9 +212,8 @@ We construct the tree of numerical semigroups, denoted by $\mathcal{T}$ as follo
 The root of the tree is the unique semigroup of genus $0$, \ie, $\left<1\right>$ that is equal to $\NN$. 
 If~$S$ is a semigroup in the tree,  the sons of $S$ are exactly the semigroup~$S^x$ where $x$ belongs to $\Irr(S)\cap[c(s),+\infty[$. 
 By convention, when depicting the tree, the numerical semigroup $S^x$ is in the left of $S^y$ if $x$ is smaller than~$y$. 
-
-The above remarks imply that a semigroup $S$ has depth $g$ in $\mathcal{T}$ if and only if its genus is~$g$, see Figure~\ref{F:Tree}.
-We denote by $\mathcal{T}^{\leq g}$ the subtree of $\mathcal{T}$ resticted to all semigroup of genus $\leq g$.
+With this construction, a semigroup $S$ has depth $g$ in $\mathcal{T}$ if and only if its genus is~$g$, see Figure~\ref{F:Tree}.
+We denote by $\mathcal{T}_{\leq g}$ the subtree of $\mathcal{T}$ resticted to all semigroup of genus $\leq g$.
 
 
  \begin{figure}[hf!]
@@ -284,12 +284,12 @@ We denote by $\mathcal{T}^{\leq g}$ the subtree of $\mathcal{T}$ resticted to al
     ;
   \end{tikzpicture}
   \]
-\caption{The first five layers of the tree $\mathcal{T}$ of numerical semigroups, corresponding to $\mathcal{T}^{\leq 5}$. A generator of a semigroup is in gray if it is not in $[c(S),+\infty[$. An edge between a semigroup $S$ and its son $S'$ is labelled by  $x$ is $S'$ is obtained from $S$ by removing~$x$, that is $S'=S^x$.}
+\caption{The first four layers of the tree $\mathcal{T}$ of numerical semigroups, corresponding to $\mathcal{T}_{\leq 4}$. A generator of a semigroup is in gray if it is not in $[c(S),+\infty[$. An edge between a semigroup $S$ and its son $S'$ is labelled by  $x$ is $S'$ is obtained from $S$ by removing~$x$, that is $S'=S^x$.}
 \label{F:Tree}
 \end{figure}
 
 As the reader can check, the main difficulty to characterize the son of a semigroup is to determine its irreducible elements.
- In \cite{NumericalSgps}, the semigroup are given by their Ap\'ery set and then the main difficulty is to describe the Ap\'ery set of $S_x$  from this of $S$. 
+ In \cite{NumericalSgps}, the semigroup are given by their Ap\'ery set and then the difficulty is to describe the Ap\'ery set of $S_x$  from this of $S$. 
  This approach is elegant but not sufficiently \emph{basic} for our optimisations.
 
 
@@ -298,7 +298,7 @@ As the reader can check, the main difficulty to characterize the son of a semigr
 \label{S:DecNumber}
 
 The aim of this section is to describe a new representation of numerical semigroups.
-which is well suited to a efficient exploration of the tree~$\mathcal{T}$ of numerical semigroups. 
+which is well suited to an efficient exploration of the tree~$\mathcal{T}$ of numerical semigroups. 
 
 \begin{defi}
 Let $S$ be a numerical semigroup.
@@ -358,7 +358,7 @@ Assume $x$ is irreducible in $S$.
 There cannot exist $y$ and $z$ in~$(S\setminus\{0\})^2$ such that $x=y+z$. 
 The only possible decomposition of $x$ as a sum of two elements of $S$ is $x=0+x$. 
 Hence, the set $D_S(x)$ is equal to~$\{0\}$ and we have $d_S(x)=1$. 
-Conversely, let $x$ such that $d_S(x)=1$. 
+Conversely, let $x$ such that $d_S(x)$ is $1$. 
 By  $i)$ the  integer $x$ must be in $S$. 
 As $x=0+x$ is always a decomposition of $x$ as a sum of two elements in $S$, we obtain $D_S(x)=\{0\}$.
 If there exist $y$ and $z$ in $S$ such that $y\leq z$ and $x=y+z$ hold then $y$ lies in $D_S(x)$. 
@@ -368,7 +368,7 @@ Hence $x$ is irreducible in~$S$.
 
 We note  that $0$ is never irreducible despite the fact $d_S(0)$ is $1$ for all numerical semigroup $S$.
 
-We now explain how to compute the $S$-decomposition numbers function of a numerical semigroup  from these of its father.
+We now explain how to compute the $S$-decomposition numbers function of a numerical semigroup  from this of its father.
 
 \begin{prop}
 Let $S$ be a numerical semigroup and $x$ be an irreducible element of $S$. 
@@ -385,64 +385,36 @@ d_S(y) &\text{otherwise.}
 \begin{proof}
 Let $y$ be in $\NN\setminus\{0\}$. We have 
 \[
-D_{S^x}(y)=\{z \in S^x\ |\ y-z\in S^x\ \text{and}\  2z\leq y\}
+D_{S^x}(y)=\{z \in S^x\ |\ y-z\in S^x\ \text{and}\  2z\leq y\}.
 \]
-and $D_{S^x}(y)$ is a subset of $D_S(y)$.
-We have $D_S(y)\setminus D_{S^x}(y)=E\sqcup F$ where
+We construct three sets as follow:
 \begin{align*}
-E&=\begin{cases}
-\{x\} &\text{if $y-x\in S^x$ and $2x\leq y$,}\\
-\emptyset & \text{otherwise.}
-\end{cases}\\
-F&=\{z\in S\ |\ y-z=x\ \text{and}\ 2z\leq y\}
-\end{align*}
-Since  the relation $y-x\in S^x$ can be rewritten as the conjunction of $y-x\in S$ and $y\not=2x$, we obtain
-\[
-E=\begin{cases}
-\{x\} &\text{if $y-x\in S$ and $2x< y$,}\\
-\emptyset & \text{otherwise.}
-\end{cases}
-\]
-By Proposition~\ref{P:Dandd}, the relation $y-x\in S$ is equivalent to $y\geq x$ and $d_S(y-x)>0$, we have
-\[
-E=\begin{cases}
-\{x\} &\text{if $y\geq x$ and $d_S(y-x)>0$ and $2x< y$,}\\
-\emptyset & \text{otherwise.}
-\end{cases}
-\]
-On the other hand, we have 
-\begin{align*}
-F&=\{z\in S\ |\ y-z=x\ \text{and}\ 2z\leq y\}\\
-&=\{z\in S\ |\ z=y-x\ \text{and}\ y\leq 2x\}\\
-&=\begin{cases}
-\{y-x\} & \text{if $y-x\in S$ and $y\leq 2x$,}\\
-\emptyset & \text{otherwise.}
+E&=\{z\in S^x\ |\ y-z=x\ \text{and}\ 2z\leq y\}\\
+F&=\begin{cases}
+\{x\}&\text{if $y-x\in S$ and $2x\leq y$},\\
+\emptyset&\text{otherwise}.
 \end{cases}
 \end{align*}
-As in the case of $E$, we get 
+We have the relation $D_{S}(y)=D_{S^x}(y)\sqcup E\sqcup F$ and so $d_S(y)$ is equal to $d_{S^x}(y)+\card(E)+\card(F)$.
+and $D_{S^x}(y)$ is a subset of $D_S(y)$. We start by determining $E$. 
+The relation $y-z=x$ implies $z=y-x$ and $2z\leq y$ becomes $y\leq 2x$. Thus we obtain
 \[
-F=\begin{cases}
-\{y-x\} & \text{if $y\geq x$ and $d_S(y-x)>0$ and $y\leq 2x$,}\\
-\emptyset & \text{otherwise.}
+E=\begin{cases}
+\{y-x\}&\text{if $y-x\in S^x$ and $y\leq 2x$}\\
+\emptyset&\text{otherwise}
 \end{cases}
-\]
-In $E$ we have the constraint $2x<y$ while in $F$ we have $y\leq 2x$, hence only one of the sets $E$ or $F$ can be non-empty. 
-This implies
-\[
-D_S(y)\setminus D_{S^x}(y)=
-\begin{cases}
-\{x\} & \text{if $y\geq x$ and $d_S(y-x)>0$ and $y\leq 2x$,}\\
-\{y-x\} & \text{if $y\geq x$ and $d_S(y-x)>0$ and $y>2x$,}\\
-\emptyset & \text{otherwise.}
-\end{cases}
-\]
+\] 
+The relation $y-x\in S^x$ together with $y\leq2x$ is equivalent to $y-x\in S$ together with $y<2x$.
 Therefore we obtain
 \[
-d_{S^x}(y)=\begin{cases}
-d_S(y)-1&\text{if $y\geq x$ and $d_S(y-x)>0$,}\\
-d_S(y)& \text{otherwise.}
+E=\begin{cases}
+\{y-x\}&\text{if $y-x\in S$ and $y< 2x$}\\
+\emptyset&\text{otherwise}
 \end{cases}
-\]
+\] 
+Assume $y-x$ lies in $S$.  If $y<2x$ holds, we have $E=\{y-x\}$ and $F=\emptyset$. Otherwise, we obtain $E=\emptyset$ and $F=\{x\}$. 
+Then if $y-x\in S$ holds, we have $\card(E)+\card(F)=1$ and so $d_{S}(y)$ is equal to $d_{S^x}(y)+1$.
+If $y-x$ not belong to $S$, then $E$ and $F$ are empty implying $d_{S}(y)=d_{S^x}(y)$. As the condition $y-x\in S$ is equivalent to $y\geq x$ together with $d_S(y-x)>0$ by Proposition~\ref{P:Dandd} the result holds.
 \end{proof}
 
 \section{A new algorithm}
@@ -644,6 +616,7 @@ O(\log(G)\times G\times S)= O(\log(G)\times G^3).
 
 \section{Technical optimizations and results}
 
+\label{S:Opti}
 
 Though there are asymptotically faster algorithm than the one presented here,
 thank to careful optimizations, we were able to compute $n_g$ for much larger
@@ -653,6 +626,8 @@ parallelism at various scale (parallel branch exploration, vectorization)...
 
 
 \subsection{Florent's rant}
+
+
 
 We use the following optimization tricks
 \begin{itemize}
@@ -672,7 +647,7 @@ We use the following optimization tricks
   number, vs \verb|uint_fast64_t| for all indexes).
 \end{itemize}
 
-\label{S:Opti}
+
 
 Assume for example that we want to construct the tree $\mathcal{T}^{\leq 100}$ of all  numerical semigroup of  genus smaller than $100$. 
 In this case, the representation of  numerical  semigroup given in Section~\ref{S:DecNumber} uses decomposition numbers of integers smaller than~$300$.
