@@ -1,8 +1,9 @@
-CXX         = g++-4.9
+CXX         = g++
 CPPFLAGS    = -DNDEBUG -DMAX_GENUS=$(MAX_GENUS)
 CXXFLAGS    = -std=c++11 -fcilkplus -g -Wall -O3 # -Winline
 TARGET_ARCH = -march=native -march=native
-LDFLAGS     = -lcilkrts
+LDFLAGS     = -lcilkrts -Wl,-rpath=/home/fromentin/root/lib
+
 
 TARGET = treewalk
 

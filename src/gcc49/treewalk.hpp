@@ -1,3 +1,4 @@
+#include <cilk/cilk.h>
 #include <cilk/reducer.h>
 #include <cilk/reducer_list.h>
 #include "monoid.hpp"
