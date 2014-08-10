@@ -11,3 +11,4 @@ mon\.c$
 moncilk\.c$
 .*\.so$
 TAGS
+.DS_Store
