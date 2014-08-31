@@ -1,6 +1,7 @@
 \documentclass[reqno,11pt]{amsart}
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{url}
+\usepackage{moreverb}
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
@@ -32,6 +33,7 @@
 \DeclareMathOperator{\App}{App}
 \DeclareMathOperator{\card}{card}
 
+\newcommand{\TODO}[1]{\marginpar{\small To do: #1}}
 
 \begin{document}
 
@@ -63,6 +65,8 @@ This tree was introduced by J.C.~Rosales and al. in \cite{Rosales} and it is the
 Starting with all the numerical semigroups of genus $49$ she obtained the number of numerical semigroups of genus $50$ in $18$ days on a pentium D runing at $3$GHz. 
 In the package~\tt{NumericalSgs} \cite{NumericalSgps} of \tt{GAP} \cite{GAP}, M. Delgado together with P.A.~Garcia-Sanchez and J. Morais used the same method of exploration.
 
+\TODO{Present the goal of the paper.}
+
 The paper is divided as follows.
 In Section~\ref{S:Tree} we describe the tree of numerical semigroups and give bounds for some parameters attached to a numerical semigroup.
 In Section~\ref{S:DecNumber} we describe a new representation of numerical semigroups that is well suited to the construction of the tree. 
@@ -91,7 +95,7 @@ That is the role of generating sets.
 
 
 \begin{defi}
-A subset $X=\{x_1<x_2<...<x_n\}$ of a semigroup is a \emph{generating set} of $S$ if every element of $S$ can be express as a sum of elements in $X$. 
+A subset $X=\{x_1<x_2<...<x_n\}$ of a semigroup is a \emph{generating set} of $S$ if every element of $S$ can be expressed as a sum of elements in $X$. 
 In this case we write $S=\left<x_1,...,x_n\right>$.
 \end{defi}
 
@@ -178,7 +182,7 @@ From the relation
  we obtain $c(S)=k+g(S)$ and so $c(S)\leq 2 g(S)$.
 \end{proof}
 
-A consequence of Proposition~ \ref{P:Res}~$i)$ is that $\Irr(S)$ is finite ant its cardinality is at most $c(S)+m(S)-1$.
+A consequence of Proposition~ \ref{P:Res}~$i)$ is that $\Irr(S)$ is finite and its cardinality is at most $c(S)+m(S)-1$.
 More precisely, using Ap\'ery set, we can prove that  the cardinality of $\Irr(S)$ is at most $m(S)$. See Section 2 of Chapter I of~\cite{BookNS} for more details.
 
 We now explain the construction of the tree of numerical semigroups.
@@ -317,7 +321,7 @@ Then $x$ can be decomposed as $x=y+z$ with $y$ and $z$ in~$S$.
 Moreover the condition $2y\leq x$ implies $y\leq z$. 
 In other words if we define~$D'_S(x)$ to be the set of all $(y,z)\in S\times S$ with $x=y+z$ and $y\leq z$ then~$D_S(x)$ is the image of $D'_S(x)$ under the projection on the first coordinate.
  Hence~$D_S(x)$ describes how~$x$ can be decomposed as sums of two elements of $S$.
- This is why $d_S(x)$ is called the $S$-decomposition number of $x$.
+ This is we decide to call $d_S(x)$ the $S$-decomposition number of $x$.
 
 \begin{exam}
 Reconsider the semigroup $S_E$ given at \eqref{E:NSG}.
@@ -419,14 +423,31 @@ If $y-x$ not belong to $S$, then $E$ and $F$ are empty implying $d_{S}(y)=d_{S^x
 
 \section{A new algorithm}
 \label{S:Algo}
-We can easily explore the tree of numerical semigroups up to a genus $G$ using a depth search first algorithm using a stack (see~\ref{A:Exp}). 
-This approach does not seem to have been used before. 
-In particular,  M. Bras-Amor\'os and M. Delgado use instead a breadth search first exploration. 
-The main advantage in our approach is the small memory needs. 
-The cost to pay is that, if we want to explore the tree deeper, we must restart from the root.
-
+We can easily explore the tree of numerical semigroups up to a genus $G$ using
+a depth first search algorithm (see Algorithm~\ref{A:ExpRec}). This approach does not seem to
+have been used before.  In particular, M. Bras-Amor\'os and M. Delgado use
+instead a breadth first search exploration.  The main advantage in our
+approach is the small memory needs.  The cost to pay is that, if we want to
+explore the tree deeper, we must restart from the root.
 \begin{algorithm}
-\caption{Depth search first exploration of the tree of numerical semigroups}\label{A:Exp}
+\caption{Recursive Depth first search exploration of the tree of numerical semigroups}\label{A:ExpRec}
+\begin{algorithmic}[1]
+\Procedure{ExploreRec}{\tt{S}, \tt{G}}
+	\If{$g(\tt{S})< \tt{G}$}
+		\For{\tt{x} from $c(\tt{S})$ to $c(\tt{S})+m(\tt{S})$}
+			\If{$\tt{x}\in \Irr(\tt{S})$}
+				\State \Call{ExploreRec}{$\tt{S}^\tt{x}, \tt{G}$}
+			\EndIf
+		\EndFor
+	\EndIf
+\EndProcedure
+\State \Call{ExploreRec}{$\NN, \tt{G}$}
+\end{algorithmic}
+\end{algorithm}
+
+Equivalently, we can use an iterative version which uses a stack (see Algorithm~\ref{A:Exp}).
+\begin{algorithm}
+\caption{Iterative Depth first search exploration of the tree of numerical semigroups}\label{A:Exp}
 \begin{algorithmic}[1]
 \Procedure{Explore}{\tt{G}}
 \State Stack \tt{stack} \Comment{the empty stack}
@@ -446,7 +467,7 @@ The cost to pay is that, if we want to explore the tree deeper, we must restart 
 \end{algorithmic}
 \end{algorithm}
 
-In Algorithm~\ref{A:Exp} we do not specify how to compute $c(S)$, $g(S)$ and $m(S)$  from $S$ neither how to test if an integer is irreducible. 
+In Algorithm~\ref{A:ExpRec} we do not specify how to compute $c(S)$, $g(S)$ and $m(S)$  from $S$ neither how to test if an integer is irreducible. 
 It also miss  the characterisation of $S^x$ from $S$.
 These items depend heavily of the representation of $S$.
 Our choice is to use the $S$-decomposition numbers function. 
@@ -624,17 +645,11 @@ genus than before. This is due to the fact that our algorithm is very well
 suited for the current processor architecture. In particular, it allows to use
 parallelism at various scale (parallel branch exploration, vectorization)...
 
-
-\subsection{Florent's rant}
-
-
-
-We use the following optimization tricks
+To get the greatest speed from modern processor we used several optimization
+tricks, which we will elaborate in the following section:
 \begin{itemize}
-\item Vectorisation (MMX, SSE, GCC's 
-\verb|__attribute__ ((vector_size(16)));|
-) and careful memory alignment.
-\item Shared memory multicore computing using \texttt{CILK++} for low level
+\item Vectorization (MMX, SSE instructions sets) and careful memory alignment.
+\item Shared memory multi-core computing using \texttt{CILK++} for low level
   enumerating tree branching;
 \item Un-recursived algorithm using a stack;
 \item Avoiding all dynamic allocation during the computation: everything is
@@ -647,7 +662,7 @@ We use the following optimization tricks
   number, vs \verb|uint_fast64_t| for all indexes).
 \end{itemize}
 
-
+\subsection{Vectorization}
 
 Assume for example that we want to construct the tree $\mathcal{T}^{\leq 100}$ of all  numerical semigroup of  genus smaller than $100$. 
 In this case, the representation of  numerical  semigroup given in Section~\ref{S:DecNumber} uses decomposition numbers of integers smaller than~$300$.
@@ -672,77 +687,220 @@ Using these two cursors, Lines \tt{10} to \tt{14} of Algorithm~\textsc{Son} can 
 \EndWhile
 \end{algorithmic}
 
-\noindent In this version we can see that the cursors \texttt{src} and \texttt{dst} move at the same time and that the modification of  the  value pointed by \texttt{dst}   only  needs to access the values pointed by \tt{src} and \tt{dst}. 
-We can therefore work in multiple entries at the same time without collision. 
-Current CPUs allow this thanks to the SIMD technologies as MMX, SSE, etc.
-The acronym SIMD stands for Single Operation Multiple Data. 
+\noindent In this version we can see that the cursors \texttt{src} and
+\texttt{dst} move at the same time and that the modification of the value
+pointed by \texttt{dst} only needs to access the values pointed by \tt{src}
+and \tt{dst}.  We can therefore work in multiple entries at the same time
+without collision.  Current CPUs allow this thanks to the SIMD technologies as
+MMX, SSE, etc.  The acronym SIMD stands for Single Operation Multiple Data.
+We used SSE4.1 technology as it allows for the largest speedup. This need to
+respect some constraints in the memory organization of the data, namely
+``memory alignment''. Recall that an address is 16~bytes aligned if it is a
+multiple of 16. SSE memory access are much faster for aligned access.
 
-The MMX technology  permits to work on $8$ bytes in parallel while the SSE works in $16$ bytes. 
-As the rest of the CPU works on $8$ bytes, the SSE technology needs some constraint on memory access than cannot be fulfilled in our algorithm. 
-This motivate our choice to use the MMX technology. 
-More precisely, we use three commands: \tt{pcmpeqb}, \tt{pandn} and \tt{psubb}.
- These commands work on two arrays of $8$ bytes, called~\tt{s} and \tt{d} here. 
- In each case the array \tt{d} is modified. 
- We denote bytes by $\{\tt{0},\tt{1}\}$-words of length $8$.
- After a call to \tt{pcmpeqb(s,d)} the $i$th entry of $d$ contains \tt{11111111} if $\tt{s}[i]=\tt{d}[i]$ holds and \tt{00000000} otherwise. 
- The command \tt{pand(s,d)}  store in $\tt{d}[i]$  the value of the byte-logic operation \tt{s}[i] \tt{and} (\tt{not} \tt{d}[i]).
-  When \tt{pand(s,d)} is called the new value of $\tt{d}[i]$ is $\tt{s}[i]-\tt{d}[i]$.  
-  Glueing all the pieces together we obtain the following version of the \textbf{for} loop of Algorithm~\textsc{Son} :
+The computation of the children is then performed as follows. First, the
+parent's decomposition numbers are copied in the children's using the
+following C++ code
+\begin{listing}{1}
+void copy_blocks(dec_blocks &dst, dec_blocks const &src) {
+  for (ind_t i=0; i<NBLOCKS; i++) dst[i] = src[i];
+}
+\end{listing}
+Here \tt{dec\_blocks} is a type for arrays of 16~bytes blocks whose size
+\tt{NBLOCKS} are just large enough to store the decomposition numbers (that is
+$3G$ rounded up to a multiple of 16). The instruction \tt{dst[i] = src[i]}
+actually copy a full 16~bytes block.
 
-\begin{algorithmic}[1]
-\State $\tt{src}\gets \text{address}(\tt{S.d[0]})$
-\State $\tt{dst}\gets \text{address}(\tt{T.d[x]})$
-\State $\tt{i}\gets 0$
-\While{$\tt{i}\leq \tt{3G}-\tt{x}$}
-\State $\tt{t}\gets [\tt{00000000},...,\tt{00000000}]$ \Comment{$8$ bytes equal to \tt{00000000}}
-\State \tt{pcmpeqb(\tt{src},t)}
-\State \tt{pandn([00000001,...,00000001],t)}
-\State \tt{psub(\tt{dst},t)}
-\State $\tt{dst}\gets \tt{t}$ \Comment{copy the array $[\tt{t}[0],...,\tt{t}[7]]$ to $[\tt{d}[0],...,\tt{d}[7]]$}
-\State \textbf{increase} \tt{src},\tt{dst},\tt{i} \textbf{by} $8$
-\EndWhile
+Then the core of the \textbf{while} loop in the preceding algorithm is
+translated as a for loop as follows (recall that $x$ denotes the generator if the
+father which is to be removed in the children):
+\begin{listing}{1}
+start = x >> 4;      // index of the block containing x
+shift = x & 0xF;     // offset of x inside the block
+...                  // some specific instructions to
+...                  // handle the first incomplete block.
+for (long int i=start+1; i<NBLOCKS; i++) {
+  block = load_unaligned_epi8(src + ((i-start)<<4) - shift);
+  dst[i] -= ((block != zero) & one);
+}
+\end{listing}
+The instruction \tt{load\_unaligned\_epi8} (specific to SSE technology) loads
+in the variable \tt{block} 16 consecutive entries of the decomposition number
+of the parent (called \tt{src} monoid). Those entries will be used to compute
+the entries $16i, \dots 16i+15$ of the children monoid. Since the removed
+generator $x$ is not necessarily a multiple of $16$, the data are not aligned
+in memory, hence the use of a specific instruction. The \tt{zero}
+(resp. \tt{one}) constants are initialized as 16 bytes equal to $0$
+(resp. $1$). The comparison \tt{(block != zero)} therefore returns a block
+which contains $0$ in the bytes corresponding the $0$ entries of block and
+$255$ in the non zero one. This results is then bitwise anded with one so that
+the instruction actually performs a 16~bytes parallel version of
+\begin{algorithmic}
+\State $\tt{dst} \gets \tt{dst} -
+\textbf{ if } \tt{block} \neq 0 \textbf{ then } 1 \textbf{ else } 0$
+\end{algorithmic}
+As we previously said, to gain more speed this core loop is actually unrolled
+using some kind of Duff device as
+\begin{algorithmic}
+\State \textbf{Jump to case } $\tt{start}+1$
+\State \textbf{case 1:} \tt{block = ...; dst[1] -= ((block != zero) \& one)}
+\State \textbf{case 2:} \tt{block = ...; dst[2] -= ((block != zero) \& one)}
+\State \textbf{[...]}
+\State \textbf{case NBLOCK-1:} \tt{...}
 \end{algorithmic}
 
-Let us explain how this works in more details. 
-Let $i$ be an integer in $\{0,...,7\}$.  
-After Line~\tt{5}, the value of $\tt{t}[i]$ is \tt{0000000}. 
-After Line~\tt{6}, we have 
-\[
-\tt{t}[i]=\begin{cases}
-\tt{11111111}&\text{if $\tt{src}[i]=\tt{00000000}$ (corresponding to $0$)}\\
-\tt{00000000}&\text{otherwise}
-\end{cases}
-\]
-Line \tt{7} performs a logical \tt{and} between $\tt{00000001}$ and $\tt{not t}[i]$. Hence the result byte is \tt{00000001} if the last byte of \tt{t}[i] is $0$ and \tt{00000000} otherwise: 
-\[
-\tt{t}[i]=\begin{cases}
-\tt{00000000}&\text{if $\tt{src}[i]=\tt{00000000}$ (corresponding to $0$)}\\
-\tt{00000001}&\text{otherwise}
-\end{cases}
-\]
- Line \tt{8} subtracts \tt{t}[i] (which is equal to $0$ or $1$) from $\tt{dst}[i]$ according to Proposition~\ref{P:Sx}. 
-Finally we shift the cursor \tt{src} and \tt{dst} by eight cases. 
+% The MMX technology permits to work on $8$ bytes in parallel while the SSE
+% works in $16$ bytes.  As the rest of the CPU works on $8$ bytes, the SSE
+% technology needs some constraint on memory access than cannot be fulfilled in
+% our algorithm.
 
-Our second optimization  is to use parallelism on exploration of the tree.
-Today, CPU of personal computer have several cores (2, 4 or more). 
-The given version of our exploration algorithm  uses a single core and so a fraction only of the power of a CPU.
+% This motivate our choice to use the MMX technology. 
+% More precisely, we use three commands: \tt{pcmpeqb}, \tt{pandn} and \tt{psubb}.
+%  These commands work on two arrays of $8$ bytes, called~\tt{s} and \tt{d} here. 
+%  In each case the array \tt{d} is modified. 
+%  We denote bytes by $\{\tt{0},\tt{1}\}$-words of length $8$.
+%  After a call to \tt{pcmpeqb(s,d)} the $i$th entry of $d$ contains \tt{11111111} if $\tt{s}[i]=\tt{d}[i]$ holds and \tt{00000000} otherwise. 
+%  The command \tt{pand(s,d)}  store in $\tt{d}[i]$  the value of the byte-logic operation \tt{s}[i] \tt{and} (\tt{not} \tt{d}[i]).
+%   When \tt{pand(s,d)} is called the new value of $\tt{d}[i]$ is $\tt{s}[i]-\tt{d}[i]$.  
+%   Glueing all the pieces together we obtain the following version of the \textbf{for} loop of Algorithm~\textsc{Son} :
 
-Our method of parallelism is very simple: for $G\in \NN$,  we cut the tree $\mathcal{T}^{\leq G}$ in sub-trees $\mathcal{T}_1,...,\mathcal{T}_n$ and we launch our algorithm on these sub-trees. 
-The advantage of this method is that there is no communication between the instances of our algorithm. 
-The disadvantage is that the cutting controls the efficiency of the parallelism. 
-Assume for example that we want to explore the tree~$\mathcal{T}^{\leq 40}$.
-We first determine all numerical semigroups $S_1,...S_{n_{20}}$ of genus $20$. 
-To explore $\mathcal{T}$ it remains to explore the tree $\mathcal{T}_i$ rooted in $S_i$ for $i=1,...,n_{20}$. 
-This works but the time to explore $\mathcal{T}_1$ is similar to the time need to explore the tree $\mathcal{T}^{\leq 40}$. 
-And in this case, using many cores does not reduce the time to explore the tree.
+% \begin{algorithmic}[1]
+% \State $\tt{src}\gets \text{address}(\tt{S.d[0]})$
+% \State $\tt{dst}\gets \text{address}(\tt{T.d[x]})$
+% \State $\tt{i}\gets 0$
+% \While{$\tt{i}\leq \tt{3G}-\tt{x}$}
+% \State $\tt{t}\gets [\tt{00000000},...,\tt{00000000}]$ \Comment{$8$ bytes equal to \tt{00000000}}
+% \State \tt{pcmpeqb(\tt{src},t)}
+% \State \tt{pandn([00000001,...,00000001],t)}
+% \State \tt{psub(\tt{dst},t)}
+% \State $\tt{dst}\gets \tt{t}$ \Comment{copy the array $[\tt{t}[0],...,\tt{t}[7]]$ to $[\tt{d}[0],...,\tt{d}[7]]$}
+% \State \textbf{increase} \tt{src},\tt{dst},\tt{i} \textbf{by} $8$
+% \EndWhile
+% \end{algorithmic}
 
-Let us now explain in more detail how we cut the tree $\mathcal{T}^{\leq G}$ in order to use parallelism.
-Semigroups of the form $\left<g+1,...,2g+1\right>$, which are of genus $g$, are called \emph{ordinary} in~\cite{Elizalde}. 
-Each ordinary semigroup has a unique son that is also ordinary. 
-We define $X$ to be the set of all the non-ordinary sons of an ordinary semigroup and $X^{\leq G}$ the restriction of $X$ to semigroup of genus $\leq G$. 
-We then denote by  $\mathcal{T}_i$ the tree rooted on $S_i$ where $X^{\leq G}=\{S_1,...,S_n\}$. 
-The time needed to explore $\mathcal{T}_i$ is very heterogeneous but there are many tree $T_i$ with maximal time. 
-This cutting is more efficient than the previous one.
+% Let us explain how this works in more details. 
+% Let $i$ be an integer in $\{0,...,7\}$.  
+% After Line~\tt{5}, the value of $\tt{t}[i]$ is \tt{0000000}. 
+% After Line~\tt{6}, we have 
+% \[
+% \tt{t}[i]=\begin{cases}
+% \tt{11111111}&\text{if $\tt{src}[i]=\tt{00000000}$ (corresponding to $0$)}\\
+% \tt{00000000}&\text{otherwise}
+% \end{cases}
+% \]
+% Line \tt{7} performs a logical \tt{and} between $\tt{00000001}$ and $\tt{not t}[i]$. Hence the result byte is \tt{00000001} if the last byte of \tt{t}[i] is $0$ and \tt{00000000} otherwise: 
+% \[
+% \tt{t}[i]=\begin{cases}
+% \tt{00000000}&\text{if $\tt{src}[i]=\tt{00000000}$ (corresponding to $0$)}\\
+% \tt{00000001}&\text{otherwise}
+% \end{cases}
+% \]
+%  Line \tt{8} subtracts \tt{t}[i] (which is equal to $0$ or $1$) from $\tt{dst}[i]$ according to Proposition~\ref{P:Sx}. 
+% Finally we shift the cursor \tt{src} and \tt{dst} by eight cases. 
+
+\subsection{Parallel tree exploration using \texttt{Cilk+}}
+
+Our second optimization is to use parallelism on exploration of the tree.
+Today, CPU of personal computer have several cores (2, 4 or more).  The given
+version of our exploration algorithm uses a single core and so a fraction only
+of the power of a CPU. The idea here is that different branches of the tree can
+be explored in parallel by different cores of the computer. The tricky part is
+to ensure that each cores are busy, giving a new branch when a core is done
+with a former one. Fortunately there is a technology calle \texttt{Cilk+}
+which is particularly well suited for those kind of problems.
+
+\tt{Cilk} is a general-purpose language designed for multithreaded parallel
+computing. The \tt{C++} incarnation is called \tt{Cilk+}. The biggest
+principle behind the design of the Cilk language is that the programmer should
+be responsible for \emph{exposing} the parallelism, identifying elements that
+can safely be executed in parallel; it should then be left to the run-time
+environment, particularly the scheduler, to decide during execution how to
+actually divide the work between processors.
+
+The crucial thing is that two keywords are all that are needed to start
+using the parallel features of \tt{Cilk+}:
+\begin{itemize}
+\item\tt{cilk\_spawn}: used on a procedure call, indicates that the call can
+  safely operate in parallel with the remaining code if the current
+  function. Note that the scheduler is not obligated to run this procedure in
+  parallel; the keyword merely alerts the scheduler that it can do so.
+\item\tt{cilk\_sync}: indicates that execution of the current procedure cannot
+  proceed until all previously spawned procedures have completed and returned
+  their results to the current frame.
+\end{itemize}
+As a consequence, to get a parallel version of the recursive
+Algorithm~\ref{A:ExpRec}, you only need to modify it as
+\begin{algorithmic}[1]
+\Procedure{ExploreRec}{\tt{S}, \tt{G}}
+	\If{$g(\tt{S})< \tt{G}$}
+		\For{\tt{x} from $c(\tt{S})$ to $c(\tt{S})+m(\tt{S})$}
+			\If{$\tt{x}\in \Irr(\tt{S})$}
+				\State\textbf{CilkSpawn} \Call{ExploreRec}{$\tt{S}^\tt{x}, \tt{G}$}
+			\EndIf
+		\EndFor
+	\EndIf
+\EndProcedure
+\end{algorithmic}
+We just tells \tt{Cilk+} that the subtrees rooted at various children can be
+explored in parallel.
+
+The thing are actually only a little bit more complicated. First we have to
+gather the results of the exploration. If we simply write
+\begin{algorithmic}[1]
+\State \tt{result}[$g(\tt{S}$] $\gets \tt{result}[g(\tt{S}] + 1$
+\end{algorithmic}
+then we face the problem of to core incrementing the same variable at the same
+time. This is called a data race and leads to nondeterministic wrong
+result. Cilk provide the notion of \emph{reducer} which are variables local to
+each thread which are gathered (here added) when a thread is finishing its
+job.
+
+A more important problem is that the cost of a recursive call in non
+negligible. Using \tt{Cilk+} recursive calls makes it even worse. The solution
+we use is to switch back to the non recursive version using a stack when the
+genus is close to the target genus. This leads to the following \tt{Cilk+} code:
+\begin{listing}{1}
+void explore(const monoid &m) {
+  unsigned long int nbr = 0;
+  if (m.genus < MAX_GENUS - STACK_BOUND) {
+    auto it = generator_iter<CHILDREN>(m);
+    while (it.move_next()) {
+      auto child = remove_generator(m, it.get_gen()).
+      cilk_spawn explore(child);
+      nbr++;
+    }
+    cilk_results[m.genus] += nbr;
+  }
+  else explore_stack(m, cilk_results.get_array());
+}
+\end{listing}
+Note that in our version, we found that \tt{STACK\_BOUND} optimal value was
+around 10-12 for genus un the range $45\dots 67$ so that \tt{explore\_stack}
+is used more than $99\%$ of the time, \tt{Cilk+} is used to balance the work
+between the different cores.
+
+\subsection{Various technical optimizations}
+
+Avoiding all dynamic allocation during the computation: everything is computed
+``in place'';
+
+
+% Our method of parallelism is very simple: for $G\in \NN$,  we cut the tree $\mathcal{T}^{\leq G}$ in sub-trees $\mathcal{T}_1,...,\mathcal{T}_n$ and we launch our algorithm on these sub-trees. 
+% The advantage of this method is that there is no communication between the instances of our algorithm. 
+% The disadvantage is that the cutting controls the efficiency of the parallelism. 
+% Assume for example that we want to explore the tree~$\mathcal{T}^{\leq 40}$.
+% We first determine all numerical semigroups $S_1,...S_{n_{20}}$ of genus $20$. 
+% To explore $\mathcal{T}$ it remains to explore the tree $\mathcal{T}_i$ rooted in $S_i$ for $i=1,...,n_{20}$. 
+% This works but the time to explore $\mathcal{T}_1$ is similar to the time need to explore the tree $\mathcal{T}^{\leq 40}$. 
+% And in this case, using many cores does not reduce the time to explore the tree.
+
+% Let us now explain in more detail how we cut the tree $\mathcal{T}^{\leq G}$ in order to use parallelism.
+% Semigroups of the form $\left<g+1,...,2g+1\right>$, which are of genus $g$, are called \emph{ordinary} in~\cite{Elizalde}. 
+% Each ordinary semigroup has a unique son that is also ordinary. 
+% We define $X$ to be the set of all the non-ordinary sons of an ordinary semigroup and $X^{\leq G}$ the restriction of $X$ to semigroup of genus $\leq G$. 
+% We then denote by  $\mathcal{T}_i$ the tree rooted on $S_i$ where $X^{\leq G}=\{S_1,...,S_n\}$. 
+% The time needed to explore $\mathcal{T}_i$ is very heterogeneous but there are many tree $T_i$ with maximal time. 
+% This cutting is more efficient than the previous one.
 
 Figure~\ref{F:Time} summarizes the time complexity of various exploration algorithms.
 
