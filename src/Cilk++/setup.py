@@ -19,7 +19,7 @@ from sage.env import *
 
 SAGE_INC = os.path.join(SAGE_LOCAL, 'include')
 SAGE_C   = os.path.join(SAGE_SRC, 'c_lib', 'include')
-SAGE_DEV = os.path.join(SAGE_ROOT, 'devel', 'sage-main')
+SAGE_DEV = os.path.join(SAGE_ROOT, 'src')
 
 
 if platform.system()=="Darwin":

@@ -639,24 +639,25 @@ O(\log(G)\times G\times S)= O(\log(G)\times G^3).
 
 \label{S:Opti}
 
-Though there are asymptotically faster algorithm than the one presented here,
+Though there are asymptotically faster algorithms than the one presented here,
 thank to careful optimizations, we were able to compute $n_g$ for much larger
-genus than before. This is due to the fact that our algorithm is very well
-suited for the current processor architecture. In particular, it allows to use
-parallelism at various scale (parallel branch exploration, vectorization)...
+genus than before. This is due to the fact that our algorithm is particularly
+well suited for the current processor architecture. In particular, it allows
+to use parallelism at various scale (parallel branch exploration,
+vectorization)...
 
-To get the greatest speed from modern processor we used several optimization
+To get the greatest speed from modern processor, we used several optimization
 tricks, which we will elaborate in the following section:
 \begin{itemize}
 \item Vectorization (MMX, SSE instructions sets) and careful memory alignment.
 \item Shared memory multi-core computing using \texttt{CILK++} for low level
   enumerating tree branching;
-\item Un-recursived algorithm using a stack;
+\item Partially derecursived algorithm using a stack;
 \item Avoiding all dynamic allocation during the computation: everything is
   computed ``in place'';
 \item Avoiding all unnecessary copy (the cost of the \textsc{Son} algorithm is
-  roughly the same (even less) as for as copy !
-\item Aggressive loop unrolling. The main loop is unrolled by hand using some
+  roughly the same as copying) !
+\item Aggressive loop unrolling: the main loop is unrolled by hand using some
   kind of Duff's device.
 \item Carefull choice of data type (\verb|uint_fast8_t| for decomposition
   number, vs \verb|uint_fast64_t| for all indexes).
@@ -664,16 +665,23 @@ tricks, which we will elaborate in the following section:
 
 \subsection{Vectorization}
 
-Assume for example that we want to construct the tree $\mathcal{T}^{\leq 100}$ of all  numerical semigroup of  genus smaller than $100$. 
-In this case, the representation of  numerical  semigroup given in Section~\ref{S:DecNumber} uses decomposition numbers of integers smaller than~$300$.
-By Lemma~\ref{L:RepN}, such a decomposition number is smaller than $151$ and requires~$1$ byte of memory.
-Thus at each \textbf{for} step of Algorithm~\textsc{Son}, the CPU actually works on $1$ byte. 
-However current CPUs work on $8$ bytes.
-The first optimization uses this point.
+Assume for example that we want to construct the tree $\mathcal{T}^{\leq 100}$
+of all numerical semigroup of genus smaller than $100$.  In this case, the
+representation of numerical semigroup given in Section~\ref{S:DecNumber} uses
+decomposition numbers of integers smaller than~$300$.  By Lemma~\ref{L:RepN},
+such a decomposition number is smaller than $151$ and requires~$1$ byte of
+memory.  Thus at each \textbf{for} step of Algorithm~\textsc{Son}, the CPU
+actually works on $1$ byte. However current CPUs usually work on $8$ bytes and
+even on $16$~bytes using vector extensions. The first optimization uses this
+point.
 
-To go further we must specify that the array of decomposition numbers in the representation of a semigroup corresponds to consecutive bytes in memory. 
-In the \textbf{for} loop of Algorithm~\textsc{Son} we may imagine two cursors: the first one, denoted \texttt{src}  pointing to the memory byte of $\texttt{S.d[0]}$  and the second one, denoted \texttt{dst} pointing to the memory byte $\texttt{T.d[y]}$.
-Using these two cursors, Lines \tt{10} to \tt{14} of Algorithm~\textsc{Son} can be rewritten as follows
+To go further we must specify that the array of decomposition numbers in the
+representation of a semigroup corresponds to consecutive bytes in memory. In
+the \textbf{for} loop of Algorithm~\textsc{Son} we may imagine two cursors:
+the first one, denoted \texttt{src} pointing to the memory byte of
+$\texttt{S.d[0]}$ and the second one, denoted \texttt{dst} pointing to the
+memory byte $\texttt{T.d[y]}$.  Using these two cursors, Lines \tt{10} to
+\tt{14} of Algorithm~\textsc{Son} can be rewritten as follows
 
 \begin{algorithmic}
 \State $\tt{src}\gets \text{address}(\tt{S.d[0]})$
@@ -692,11 +700,12 @@ Using these two cursors, Lines \tt{10} to \tt{14} of Algorithm~\textsc{Son} can 
 pointed by \texttt{dst} only needs to access the values pointed by \tt{src}
 and \tt{dst}.  We can therefore work in multiple entries at the same time
 without collision.  Current CPUs allow this thanks to the SIMD technologies as
-MMX, SSE, etc.  The acronym SIMD stands for Single Operation Multiple Data.
-We used SSE4.1 technology as it allows for the largest speedup. This need to
-respect some constraints in the memory organization of the data, namely
-``memory alignment''. Recall that an address is 16~bytes aligned if it is a
-multiple of 16. SSE memory access are much faster for aligned access.
+MMX, SSE, etc.  The acronym SIMD~\cite{SIMD} stands for Single Operation
+Multiple Data.  We used SSE4.1~\cite{SSE, IntelSSE} technology as it allows
+for the largest speedup. This need to respect some constraints in the memory
+organization of the data, namely ``memory alignment''. Recall that an address
+is 16~bytes aligned if it is a multiple of 16. SSE memory access are much
+faster for aligned access.
 
 The computation of the children is then performed as follows. First, the
 parent's decomposition numbers are copied in the children's using the
@@ -712,8 +721,8 @@ $3G$ rounded up to a multiple of 16). The instruction \tt{dst[i] = src[i]}
 actually copy a full 16~bytes block.
 
 Then the core of the \textbf{while} loop in the preceding algorithm is
-translated as a for loop as follows (recall that $x$ denotes the generator if the
-father which is to be removed in the children):
+translated as a for loop as follows (recall that $x$ denotes the generator of
+the father which is to be removed in the children):
 \begin{listing}{1}
 start = x >> 4;      // index of the block containing x
 shift = x & 0xF;     // offset of x inside the block
@@ -739,8 +748,11 @@ the instruction actually performs a 16~bytes parallel version of
 \State $\tt{dst} \gets \tt{dst} -
 \textbf{ if } \tt{block} \neq 0 \textbf{ then } 1 \textbf{ else } 0$
 \end{algorithmic}
+which is equivalent to Lines \tt{10} to \tt{14} of Algorithm~\textsc{Son}.
+\medskip
+
 As we previously said, to gain more speed this core loop is actually unrolled
-using some kind of Duff device as
+using some kind of Duff device~\cite{Duff} as
 \begin{algorithmic}
 \State \textbf{Jump to case } $\tt{start}+1$
 \State \textbf{case 1:} \tt{block = ...; dst[1] -= ((block != zero) \& one)}
@@ -806,7 +818,8 @@ version of our exploration algorithm uses a single core and so a fraction only
 of the power of a CPU. The idea here is that different branches of the tree can
 be explored in parallel by different cores of the computer. The tricky part is
 to ensure that each cores are busy, giving a new branch when a core is done
-with a former one. Fortunately there is a technology calle \texttt{Cilk+}
+with a former one. Fortunately there is a technology called
+\texttt{Cilk+}~\cite{CilkIntel, CilkRefman}
 which is particularly well suited for those kind of problems.
 
 \tt{Cilk} is a general-purpose language designed for multithreaded parallel
@@ -849,16 +862,22 @@ gather the results of the exploration. If we simply write
 \begin{algorithmic}[1]
 \State \tt{result}[$g(\tt{S}$] $\gets \tt{result}[g(\tt{S}] + 1$
 \end{algorithmic}
-then we face the problem of to core incrementing the same variable at the same
-time. This is called a data race and leads to nondeterministic wrong
-result. Cilk provide the notion of \emph{reducer} which are variables local to
-each thread which are gathered (here added) when a thread is finishing its
-job.
+then we face the problem of two core incrementing the same variable at the
+same time. Incrementing a variables is actually done in 3 steps: reading the
+value from the memory, adding one, storing back the results. Since there is by
+default non synchronization, the following sequence of actions for two core
+and is possible: Read1 / Read2 / Add1 / Add2 / Store1 / Store2. Then the two
+cores performs the same modification resulting in incrementing the variable
+only once. This is called a data race and leads to nondeterministic wrong
+result. To cope with those kinds of synchronization problems, Cilk provide the
+notion of \emph{reducer} which are variables local to each thread which are
+gathered (here added) when a thread is finishing its job.
 
 A more important problem is that the cost of a recursive call in non
-negligible. Using \tt{Cilk+} recursive calls makes it even worse. The solution
-we use is to switch back to the non recursive version using a stack when the
-genus is close to the target genus. This leads to the following \tt{Cilk+} code:
+negligible. Using \tt{Cilk+} recursive calls instead of \tt{C++} calls makes
+it even worse. The solution we use is to switch back to the non recursive
+version using a stack when the genus is close to the target genus. This leads
+to the following \tt{Cilk+} code:
 \begin{listing}{1}
 void explore(const monoid &m) {
   unsigned long int nbr = 0;
@@ -875,32 +894,70 @@ void explore(const monoid &m) {
 }
 \end{listing}
 Note that in our version, we found that \tt{STACK\_BOUND} optimal value was
-around 10-12 for genus un the range $45\dots 67$ so that \tt{explore\_stack}
-is used more than $99\%$ of the time, \tt{Cilk+} is used to balance the work
-between the different cores.
+around 10-12 for genus in the range $45\dots 67$ so that \tt{explore\_stack}
+is used more than $99\%$ of the time. The \tt{Cilk+} recursive function does
+actually very little work but ensure that the work is balanced between the
+different cores.
 
 \subsection{Various technical optimizations}
 
-Avoiding all dynamic allocation during the computation: everything is computed
-``in place'';
+Using vectorization and loop enrolling as described previously leads to an
+extremely fast \textsc{Son} algorithm. Indeed, its cost is comparable to the cost
+of copying a monoid. It is therefore crucial for performance to avoid any
+extra cost. We list here various places where unnecessary cost can be avoided.
 
+\subsubsection*{Avoiding dynamic allocation} Compared to the \textsc{Son}
+algorithm, dynamic allocation cost orders of magnitude more. Therefore, during
+the derecursived stack algorithm, we only allocate (on the system stack rather
+than on the heap), the stack of monoid. No further allocation are done.
 
-% Our method of parallelism is very simple: for $G\in \NN$,  we cut the tree $\mathcal{T}^{\leq G}$ in sub-trees $\mathcal{T}_1,...,\mathcal{T}_n$ and we launch our algorithm on these sub-trees. 
-% The advantage of this method is that there is no communication between the instances of our algorithm. 
-% The disadvantage is that the cutting controls the efficiency of the parallelism. 
-% Assume for example that we want to explore the tree~$\mathcal{T}^{\leq 40}$.
-% We first determine all numerical semigroups $S_1,...S_{n_{20}}$ of genus $20$. 
-% To explore $\mathcal{T}$ it remains to explore the tree $\mathcal{T}_i$ rooted in $S_i$ for $i=1,...,n_{20}$. 
-% This works but the time to explore $\mathcal{T}_1$ is similar to the time need to explore the tree $\mathcal{T}^{\leq 40}$. 
-% And in this case, using many cores does not reduce the time to explore the tree.
+\subsubsection*{Avoiding all unnecessary copy} We also used a trick to avoid
+copying from and to the top of the stack. Indeed, then main loop perform the
+following sequences of operations:
+\begin{algorithmic}[1]
+  \State $\tt{S} \gets \tt{stack.top()}$
+  \State \tt{stack.pop()}
+  \For{all children $\tt{S}^\tt{x}$ of \tt{S}}
+  \State $\tt{S.push}(\tt{S}^\tt{x})$
+  \EndFor
+\end{algorithmic}
+If we use a stack of monoid, we can construct $\tt{S}^\tt{x}$ directly into
+the stack memory but we have to copy the top of the stack to \tt{S}. Since the
+average number of children is the golden ratio, this single copy in far from
+being negligible. The trick is to use a level of indirection, replacing the
+stack by an array of monoid and an array of indexes pointing to the array of
+monoid. We keep the invariant that the array of indexes is a permutation of
+the array of monoid. Now instead of copying \tt{S} out of the stack, we keep
+it on the stack, pushing the children in the second position by exchanging the
+indexes. Here is the relevant part of the code:
+\begin{listing}{1}
+  monoid data[MAX_GENUS-1], *stack[MAX_GENUS], *current;
+  monoid **stack_pointer = stack + 1;
+  for (ind_t i=1; i<MAX_GENUS; i++) stack[i] = &(data[i-1]);
+  [...]
+  while (stack_pointer != stack) {
+      --stack_pointer;
+      current = *stack_pointer;
+      [...] for each children {
+        *stack_pointer = *(stack_pointer + 1);
+        [...] construct the children in **stack_pointer
+        [...] using the parent in *current
+        stack_pointer++;
+        [...]
+      }
+      *stack_pointer = current;
+  }
+\end{listing}
 
-% Let us now explain in more detail how we cut the tree $\mathcal{T}^{\leq G}$ in order to use parallelism.
-% Semigroups of the form $\left<g+1,...,2g+1\right>$, which are of genus $g$, are called \emph{ordinary} in~\cite{Elizalde}. 
-% Each ordinary semigroup has a unique son that is also ordinary. 
-% We define $X$ to be the set of all the non-ordinary sons of an ordinary semigroup and $X^{\leq G}$ the restriction of $X$ to semigroup of genus $\leq G$. 
-% We then denote by  $\mathcal{T}_i$ the tree rooted on $S_i$ where $X^{\leq G}=\{S_1,...,S_n\}$. 
-% The time needed to explore $\mathcal{T}_i$ is very heterogeneous but there are many tree $T_i$ with maximal time. 
-% This cutting is more efficient than the previous one.
+\subsubsection*{Pointer arithmetic and indexes}
+
+Due to the way, the C++ does its pointer arithmetic, even if the index in the
+array are less than $3G$ and therefore fits in $8$~bits, we use $64$~bits
+indexes (namely \verb|uint_fast64_t|) to avoid conversion and sign extension
+when computing addresses of indexed element. This single standard trick save
+20\% of speed.
+
+\subsection{Timings}
 
 Figure~\ref{F:Time} summarizes the time complexity of various exploration algorithms.
 

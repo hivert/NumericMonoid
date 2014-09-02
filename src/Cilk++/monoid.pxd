@@ -15,8 +15,10 @@ cdef extern from "monoid.hpp":
     inline monoid remove_generator(const monoid &src, ind_t) nogil
 
     # Fake type since Cython only allows for instanciation of template by types.
-    ctypedef ALL "ALL"
-    ctypedef CHILDREN "CHILDREN"
+    cdef cppclass ALL:
+        pass
+    cdef cppclass CHILDREN:
+        pass
 
     cdef cppclass generator_iter[T]:
         generator_iter(const monoid &mon) nogil

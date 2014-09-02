@@ -46,9 +46,12 @@ inline void remove_generator(monoid &__restrict__ dst,
 inline monoid remove_generator(const monoid &src, ind_t gen);
 
 
-typedef enum { ALL, CHILDREN } generator_type;
+// typedef enum { ALL, CHILDREN } generator_type;
+class ALL {};
+class CHILDREN {};
 
-template <generator_type T> class generator_iter
+// template <generator_type T> class generator_iter
+template <class T> class generator_iter
 {
 private:
 
@@ -149,7 +152,7 @@ template<> inline generator_iter<CHILDREN>::generator_iter(const monoid &mon)
   gen = (iblock << 4) - 1;
 };
 
-template <generator_type T> inline uint8_t generator_iter<T>::count()
+template <class T> inline uint8_t generator_iter<T>::count()
 {
   uint8_t nbr = _mm_popcnt_u32(mask); // popcnt returns a 8 bits value
   for (iblock++; iblock < bound; iblock++)
@@ -157,7 +160,7 @@ template <generator_type T> inline uint8_t generator_iter<T>::count()
   return nbr;
 };
 
-template <generator_type T> inline bool generator_iter<T>::move_next()
+template <class T> inline bool generator_iter<T>::move_next()
 {
   while (!mask)
     {
