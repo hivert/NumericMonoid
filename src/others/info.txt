@@ -1,0 +1,12 @@
+Tous les programmes prennet un genre g en argument et calcul le nombre de semigroupes de genre <= g
+ 
+ngtree-v1:
+	utilise un parcours en largeur de l'arbre et un calcul des fils classique
+ngtree-v2:
+	utilise un parcours en profondeur de l'arbre et un calcul des fils classiques
+ngtree-v3:
+	utilise un parcours en profondeu de l'arbre et un calcul des fils à l'aide du nombre de décomposition
+
+ngtree-v4:
+	pareil que ngtree-v3 mais utilise du MMX (codé direct en assembleur).
+	
