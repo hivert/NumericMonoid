@@ -1,4 +1,4 @@
-Tous les programmes prennet un genre g en argument et calcul le nombre de semigroupes de genre <= g
+Les version <=3 prennent un genre g en argument et calcule le nombre de semigroupes de genre <= g
  
 ngtree-v1:
 	utilise un parcours en largeur de l'arbre et un calcul des fils classique
