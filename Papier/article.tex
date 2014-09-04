@@ -6,6 +6,7 @@
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
 \usepackage{pgfplots}
+\usepackage{xspace}
 \theoremstyle{plain}
 \newtheorem{prop}{Proposition}[section]
 \theoremstyle{definition}
@@ -21,10 +22,17 @@
 \newcommand{\gr}[1]{{\color{gray} #1}}
 %\newcommand{\card}{\#}
 \newcommand{\ie}{\emph{i.e.}}
+\newcommand{\Cilk}{\texttt{Cilk}\xspace}
+\newcommand{\CilkP}{\texttt{Cilk++}\xspace}
+\newcommand{\CPP}{\texttt{C++}\xspace}
 \newcommand{\kkp}{{k+1}}
 \newcommand{\gen}[1]{\left<#1\right>}
 \renewcommand{\leq}{\leqslant}
 \renewcommand{\geq}{\geqslant}
+\newcommand{\MMX}{\texttt{MMX}\xspace}
+\newcommand{\SIMD}{\texttt{SIMD}\xspace}
+\newcommand{\SSE}{\texttt{SSE}\xspace}
+\newcommand{\SSEV}{\texttt{SSE4.1}\xspace}
 \newcommand{\NN}{\mathbb{N}}
 \renewcommand{\tt}[1]{\texttt{#1}}
 \newcommand{\sgnode}[1]{{\bf \left<#1\right>}}
@@ -32,7 +40,10 @@
 \DeclareMathOperator{\Irr}{Irr}
 \DeclareMathOperator{\App}{App}
 \DeclareMathOperator{\card}{card}
-
+\newcommand{\Jean}[1]{{\color{blue}#1}}
+\newcommand{\Florent}[1]{{\color{green}#1}}
+\newcommand{\Delete}[1]{}
+\newcommand{\REM}[1]{\marginpar{\small #1}}
 \newcommand{\TODO}[1]{\marginpar{\small To do: #1}}
 
 \begin{document}
@@ -60,16 +71,21 @@ In  J.A. Sloane's \emph{on-line encyclopedia of integer}~\cite{OEIS} we find the
 These values have been obtain by M. Bras-Amor\'os (view \cite{BrasAmoros2008} for more details for $g\leq 50)$. 
 On his home page~\cite{Delgado}, M. Delgado  gives the value of $n_{55}$ without specifying the values of $n_{53}$ and~$n_{54}$. 
 
-M.~Bras-Amor\'os used a depth first search exploration of the tree of numerical semigroups up to a given genus.
+M.~Bras-Amor\'os used a depth first search exploration of the tree of numerical semigroups $\mathcal{T}$ up to a given genus.
 This tree was introduced by J.C.~Rosales and al. in \cite{Rosales} and it is the subject of the Section~\ref{S:Tree}.
 Starting with all the numerical semigroups of genus $49$ she obtained the number of numerical semigroups of genus $50$ in $18$ days on a pentium D runing at $3$GHz. 
 In the package~\tt{NumericalSgs} \cite{NumericalSgps} of \tt{GAP} \cite{GAP}, M. Delgado together with P.A.~Garcia-Sanchez and J. Morais used the same method of exploration.
 
-\TODO{Present the goal of the paper.}
+
+\Jean{Here we describe a new algorithm for the exploration of the tree of numerical semigroup $\mathcal{T}$ and achieve the computation of $n_g$ for $g\leq 67$. 
+The cornerstone of our method is a new combinatorial representation of numerical semigroup that is well suited for exploration of the tree~$\mathcal{T}$ and allow code optimization essentially based on use of vectorial instructions and parallelization.}
+
+
 
 The paper is divided as follows.
 In Section~\ref{S:Tree} we describe the tree of numerical semigroups and give bounds for some parameters attached to a numerical semigroup.
-In Section~\ref{S:DecNumber} we describe a new representation of numerical semigroups that is well suited to the construction of the tree. 
+\Jean{The decription of our new representation of numerical semigroup is done in the third section.}
+\Delete{In Section~\ref{S:Tree} we describe a new representation of numerical semigrouos that is well suited to the construction of the tree.}
 In Section~\ref{S:Algo} we describe an algorithm based on the representation given in Section~\ref{S:DecNumber} and give its complexity. 
 Section~\ref{S:Opti} is more technical, and is devoted to the optimisation of the algorithm introduced in Section~\ref{S:Algo}.
 
@@ -648,9 +664,11 @@ vectorization)...
 
 To get the greatest speed from modern processor, we used several optimization
 tricks, which we will elaborate in the following section:
+
+\REM{C'est un peu moche c'est gros points, non? Des tirets peut etre.}
 \begin{itemize}
-\item Vectorization (MMX, SSE instructions sets) and careful memory alignment.
-\item Shared memory multi-core computing using \texttt{CILK++} for low level
+\item Vectorization (\MMX, \SSE instructions sets) and careful memory alignment. 
+\item Shared memory multi-core computing using \CilkP for low level
   enumerating tree branching;
 \item Partially derecursived algorithm using a stack;
 \item Avoiding all dynamic allocation during the computation: everything is
@@ -665,15 +683,15 @@ tricks, which we will elaborate in the following section:
 
 \subsection{Vectorization}
 
-Assume for example that we want to construct the tree $\mathcal{T}^{\leq 100}$
+Assume for example that we want to construct the tree~$\mathcal{T}^{\leq 100}$
 of all numerical semigroup of genus smaller than $100$.  In this case, the
 representation of numerical semigroup given in Section~\ref{S:DecNumber} uses
 decomposition numbers of integers smaller than~$300$.  By Lemma~\ref{L:RepN},
 such a decomposition number is smaller than $151$ and requires~$1$ byte of
 memory.  Thus at each \textbf{for} step of Algorithm~\textsc{Son}, the CPU
 actually works on $1$ byte. However current CPUs usually work on $8$ bytes and
-even on $16$~bytes using vector extensions. The first optimization uses this
-point.
+even on $16$~bytes using vector extensions. \REM{Peut etre rajouter qqchose sur l'AVX; en fait on devrait pouvoir utiliser l'AVX2.} The first optimization uses this
+point. 
 
 To go further we must specify that the array of decomposition numbers in the
 representation of a semigroup corresponds to consecutive bytes in memory. In
@@ -699,17 +717,17 @@ memory byte $\texttt{T.d[y]}$.  Using these two cursors, Lines \tt{10} to
 \texttt{dst} move at the same time and that the modification of the value
 pointed by \texttt{dst} only needs to access the values pointed by \tt{src}
 and \tt{dst}.  We can therefore work in multiple entries at the same time
-without collision.  Current CPUs allow this thanks to the SIMD technologies as
-MMX, SSE, etc.  The acronym SIMD~\cite{SIMD} stands for Single Operation
-Multiple Data.  We used SSE4.1~\cite{SSE, IntelSSE} technology as it allows
+without collision.  Current CPUs allow this thanks to the \SIMD technologies as
+\MMX, \SSE, etc.  The acronym \SIMD~\cite{SIMD} stands for Single Operation
+Multiple Data.  We used \SSEV~\cite{SSE, IntelSSE} technology as it allows
 for the largest speedup. This need to respect some constraints in the memory
 organization of the data, namely ``memory alignment''. Recall that an address
-is 16~bytes aligned if it is a multiple of 16. SSE memory access are much
+is 16~bytes aligned if it is a multiple of 16. \SSE memory access are much
 faster for aligned access.
 
 The computation of the children is then performed as follows. First, the
 parent's decomposition numbers are copied in the children's using the
-following C++ code
+following \CPP code
 \begin{listing}{1}
 void copy_blocks(dec_blocks &dst, dec_blocks const &src) {
   for (ind_t i=0; i<NBLOCKS; i++) dst[i] = src[i];
@@ -721,7 +739,7 @@ $3G$ rounded up to a multiple of 16). The instruction \tt{dst[i] = src[i]}
 actually copy a full 16~bytes block.
 
 Then the core of the \textbf{while} loop in the preceding algorithm is
-translated as a for loop as follows (recall that $x$ denotes the generator of
+translated as a \texttt{for} loop as follows (recall that $x$ denotes the generator of
 the father which is to be removed in the children):
 \begin{listing}{1}
 start = x >> 4;      // index of the block containing x
@@ -733,14 +751,15 @@ for (long int i=start+1; i<NBLOCKS; i++) {
   dst[i] -= ((block != zero) & one);
 }
 \end{listing}
-The instruction \tt{load\_unaligned\_epi8} (specific to SSE technology) loads
-in the variable \tt{block} 16 consecutive entries of the decomposition number
-of the parent (called \tt{src} monoid). Those entries will be used to compute
+The instruction \tt{load\_unaligned\_epi8} (specific to \SSE technology) loads
+ 16 consecutive entries of the decomposition number
+of the parent (called \tt{src} monoid) in the variable \tt{block}.
+Those entries will be used to compute
 the entries $16i, \dots 16i+15$ of the children monoid. Since the removed
-generator $x$ is not necessarily a multiple of $16$, the data are not aligned
+generator~$x$ is not necessarily a multiple of $16$, the data are not aligned
 in memory, hence the use of a specific instruction. The \tt{zero}
 (resp. \tt{one}) constants are initialized as 16 bytes equal to $0$
-(resp. $1$). The comparison \tt{(block != zero)} therefore returns a block
+(resp. $1$). The comparison \tt{(block != zero)} therfore returns a block
 which contains $0$ in the bytes corresponding the $0$ entries of block and
 $255$ in the non zero one. This results is then bitwise anded with one so that
 the instruction actually performs a 16~bytes parallel version of
@@ -810,7 +829,7 @@ using some kind of Duff device~\cite{Duff} as
 %  Line \tt{8} subtracts \tt{t}[i] (which is equal to $0$ or $1$) from $\tt{dst}[i]$ according to Proposition~\ref{P:Sx}. 
 % Finally we shift the cursor \tt{src} and \tt{dst} by eight cases. 
 
-\subsection{Parallel tree exploration using \texttt{Cilk+}}
+\subsection{Parallel tree exploration using \CilkP}
 
 Our second optimization is to use parallelism on exploration of the tree.
 Today, CPU of personal computer have several cores (2, 4 or more).  The given
@@ -819,19 +838,19 @@ of the power of a CPU. The idea here is that different branches of the tree can
 be explored in parallel by different cores of the computer. The tricky part is
 to ensure that each cores are busy, giving a new branch when a core is done
 with a former one. Fortunately there is a technology called
-\texttt{Cilk+}~\cite{CilkIntel, CilkRefman}
+\CilkP~\cite{CilkIntel, CilkRefman}
 which is particularly well suited for those kind of problems.
 
-\tt{Cilk} is a general-purpose language designed for multithreaded parallel
-computing. The \tt{C++} incarnation is called \tt{Cilk+}. The biggest
-principle behind the design of the Cilk language is that the programmer should
+\Cilk is a general-purpose language designed for multithreaded parallel
+computing. The \CPP incarnation is called \CilkP. The biggest
+principle behind the design of the \Cilk language is that the programmer should
 be responsible for \emph{exposing} the parallelism, identifying elements that
 can safely be executed in parallel; it should then be left to the run-time
 environment, particularly the scheduler, to decide during execution how to
 actually divide the work between processors.
 
 The crucial thing is that two keywords are all that are needed to start
-using the parallel features of \tt{Cilk+}:
+using the parallel features of \CilkP:
 \begin{itemize}
 \item\tt{cilk\_spawn}: used on a procedure call, indicates that the call can
   safely operate in parallel with the remaining code if the current
@@ -854,30 +873,32 @@ Algorithm~\ref{A:ExpRec}, you only need to modify it as
 	\EndIf
 \EndProcedure
 \end{algorithmic}
-We just tells \tt{Cilk+} that the subtrees rooted at various children can be
+We just tells \CilkP that the subtrees rooted at various children can be
 explored in parallel.
 
 The thing are actually only a little bit more complicated. First we have to
 gather the results of the exploration. If we simply write
 \begin{algorithmic}[1]
-\State \tt{result}[$g(\tt{S}$] $\gets \tt{result}[g(\tt{S}] + 1$
+\State \tt{result}[$g(\tt{S})$] $\gets \tt{result}[g(\tt{S})] + 1$
 \end{algorithmic}
-then we face the problem of two core incrementing the same variable at the
-same time. Incrementing a variables is actually done in 3 steps: reading the
-value from the memory, adding one, storing back the results. Since there is by
-default non synchronization, the following sequence of actions for two core
-and is possible: Read1 / Read2 / Add1 / Add2 / Store1 / Store2. Then the two
+then we face the problem of two cores incrementing the same variable at the
+same time.
+ Incrementing a variable is actually done in 3 steps: reading the
+value from the memory, adding one, storing back the result. 
+Since there is by
+default non synchronization, the following sequence of actions for two cores
+ is possible: Read1 / Read2 / Add1 / Add2 / Store1 / Store2. Then the two
 cores performs the same modification resulting in incrementing the variable
 only once. This is called a data race and leads to nondeterministic wrong
-result. To cope with those kinds of synchronization problems, Cilk provide the
+result. To cope with those kinds of synchronization problems, \Cilk provide the
 notion of \emph{reducer} which are variables local to each thread which are
 gathered (here added) when a thread is finishing its job.
 
 A more important problem is that the cost of a recursive call in non
-negligible. Using \tt{Cilk+} recursive calls instead of \tt{C++} calls makes
+negligible. Using \CilkP recursive calls instead of \CPP calls makes
 it even worse. The solution we use is to switch back to the non recursive
 version using a stack when the genus is close to the target genus. This leads
-to the following \tt{Cilk+} code:
+to the following \CilkP code:
 \begin{listing}{1}
 void explore(const monoid &m) {
   unsigned long int nbr = 0;
@@ -895,7 +916,7 @@ void explore(const monoid &m) {
 \end{listing}
 Note that in our version, we found that \tt{STACK\_BOUND} optimal value was
 around 10-12 for genus in the range $45\dots 67$ so that \tt{explore\_stack}
-is used more than $99\%$ of the time. The \tt{Cilk+} recursive function does
+is used more than $99\%$ of the time. The \CilkP recursive function does
 actually very little work but ensure that the work is balanced between the
 different cores.
 
@@ -909,7 +930,7 @@ extra cost. We list here various places where unnecessary cost can be avoided.
 \subsubsection*{Avoiding dynamic allocation} Compared to the \textsc{Son}
 algorithm, dynamic allocation cost orders of magnitude more. Therefore, during
 the derecursived stack algorithm, we only allocate (on the system stack rather
-than on the heap), the stack of monoid. No further allocation are done.
+than on the heap) the stack of monoid. No further allocation are done.
 
 \subsubsection*{Avoiding all unnecessary copy} We also used a trick to avoid
 copying from and to the top of the stack. Indeed, then main loop perform the
@@ -923,7 +944,7 @@ following sequences of operations:
 \end{algorithmic}
 If we use a stack of monoid, we can construct $\tt{S}^\tt{x}$ directly into
 the stack memory but we have to copy the top of the stack to \tt{S}. Since the
-average number of children is the golden ratio, this single copy in far from
+average number of children is the golden ratio, this single copy is far from
 being negligible. The trick is to use a level of indirection, replacing the
 stack by an array of monoid and an array of indexes pointing to the array of
 monoid. We keep the invariant that the array of indexes is a permutation of
@@ -951,7 +972,7 @@ indexes. Here is the relevant part of the code:
 
 \subsubsection*{Pointer arithmetic and indexes}
 
-Due to the way, the C++ does its pointer arithmetic, even if the index in the
+Due to the way, the \CPP does its pointer arithmetic, even if the index in the
 array are less than $3G$ and therefore fits in $8$~bits, we use $64$~bits
 indexes (namely \verb|uint_fast64_t|) to avoid conversion and sign extension
 when computing addresses of indexed element. This single standard trick save
@@ -1153,7 +1174,7 @@ The scale is logarithmic in time.
 The first version is based on a breadth-first search exploration and the peak at genus~$35$ is due to the consumption of all the memory and use of swap. 
 The second version uses a depth first search exploration.
 The third is based on the second one with use of decomposition numbers, it corresponds to the algorithm given in Section~\ref{S:Algo}. 
-The last one is an optimisation of the third one with MMX.}
+The last one is an optimisation of the third one with \MMX.}
 \end{figure}
 
 
