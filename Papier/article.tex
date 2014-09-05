@@ -718,8 +718,8 @@ memory byte $\texttt{T.d[y]}$.  Using these two cursors, Lines \tt{10} to
 pointed by \texttt{dst} only needs to access the values pointed by \tt{src}
 and \tt{dst}.  We can therefore work in multiple entries at the same time
 without collision.  Current CPUs allow this thanks to the \SIMD technologies as
-\MMX, \SSE, etc.  The acronym \SIMD~\cite{SIMD} stands for Single Operation
-Multiple Data.  We used \SSEV~\cite{SSE, IntelSSE} technology as it allows
+\MMX, \SSE, etc.  The acronym \SIMD~\cite{WikipediaSIMD} stands for Single Operation
+Multiple Data.  We used \SSEV~\cite{WikipediaSSE, IntelSSE} technology as it allows
 for the largest speedup. This need to respect some constraints in the memory
 organization of the data, namely ``memory alignment''. Recall that an address
 is 16~bytes aligned if it is a multiple of 16. \SSE memory access are much
@@ -771,7 +771,7 @@ which is equivalent to Lines \tt{10} to \tt{14} of Algorithm~\textsc{Son}.
 \medskip
 
 As we previously said, to gain more speed this core loop is actually unrolled
-using some kind of Duff device~\cite{Duff} as
+using some kind of Duff device~\cite{WikipediaDuff} as
 \begin{algorithmic}
 \State \textbf{Jump to case } $\tt{start}+1$
 \State \textbf{case 1:} \tt{block = ...; dst[1] -= ((block != zero) \& one)}
@@ -834,20 +834,21 @@ using some kind of Duff device~\cite{Duff} as
 Our second optimization is to use parallelism on exploration of the tree.
 Today, CPU of personal computer have several cores (2, 4 or more).  The given
 version of our exploration algorithm uses a single core and so a fraction only
-of the power of a CPU. The idea here is that different branches of the tree can
-be explored in parallel by different cores of the computer. The tricky part is
-to ensure that each cores are busy, giving a new branch when a core is done
-with a former one. Fortunately there is a technology called
-\CilkP~\cite{CilkIntel, CilkRefman}
-which is particularly well suited for those kind of problems.
+of the power of a CPU. The idea here is that different branches of the tree
+can be explored in parallel by different cores of the computer. The tricky
+part is to ensure that each cores are busy, giving a new branch when a core is
+done with a former one. Fortunately there is a technology called
+\CilkP~\cite{CilkIntel, CilkRefman} which is particularly well suited for
+those kind of problems. For our computation, we used the free version which is
+integrated in the latest version of the GNU C compiler~\cite{GCCcilk}.
 
 \Cilk is a general-purpose language designed for multithreaded parallel
-computing. The \CPP incarnation is called \CilkP. The biggest
-principle behind the design of the \Cilk language is that the programmer should
-be responsible for \emph{exposing} the parallelism, identifying elements that
-can safely be executed in parallel; it should then be left to the run-time
-environment, particularly the scheduler, to decide during execution how to
-actually divide the work between processors.
+computing. The \CPP incarnation is called \CilkP. The biggest principle behind
+the design of the \Cilk language is that the programmer should be responsible
+for \emph{exposing} the parallelism, identifying elements that can safely be
+executed in parallel; it should then be left to the run-time environment,
+particularly the scheduler, to decide during execution how to actually divide
+the work between processors.
 
 The crucial thing is that two keywords are all that are needed to start
 using the parallel features of \CilkP:
@@ -890,7 +891,7 @@ default non synchronization, the following sequence of actions for two cores
  is possible: Read1 / Read2 / Add1 / Add2 / Store1 / Store2. Then the two
 cores performs the same modification resulting in incrementing the variable
 only once. This is called a data race and leads to nondeterministic wrong
-result. To cope with those kinds of synchronization problems, \Cilk provide the
+result. To cope with those kinds of synchronization problems, \CilkP provide the
 notion of \emph{reducer} which are variables local to each thread which are
 gathered (here added) when a thread is finishing its job.
 
@@ -1166,6 +1167,94 @@ As the reader can see the convergence is very slow.
         };
 	%\legend style={anchor=north,at={(20,1000)}}  
         \legend{\tiny breadth-expl,\tiny depth-expl,\tiny depth-expl-$\delta$,\tiny depth-expl-$\delta$-mmx}
+        \end{semilogyaxis}
+    \end{tikzpicture}
+    \label{F:Time:new}
+    \caption{Comparison of time executions of different exploration algorithms of the tree $\mathcal{T}^{\leq g}$ on an Intel \tt{i5-3570K} CPU with $8GB$ of memory. 
+The scale is logarithmic in time. 
+The first version is based on a breadth-first search exploration and the peak at genus~$35$ is due to the consumption of all the memory and use of swap. 
+The second version uses a depth first search exploration.
+The third is based on the second one with use of decomposition numbers, it corresponds to the algorithm given in Section~\ref{S:Algo}. 
+The last one is an optimisation of the third one with \MMX.}
+\end{figure}
+
+
+
+\begin{figure}[b]
+\begin{tikzpicture}[scale=1.3]
+        \begin{semilogyaxis}[xlabel=\small genus,ylabel=time,legend pos=north west,legend cell align=left]
+        \addplot [color=blue,mark=x] coordinates {
+(20,0.045767)
+(21,0.067697)
+(22,0.112697)
+(23,0.194646)
+(24,0.335412)
+(25,0.581481)
+(26,1.01088)
+(27,1.72613)
+(28,2.9324)
+(29,4.91856)
+(30,8.39383)
+(31,14.0308)
+(32,23.7138)
+(33,39.6461)
+(34,66.1154)
+(35,109.406)
+(36,182.331)
+(37,302.765)
+        };
+       \addplot [color=black,mark=x] coordinates {
+			(20,0.02)	
+(20,0.043697)
+(21,0.065487)
+(22,0.113301)
+(23,0.186903)
+(24,0.31748)
+(25,0.53251)
+(26,0.899982)
+(27,1.5205)
+(28,2.55423)
+(29,4.28809)
+(30,7.30236)
+(31,12.1284)
+(32,20.2132)
+(33,33.707)
+(34,56.5415)
+(35,93.7614)
+(36,157.09)
+(37,259.997)
+(38,427.497)
+(39,709.564)
+(40,1192.81)
+        };
+         \addplot [color=red,mark=x] coordinates {
+(20,0.027708)
+(21,0.044416)
+(22,0.074789)
+(23,0.122006)
+(24,0.203155)
+(25,0.344143)
+(26,0.594073)
+(27,1.07134)
+(28,1.622)
+(29,2.82573)
+(30,4.53882)
+(31,7.60975)
+(32,12.5442)
+(33,21.0466)
+(34,34.7638)
+(35,57.7621)
+(36,95.6878)
+(37,158.95)
+(38,264.495)
+(39,436.146)
+(40,719.347)
+        };
+        \addplot [color=magenta,mark=x] coordinates {
+
+        };
+	%\legend style={anchor=north,at={(20,1000)}}  
+        \legend{\tiny breadth-expl,\tiny depth-expl,\tiny depth-expl-$\delta$}
         \end{semilogyaxis}
     \end{tikzpicture}
     \label{F:Time}
