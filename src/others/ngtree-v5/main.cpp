@@ -1,3 +1,4 @@
+#include <time.h>
 #include <iostream>
 #include <iomanip>
 #include <cpuid.h>
@@ -71,12 +72,13 @@ int main(int argc, char **argv)
   walk_stack(N,ng);
 
   
-  cout << endl << "============================" << endl << endl;
-  for (unsigned int i=0; i<MAX_GENUS; i++)
-    {
-      cout << ng[i] << " ";
-    }
-  cout << endl;
+  // cout << endl << "============================" << endl << endl;
+  // for (unsigned int i=0; i<MAX_GENUS; i++)
+  //   {
+  //     cout << ng[i] << " ";
+  //   }
+  // cout << endl;
+  cout<<1.0*long(clock())/CLOCKS_PER_SEC<<endl;
   return EXIT_SUCCESS;
 }
 

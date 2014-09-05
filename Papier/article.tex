@@ -977,7 +977,7 @@ Due to the way, the \CPP does its pointer arithmetic, even if the index in the
 array are less than $3G$ and therefore fits in $8$~bits, we use $64$~bits
 indexes (namely \verb|uint_fast64_t|) to avoid conversion and sign extension
 when computing addresses of indexed element. This single standard trick save
-20\% of speed.
+10\% of speed.
 
 \subsection{Timings}
 
@@ -1204,7 +1204,6 @@ The last one is an optimisation of the third one with \MMX.}
 (37,302.765)
         };
        \addplot [color=black,mark=x] coordinates {
-			(20,0.02)	
 (20,0.043697)
 (21,0.065487)
 (22,0.113301)
@@ -1251,21 +1250,40 @@ The last one is an optimisation of the third one with \MMX.}
 (40,719.347)
         };
         \addplot [color=magenta,mark=x] coordinates {
-
+(20,0.001562)
+(21,0.001957)
+(22,0.002711)
+(23,0.003811)
+(24,0.005605)
+(25,0.00861)
+(26,0.013127)
+(27,0.020991)
+(28,0.036053)
+(29,0.05879)
+(30,0.095882)
+(31,0.158853)
+(32,0.259237)
+(33,0.441074)
+(34,0.750349)
+(35,1.2067)
+(36,1.9608)
+(37,3.19713)
+(38,5.33436)
+(39,9.2136)
+(40,14.5226)
         };
 	%\legend style={anchor=north,at={(20,1000)}}  
         \legend{\tiny breadth-expl,\tiny depth-expl,\tiny depth-expl-$\delta$}
         \end{semilogyaxis}
     \end{tikzpicture}
     \label{F:Time}
-    \caption{Comparison of time executions of different exploration algorithms of the tree $\mathcal{T}^{\leq g}$ on an Intel \tt{i5-3570K} CPU with $8GB$ of memory. 
+    \caption{Comparison of time executions of different exploration algorithms of the tree $\mathcal{T}^{\leq g}$ on an Intel \tt{i7-3840QM} CPU with $32GB$ of memory. 
 The scale is logarithmic in time. 
 The first version is based on a breadth-first search exploration and the peak at genus~$35$ is due to the consumption of all the memory and use of swap. 
 The second version uses a depth first search exploration.
 The third is based on the second one with use of decomposition numbers, it corresponds to the algorithm given in Section~\ref{S:Algo}. 
-The last one is an optimisation of the third one with \MMX.}
+The last one is an optimisation of the third one with \SSE but not using \CilkP.}
 \end{figure}
-
 
 \footnotesize
 \bibliographystyle{ieeetr}

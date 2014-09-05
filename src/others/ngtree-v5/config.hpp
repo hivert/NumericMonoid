@@ -1,2 +1,1 @@
-#define MAX_GENUS 35
-
+#define MAX_GENUS 40

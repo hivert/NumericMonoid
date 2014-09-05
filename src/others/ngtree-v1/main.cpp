@@ -1,3 +1,4 @@
+#include <time.h>
 #include <iostream>
 #include <list>
 #include <stdlib.h>
@@ -94,4 +95,5 @@ int main(int argc,char** argv){
     lg.clear();
     lg.swap(next);
   }
+  cout<<1.0*long(clock())/CLOCKS_PER_SEC<<endl;
 }

@@ -1,3 +1,4 @@
+#include <time.h>
 #include <iostream>
 #include <list>
 #include <stdlib.h>
@@ -99,4 +100,5 @@ int main(int argc,char** argv){
   /*for(i=0;i<=G;++i){
     cout<<i<<"->"<<ng[i]<<endl;
     }*/
+  cout<<1.0*long(clock())/CLOCKS_PER_SEC<<endl;
 }
