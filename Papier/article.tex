@@ -6,6 +6,8 @@
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
 \usepackage{pgfplots}
+\usepackage{alltt}
+\usepackage{listings}
 \usepackage{xspace}
 \theoremstyle{plain}
 \newtheorem{prop}{Proposition}[section]
@@ -46,6 +48,9 @@
 \newcommand{\REM}[1]{\marginpar{\small #1}}
 \newcommand{\TODO}[1]{\marginpar{\small To do: #1}}
 
+
+%Replace bullet in item by dash
+\def\labelitemi{--}
 \begin{document}
 
 \begin{abstract}
@@ -457,13 +462,13 @@ explore the tree deeper, we must restart from the root.
 		\EndFor
 	\EndIf
 \EndProcedure
-\State \Call{ExploreRec}{$\NN, \tt{G}$}
 \end{algorithmic}
 \end{algorithm}
 
 Equivalently, we can use an iterative version which uses a stack (see Algorithm~\ref{A:Exp}).
 \begin{algorithm}
 \caption{Iterative Depth first search exploration of the tree of numerical semigroups}\label{A:Exp}
+\small
 \begin{algorithmic}[1]
 \Procedure{Explore}{\tt{G}}
 \State Stack \tt{stack} \Comment{the empty stack}
@@ -527,8 +532,9 @@ In an algorithmic context, if the variable \texttt{S} stands for a numerical sem
 For example the following Algorithm initializes a representation of the semigroup $\NN$ ready for an exploration up to genus $G$.
 
 \begin{algorithm}
-\caption{Return the root of $\mathcal{T}$ for an exploration up to genus \tt{G}}\label{A:Root}
+\caption{Returns the root of $\mathcal{T}$ for an exploration up to genus \tt{G}}\label{A:Root}
 \begin{algorithmic}
+\small
 \Function{Root}{\tt{G}}
 \State \tt{R.c} $\gets$ 1 \Comment{\tt{R} stands for $\NN$}
 \State \tt{R.g} $\gets$ 0
@@ -546,6 +552,7 @@ We can now describe an algorithm that returns the representation of the semigrou
 \begin{algorithm}
 \caption{Returns the son $S_x$ of $S$ with $x\in\Irr(S)\cap[c(S),c(S)+m(S)[$.}\label{A:Son}
 \begin{algorithmic}[1]
+\small
 \Function{Son}{\tt{S},\tt{x},\tt{G}}
 \State \tt{T.c} $\gets$ $\tt{x}+1$ \Comment{\tt{T}  stands for $\tt{S}_x$}
 \State \tt{T.g} $\gets$ $\tt{S.g}+1$
@@ -592,6 +599,7 @@ Summarizing, these results give that the algorithm runs in time $O(\log(G)\times
 \begin{algorithm}
 \caption{Returns an array containing the value of $n_g$ for $g\leq G$}\label{A:Count}
 \begin{algorithmic}[1]
+\small
 \Function{Count}{\tt{G}}
 \State \tt{n} $\gets [0,...,0]$ \Comment $\tt{n[g]}$ stands for $n_g$ and is initialised to $0$
 \State Stack \tt{stack} \Comment{the empty stack}
@@ -665,7 +673,7 @@ vectorization)...
 To get the greatest speed from modern processor, we used several optimization
 tricks, which we will elaborate in the following section:
 
-\REM{C'est un peu moche c'est gros points, non? Des tirets peut etre.}
+
 \begin{itemize}
 \item Vectorization (\MMX, \SSE instructions sets) and careful memory alignment. 
 \item Shared memory multi-core computing using \CilkP for low level
@@ -690,8 +698,8 @@ decomposition numbers of integers smaller than~$300$.  By Lemma~\ref{L:RepN},
 such a decomposition number is smaller than $151$ and requires~$1$ byte of
 memory.  Thus at each \textbf{for} step of Algorithm~\textsc{Son}, the CPU
 actually works on $1$ byte. However current CPUs usually work on $8$ bytes and
-even on $16$~bytes using vector extensions. \REM{Peut etre rajouter qqchose sur l'AVX; en fait on devrait pouvoir utiliser l'AVX2.} The first optimization uses this
-point. 
+even on $16$~bytes using vector extensions. 
+The first optimization uses this point. 
 
 To go further we must specify that the array of decomposition numbers in the
 representation of a semigroup corresponds to consecutive bytes in memory. In
@@ -701,6 +709,7 @@ $\texttt{S.d[0]}$ and the second one, denoted \texttt{dst} pointing to the
 memory byte $\texttt{T.d[y]}$.  Using these two cursors, Lines \tt{10} to
 \tt{14} of Algorithm~\textsc{Son} can be rewritten as follows
 
+{\small
 \begin{algorithmic}
 \State $\tt{src}\gets \text{address}(\tt{S.d[0]})$
 \State $\tt{dst}\gets \text{address}(\tt{T.d[x]})$
@@ -711,28 +720,31 @@ memory byte $\texttt{T.d[y]}$.  Using these two cursors, Lines \tt{10} to
 \State \textbf{increase} \tt{src},\tt{dst},\tt{i} \textbf{by} $1$
 
 \EndWhile
-\end{algorithmic}
+\end{algorithmic}}
 
 \noindent In this version we can see that the cursors \texttt{src} and
 \texttt{dst} move at the same time and that the modification of the value
 pointed by \texttt{dst} only needs to access the values pointed by \tt{src}
 and \tt{dst}.  We can therefore work in multiple entries at the same time
 without collision.  Current CPUs allow this thanks to the \SIMD technologies as
-\MMX, \SSE, etc.  The acronym \SIMD~\cite{WikipediaSIMD} stands for Single Operation
-Multiple Data.  We used \SSEV~\cite{WikipediaSSE, IntelSSE} technology as it allows
-for the largest speedup. This need to respect some constraints in the memory
+\MMX, \SSE, etc.  The acronym \SIMD~\cite{WikipediaSIMD} stands for Single Operation Multiple Data.  
+We used \SSEV~\cite{WikipediaSSE, IntelSSE} technology as it allows for the largest speedup\footnote{A much more speedup can be certainly obtained using \texttt{AVX2} technology \cite{AVX2}. However, at this time, we can't access a performent computer with this set of instructions.}.  
+This need to respect some constraints in the memory
 organization of the data, namely ``memory alignment''. Recall that an address
 is 16~bytes aligned if it is a multiple of 16. \SSE memory access are much
 faster for aligned access.
 
+
 The computation of the children is then performed as follows. First, the
 parent's decomposition numbers are copied in the children's using the
 following \CPP code
-\begin{listing}{1}
+{
+\small
+\begin{alltt}
 void copy_blocks(dec_blocks &dst, dec_blocks const &src) {
   for (ind_t i=0; i<NBLOCKS; i++) dst[i] = src[i];
 }
-\end{listing}
+\end{alltt}}
 Here \tt{dec\_blocks} is a type for arrays of 16~bytes blocks whose size
 \tt{NBLOCKS} are just large enough to store the decomposition numbers (that is
 $3G$ rounded up to a multiple of 16). The instruction \tt{dst[i] = src[i]}
@@ -741,7 +753,9 @@ actually copy a full 16~bytes block.
 Then the core of the \textbf{while} loop in the preceding algorithm is
 translated as a \texttt{for} loop as follows (recall that $x$ denotes the generator of
 the father which is to be removed in the children):
-\begin{listing}{1}
+{
+\small
+\begin{alltt}
 start = x >> 4;      // index of the block containing x
 shift = x & 0xF;     // offset of x inside the block
 ...                  // some specific instructions to
@@ -750,7 +764,8 @@ for (long int i=start+1; i<NBLOCKS; i++) {
   block = load_unaligned_epi8(src + ((i-start)<<4) - shift);
   dst[i] -= ((block != zero) & one);
 }
-\end{listing}
+\end{alltt}
+}
 The instruction \tt{load\_unaligned\_epi8} (specific to \SSE technology) loads
  16 consecutive entries of the decomposition number
 of the parent (called \tt{src} monoid) in the variable \tt{block}.
@@ -763,22 +778,27 @@ in memory, hence the use of a specific instruction. The \tt{zero}
 which contains $0$ in the bytes corresponding the $0$ entries of block and
 $255$ in the non zero one. This results is then bitwise anded with one so that
 the instruction actually performs a 16~bytes parallel version of
-\begin{algorithmic}
-\State $\tt{dst} \gets \tt{dst} -
+
+
+\begin{center}
+$\tt{dst} \gets \tt{dst} -
 \textbf{ if } \tt{block} \neq 0 \textbf{ then } 1 \textbf{ else } 0$
-\end{algorithmic}
+\end{center}
+
 which is equivalent to Lines \tt{10} to \tt{14} of Algorithm~\textsc{Son}.
 \medskip
 
 As we previously said, to gain more speed this core loop is actually unrolled
 using some kind of Duff device~\cite{WikipediaDuff} as
+
+{\small
 \begin{algorithmic}
 \State \textbf{Jump to case } $\tt{start}+1$
 \State \textbf{case 1:} \tt{block = ...; dst[1] -= ((block != zero) \& one)}
 \State \textbf{case 2:} \tt{block = ...; dst[2] -= ((block != zero) \& one)}
 \State \textbf{[...]}
 \State \textbf{case NBLOCK-1:} \tt{...}
-\end{algorithmic}
+\end{algorithmic}}
 
 % The MMX technology permits to work on $8$ bytes in parallel while the SSE
 % works in $16$ bytes.  As the rest of the CPU works on $8$ bytes, the SSE
@@ -863,7 +883,12 @@ using the parallel features of \CilkP:
 \end{itemize}
 As a consequence, to get a parallel version of the recursive
 Algorithm~\ref{A:ExpRec}, you only need to modify it as
-\begin{algorithmic}[1]
+
+{\small
+
+\begin{algorithm}
+\caption{\Cilk version of Algorithm~\ref{A:ExpRec}}
+\begin{algorithmic}
 \Procedure{ExploreRec}{\tt{S}, \tt{G}}
 	\If{$g(\tt{S})< \tt{G}$}
 		\For{\tt{x} from $c(\tt{S})$ to $c(\tt{S})+m(\tt{S})$}
@@ -874,14 +899,17 @@ Algorithm~\ref{A:ExpRec}, you only need to modify it as
 	\EndIf
 \EndProcedure
 \end{algorithmic}
+\end{algorithm}
+}
+
 We just tells \CilkP that the subtrees rooted at various children can be
 explored in parallel.
 
 The thing are actually only a little bit more complicated. First we have to
 gather the results of the exploration. If we simply write
-\begin{algorithmic}[1]
-\State \tt{result}[$g(\tt{S})$] $\gets \tt{result}[g(\tt{S})] + 1$
-\end{algorithmic}
+\begin{center}
+\tt{result}[$g(\tt{S})$] $\gets \tt{result}[g(\tt{S})] + 1$
+\end{center}
 then we face the problem of two cores incrementing the same variable at the
 same time.
  Incrementing a variable is actually done in 3 steps: reading the
@@ -900,7 +928,8 @@ negligible. Using \CilkP recursive calls instead of \CPP calls makes
 it even worse. The solution we use is to switch back to the non recursive
 version using a stack when the genus is close to the target genus. This leads
 to the following \CilkP code:
-\begin{listing}{1}
+{\small
+\begin{verbatim}
 void explore(const monoid &m) {
   unsigned long int nbr = 0;
   if (m.genus < MAX_GENUS - STACK_BOUND) {
@@ -914,7 +943,8 @@ void explore(const monoid &m) {
   }
   else explore_stack(m, cilk_results.get_array());
 }
-\end{listing}
+\end{verbatim}
+}
 Note that in our version, we found that \tt{STACK\_BOUND} optimal value was
 around 10-12 for genus in the range $45\dots 67$ so that \tt{explore\_stack}
 is used more than $99\%$ of the time. The \CilkP recursive function does
@@ -936,13 +966,15 @@ than on the heap) the stack of monoid. No further allocation are done.
 \subsubsection*{Avoiding all unnecessary copy} We also used a trick to avoid
 copying from and to the top of the stack. Indeed, then main loop perform the
 following sequences of operations:
-\begin{algorithmic}[1]
+{\small
+\begin{algorithmic}
   \State $\tt{S} \gets \tt{stack.top()}$
   \State \tt{stack.pop()}
   \For{all children $\tt{S}^\tt{x}$ of \tt{S}}
   \State $\tt{S.push}(\tt{S}^\tt{x})$
   \EndFor
 \end{algorithmic}
+}
 If we use a stack of monoid, we can construct $\tt{S}^\tt{x}$ directly into
 the stack memory but we have to copy the top of the stack to \tt{S}. Since the
 average number of children is the golden ratio, this single copy is far from
@@ -952,7 +984,9 @@ monoid. We keep the invariant that the array of indexes is a permutation of
 the array of monoid. Now instead of copying \tt{S} out of the stack, we keep
 it on the stack, pushing the children in the second position by exchanging the
 indexes. Here is the relevant part of the code:
-\begin{listing}{1}
+
+{\small
+\begin{verbatim}
   monoid data[MAX_GENUS-1], *stack[MAX_GENUS], *current;
   monoid **stack_pointer = stack + 1;
   for (ind_t i=1; i<MAX_GENUS; i++) stack[i] = &(data[i-1]);
@@ -969,7 +1003,8 @@ indexes. Here is the relevant part of the code:
       }
       *stack_pointer = current;
   }
-\end{listing}
+\end{verbatim}
+}
 
 \subsubsection*{Pointer arithmetic and indexes}
 
@@ -1026,8 +1061,7 @@ g & $n_g$ & $n_g/n_{g-1}$\\
 31 & 9266788 & 1.64107 \\
 32 & 15195070 & 1.63973 \\
 33 & 24896206 & 1.63843 \\
-34 & 40761087 & 1.63724 \\
-35 & 66687201 & 1.63605 \\
+
 \hline
 \end{tabular}
 \end{minipage}
@@ -1036,6 +1070,8 @@ g & $n_g$ & $n_g/n_{g-1}$\\
 \hline
 g & $n_g$ & $n_g/n_{g-1}$\\
 \hline
+34 & 40761087 & 1.63724 \\
+35 & 66687201 & 1.63605 \\
 36 & 109032500 & 1.63498 \\
 37 & 178158289 & 1.63399 \\
 38 & 290939807 & 1.63304 \\
@@ -1286,9 +1322,45 @@ The last one is an optimisation of the third one with \SSE but not using \CilkP.
 \end{figure}
 
 \footnotesize
-\bibliographystyle{ieeetr}
-\bibliography{biblio}
 
+\begin{thebibliography}{10}
+
+\bibitem{BrasAmoros2008}{M.~Bras-Amor{\'o}s, \emph{Fibonacci-like behavior of the number of numerical semigroups of a given genus}, Semigroup Forum \textbf{76}, no.~2 (2008), 379--384}
+ 
+ \bibitem{Delgado}{M.~Delgado, homepage, \url{http://cmup.fc.up.pt/cmup/mdelgado/numbers/}}
+ 
+\bibitem{NumericalSgps}{M.~Delgado, P.A.~Garcia-Sanchez, J.~Maris, \emph{NumericalSgps} -- GAP package, ver.0.971, 2001 \url{http://cmup.fc.up.pt/cmup/mdelgado/numericalsgps/}}
+
+\bibitem{GAP}{GAP -- Groups, Algorithms, and Programming, Version 4.6.3, \url{http://www.gap-system.org}}
+
+\bibitem{BookNS}{P.A.~Garsia-Sanchez, J.C.~Rosales, \emph{Numerical semigroups}, Springer, New York, 2009, Developments in Mathematics, vol.~20, x+181}
+
+\bibitem{GCCcilk}{B.V.~Iyer, R.~Geva, P.~Halpern, \emph{Cilk\texttrademark{}+ in GCC}
+,GNU Tools Cauldron, 2012, \url{http://gcc.gnu.org/wiki/cauldron2012?action=AttachFile&do=get&target=Cilkplus_GCC.pdf}}
+
+\bibitem{BookDFP}{J.L.~Ram{\'{\i}}rez Alfons{\'{\i}}n, \emph{The Diophantine Frobenius Problem}, Oxford University press, 2005, Oxford Lecture Series in Mathematics and its Applications, vol.~30, xvi+243}
+
+\bibitem{Rosales}{J.C.~Rosales, \emph{Fundamental gaps of numerical semigroups generated by two elements}, Linear Algebre Appl. \textbf{405} (2005), 200--208}
+
+\bibitem{OEIS}{N.J.A.~Sloane, \emph{The On-Line Encyclopedia of Integer Sequences}, \url{http://oeis.org}}
+
+\bibitem{IntelSSE}{Software.intel.com, \emph{Intel Instruction Set Architechture Extensions}, Intel\textregistered{} Developer Zone, 2013, \url{https://www.cilkplus.org/}}
+
+
+\bibitem{CilkIntel}{Software.intel.com, \emph{Intel\textregistered{} Cilk\texttrademark{} Homepage}, \url{ttps://www.cilkplus.org/}}
+
+\bibitem{CilkRefman}{Software.intel.com, \emph{Intel\textregistered{} Cilk\texttrademark{} Plus Reference Guide},\url{https://software.intel.com/en-us/node/522579}}
+
+\bibitem{AVX2}{Wikipedia, \emph{Advanced Vector Extension}, \url{http://en.wikipedia.org/wiki/Advanced_Vector_Extensions}}
+
+\bibitem{WikipediaDuff}{Wikipedia, \emph{Duff's device}, \url{http://en.wikipedia.org/wiki/Duff's_device}}
+
+\bibitem{WikipediaSIMD}{Wikipedia, \emph{SIMD}, \url{http://en.wikipedia.org/wiki/SIMD}}
+
+\bibitem{WikipediaSSE}{Wikipedia, \emph{Streaming SIMD Extensions}, \url{http://en.wikipedia.org/wiki/Streaming_SIMD_Extensions}}
+
+\bibitem{Zhai}{A. Zhai, \emph{Fibonacci-like growth of numerical semigroups of a given genus}, Semigroup Forum\textbf{86}, no.3 (2013), 634--662}
+\end{thebibliography}
 
 \end{document}
 
