@@ -1,0 +1,7 @@
+rm -f stats
+for ((i=1; i<41; i++)); do
+   rm -f config.hpp
+   echo "#define MAX_GENUS $i" > config.hpp
+   make clean all > /dev/null 2>&1
+   echo "($i,`./treewalk`)" | tee -a stats
+done;
