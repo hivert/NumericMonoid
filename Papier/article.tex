@@ -54,7 +54,10 @@
 \begin{document}
 
 \begin{abstract}
-In this paper we describe an algorithm visiting all the numerical semigroups up to a given genus using a new representation of numerical semigroups. 
+  In this paper we describe an algorithm visiting all the numerical semigroups
+  up to a given genus using a new representation of numerical semigroups. The
+  interest of this algorithm is that it fits particularly well the
+  architecture of modern computer allowing very large optimizations.
 \end{abstract}
 
 \maketitle
@@ -82,10 +85,19 @@ Starting with all the numerical semigroups of genus $49$ she obtained the number
 In the package~\tt{NumericalSgs} \cite{NumericalSgps} of \tt{GAP} \cite{GAP}, M. Delgado together with P.A.~Garcia-Sanchez and J. Morais used the same method of exploration.
 
 
-\Jean{Here we describe a new algorithm for the exploration of the tree of numerical semigroup $\mathcal{T}$ and achieve the computation of $n_g$ for $g\leq 67$. 
-The cornerstone of our method is a new combinatorial representation of numerical semigroup that is well suited for exploration of the tree~$\mathcal{T}$ and allow code optimization essentially based on use of vectorial instructions and parallelization.}
-
-
+Here we describe a new algorithm for the exploration of the tree of numerical
+semigroup $\mathcal{T}$ and achieve the computation of $n_g$ for $g\leq 67$.
+The cornerstone of our method is a new combinatorial representation of
+numerical semigroup that is well suited for exploration of the
+tree~$\mathcal{T}$ and allow \Florent{large} code optimization essentially based on use of
+vectorial instructions and parallelization. \Florent{The goal of the paper is twofold:
+first to present our new encoding of the semigroup and the associated
+algorithms, and second to present the optimization technique which allows for
+those kinds of algorithms to get speedups by factors of hundreds and even
+thousand. We claim that these technique are fairly general for those kinds of
+algorithms. As a support for the claim, we applied it to an algorithm of
+N.~Borie enumerating integer vector modulo permutation groups~\cite{Borie} and
+got a speedup by a factor larger than 2000 using 8 cores !}
 
 The paper is divided as follows.
 In Section~\ref{S:Tree} we describe the tree of numerical semigroups and give bounds for some parameters attached to a numerical semigroup.
@@ -1326,7 +1338,12 @@ The last one is an optimisation of the third one with \SSE but not using \CilkP.
 \begin{thebibliography}{10}
 
 \bibitem{BrasAmoros2008}{M.~Bras-Amor{\'o}s, \emph{Fibonacci-like behavior of the number of numerical semigroups of a given genus}, Semigroup Forum \textbf{76}, no.~2 (2008), 379--384}
- 
+
+\bibitem{Borie}{N.~Borie, \emph{Generation modulo the action of a permutation
+      group}, Proceeding of The 25th International Conference on Formal Power
+    Series and Algebraic Combinatorics (FPSAC '13), DMTCS Proceedings \textbf{0}(01) (2013),
+    767--778}
+
  \bibitem{Delgado}{M.~Delgado, homepage, \url{http://cmup.fc.up.pt/cmup/mdelgado/numbers/}}
  
 \bibitem{NumericalSgps}{M.~Delgado, P.A.~Garcia-Sanchez, J.~Maris, \emph{NumericalSgps} -- GAP package, ver.0.971, 2001 \url{http://cmup.fc.up.pt/cmup/mdelgado/numericalsgps/}}
