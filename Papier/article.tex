@@ -94,9 +94,9 @@ tree~$\mathcal{T}$ and allow large code optimization essentially based on use of
 vectorial instructions and parallelization.
 The goal of the paper is twofold:
 first to present our new encoding of the semigroup and the associated
-algorithms, and second to present the optimization technique which allows for
+algorithms, and second to present the optimization techniques which allows for
 those kinds of algorithms to get speedups by factors of hundreds and even
-thousand. We claim that these technique are fairly general for those kinds of
+thousands. We claim that these technique are fairly general for those kinds of
 algorithms. As a support for the claim, we applied it to an algorithm of
 N.~Borie enumerating integer vector modulo permutation groups~\cite{Borie} and
 got a speedup by a factor larger than 2000 using 8 cores !
@@ -984,9 +984,11 @@ when computing addresses of indexed element. This single standard trick save
 
 \section{Results}
 
-Running the \Cilk version of our optimized algorithm  we have explored the tree of numerical semigroup upto genus $67$
-The computation are done on $64$ cores \REM{Ajouter descriptif de la machine + temps mis}.
-The values of $n_g$ for $g\leq 67$ are : 
+Running the \Cilk version of our optimized algorithm we have explored the tree
+of numerical semigroup upto genus $67$. The computation were done one a shared
+$64$ core AMD Opteron\texttrademark{} Processor 6276. As other heavy
+computation were running on the machine, we only used $32$ cores. The
+computation took $18$~days. The values of $n_g$ for $g\leq 67$ are :
 \begin{center}
 \begin{tabular}{|r|r||r|r||r|r|}
 \hline
@@ -1053,8 +1055,9 @@ All the algorithm are executed on only one thread. Algorithm \texttt{depth} is b
 \end{tabular}
 \end{figure}
 
-The computation of $n_g$ for $g\leq 33$ with algorithm \texttt{breadth} is very long because all the \texttt{8GB} of memory are consumed and the system must use swap memory to finish the computation. This algorithm was not launched 
+The computation of $n_g$ for $g\leq 33$ with algorithm \texttt{breadth} is very long because all the \texttt{8GB} of memory are consumed and the system must use swap memory to finish the computation. This algorithm was not launched.
 
+\Jean{
 On the following table we illustrate the impact of parallelization. The test are also be performed on the \tt{i5-3570K} CPU. This CPU has two physics cores that are viewed as four virtual cores by the system. Therefore we have decided to test the parallelization of our algorithm using \Cilk upto 4 threads. 
 The time of the one threaded algorithm  must be compared with the \texttt{$delta$+sse} version of the previous table : it illustrate the additional cost induced by the use of \Cilk technology. 
   
@@ -1070,10 +1073,37 @@ Threads & 30 & 35 & 40 & 45 & 50 \\
 \hline
 \end{tabular}
 \end{figure}
+}
 
-It should be mentioned that the hyper threading of the CPU has not been deactivated : the CPU clock is higher using one thread than  two and so on.
+On the following table we illustrate the impact of parallelization. The test
+were performed on a machine holding two \tt{Intel\texttrademark{}
+  Xeon\texttrademark{} X5650} CPU running at $2.67~GHz$. Each of those CPU
+have 6 physical cores that are able to run 12 threads. However, due to Hyper
+threading, when more than 12 thread are running, the computation engine are
+shared between two threads. Therefore, the speedup should by much less when
+adding more core. We can see that this is indeed happening under the
+horizontal bar in the following table.
+  \begin{figure}[h!]
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+Threads & 30 & 35 & 40 & 45 & 50 \\
+\hline
+1 &  0.33 & 2.50 & 26.1 & 307 & 3709 \\
+2 &  0.17 & 1.25 & 13.05 & 153.5 & 1110\\
+3 &  0.11 & 0.71 & 8.57 & 102.6 & 747 \\
+4 &  0.10 & 0.55 & 6.45 &  77.21 & 489 \\
+8 &  0.10 & 0.36 & 3.55 &  40.22 & 489 \\
+12 &  0.10 & 0.36 & 2.61 & 27.34 & 489 \\\hline
+16 &  0.10 & 0.37 & 2.50 & 25.96 & 489 \\
+24 &  0.12 & 0.51 & 3.18 & 25.27 & 489 \\
+\hline
+\end{tabular}
+\end{figure}
 
-\textbf{Acknowledgment.} We would like to thank Shalom Eliahou for his presentation of the tree of numerical semigroups and for the interesting discussions on the subject.
+\textbf{Acknowledgment.} We would like to thank Shalom Eliahou for his
+presentation of the tree of numerical semigroups and for the interesting
+discussions on the subject. We also would like to thanks Nathan Cohen who
+suggested the two level of indirection stack optimization.
 
 %\begin{figure}[b]
 %\begin{tikzpicture}[scale=1.3]
