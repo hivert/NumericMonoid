@@ -9,6 +9,8 @@
 \usepackage{alltt}
 \usepackage{listings}
 \usepackage{xspace}
+\usepackage{pdfsync}
+
 \theoremstyle{plain}
 \newtheorem{prop}{Proposition}[section]
 \theoremstyle{definition}
@@ -18,8 +20,6 @@
 \newtheorem{lem}[prop]{Lemma}
 \newtheorem{fact}[prop]{Fact}
 
-\title{Exploring the tree of numerical semigroups}
-\author{Jean Fromentin and  Florent Hivert}
 
 \newcommand{\gr}[1]{{\color{gray} #1}}
 %\newcommand{\card}{\#}
@@ -51,6 +51,15 @@
 
 %Replace bullet in item by dash
 \def\labelitemi{--}
+
+
+\title{Exploring the tree of numerical semigroups}
+\author{Jean Fromentin and  Florent Hivert}
+\date{2 October 2014}
+\keywords{semigroups, tree, algorithm, \texttt{SSE}, 
+\texttt{Cilk}, optimization}
+\subjclass[2010]{05A15,68R05,68W10}
+
 \begin{document}
 
 \begin{abstract}
@@ -432,14 +441,14 @@ Equivalently, we can use an iterative version which uses a stack:
 \begin{algorithmic}[1]
 \Procedure{Explore}{\tt{G}}
 \State Stack \tt{stack} \Comment{the empty stack}
-\State $\tt{S} \gets\left<1\right>$
-\While{stack is not empty} 
+\State \tt{stack.push($\mathbb{N}$)}
+\While{\tt{stack} is not empty} 
 	\State $\tt{S} \gets \tt{stack.top()}$
 	\State \tt{stack.pop()}
 	\If{$g(\tt{S})< \tt{G}$}
 		\For{\tt{x} from $c(\tt{S})$ to $c(\tt{S})+m(\tt{S})$}
 			\If{$\tt{x}\in \Irr(\tt{S})$}
-				\State $\tt{S.push}(\tt{S}^\tt{x})$
+				\State $\tt{stack.push}(\tt{S}^\tt{x})$
 			\EndIf
 		\EndFor
 	\EndIf
@@ -566,15 +575,16 @@ Summarizing, these results give that the algorithm runs in time $O(\log(G)\times
 \Function{Count}{\tt{G}}
 \State \tt{n} $\gets [0,...,0]$ \Comment $\tt{n[g]}$ stands for $n_g$ and is initialised to $0$
 \State Stack \tt{stack} \Comment{the empty stack}
-\State $\tt{S} \gets \textsc{Root}(\tt{G})$
-\While{stack is not empty} 
+\State \tt{stack.push(\textsc{Root}(\tt{G}))}
+\While{\tt{stack} is not empty} 
 	\State $\tt{S} \gets \tt{stack.top()}$
 	\State \tt{stack.pop()}
 	\State $\tt{n[S.g]}\gets\tt{n[S.g]}+1$
 	\If{$\tt{S.g}< \tt{G}$}
 		\For{\tt{x} from $\tt{S.c}$ to $\tt{S.c}+\tt{S.m}$}
-			\If{$\tt{S.d[x]\,=\,1}$}
-				\State $\tt{S.push}(\textsc{Son}(\tt{S},\tt{x},\tt{G}))$
+			\If{$\tt{S.d[x]\,=\,1}$}			
+			      \State 
+$\tt{stack.push}(\textsc{Son}(\tt{S},\tt{x},\tt{G}))$
 			\EndIf
 		\EndFor
 	\EndIf
@@ -857,7 +867,8 @@ Algorithm~\ref{A:ExpRec}, you only need to modify it as
 	\If{$g(\tt{S})< \tt{G}$}
 		\For{\tt{x} from $c(\tt{S})$ to $c(\tt{S})+m(\tt{S})$}
 			\If{$\tt{x}\in \Irr(\tt{S})$}
-				\State\textbf{CilkSpawn} \Call{ExploreRec}{$\tt{S}^\tt{x}, \tt{G}$}
+				\State\textbf{cilk\_spawn} 
+\Call{ExploreRec}{$\tt{S}^\tt{x}, \tt{G}$}
 			\EndIf
 		\EndFor
 	\EndIf
@@ -1037,10 +1048,21 @@ Since the work of M.~Bras-Amor{\'o}s, see \cite{BrasAmoros2008}, we yet know tha
 
 \subsection{Timings}
 
-In this section we summarize the timing improvement through the different optimization of our algorithm. All the computations are done on a computer with an \tt{i5-3570K} CPU equipped with \texttt{8GB} of memory.
+In this section we summarize the timing improvement through the different 
+optimization of our algorithm. 
 
-The following table show the time needed by the algorithm for computing the values of $n_g$ for $g\leq G$ with $30\leq G \leq 40$.
-All the algorithm are executed on only one thread. Algorithm \texttt{depth} is based on a baser breadth exploration of the tree while Algorithm \texttt{depth} use a depth exploration. Algorithm \texttt{depth+$\delta$} is a refinement of \texttt{depth} based on the the $S$-decomposition function. Algorithm \texttt{$\delta$+sse} in an optimization of \texttt{depth+$\delta$} using the \SIMD extension \SSE. Times are in second.
+
+The following table show the time needed by the algorithm for computing 
+the values of $n_g$ 
+for $g\leq G$ with $30\leq G \leq 40$. 
+on a machine equipped with  an \tt{Intel\texttrademark{} i5-3570K} CPU 
+and \texttt{8GB} of memory.
+All algorithms are executed on only one thread. Algorithm \texttt{depth} is 
+based on a breadth exploration of the tree while Algorithm \texttt{depth} 
+use a depth exploration. Algorithm \texttt{depth+$\delta$} is a refinement of 
+\texttt{depth} based on the the $S$-decomposition function. Algorithm 
+\texttt{$\delta$+sse} in an optimization of \texttt{depth+$\delta$} using the 
+\SIMD extension \SSE. Times are in second.
 
 \begin{figure}[h!]
 \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}
@@ -1055,14 +1077,22 @@ All the algorithm are executed on only one thread. Algorithm \texttt{depth} is b
 \end{tabular}
 \end{figure}
 
-The computation of $n_g$ for $g\leq 33$ with algorithm \texttt{breadth} is very long because all the \texttt{8GB} of memory are consumed and the system must use swap memory to finish the computation. This algorithm was not launched.
+The computation of $n_g$ for $g\leq 33$ with algorithm \texttt{breadth} is very 
+long because all the \texttt{8GB} of memory are consumed and the system 
+must use swap memory to finish the computation. This algorithm was not launched 
+for genus~$g\geq 36$.
 
-\Jean{
-On the following table we illustrate the impact of parallelization. The test are also be performed on the \tt{i5-3570K} CPU. This CPU has two physics cores that are viewed as four virtual cores by the system. Therefore we have decided to test the parallelization of our algorithm using \Cilk upto 4 threads. 
-The time of the one threaded algorithm  must be compared with the \texttt{$delta$+sse} version of the previous table : it illustrate the additional cost induced by the use of \Cilk technology. 
+
+The following table illustrates the impact of parallelization on the same 
+machine based on the \tt{Intel\texttrademark{} i5-3570K} CPU 
+running at \texttt{3.4GHz}. This CPU has two physical cores that are able 
+to run four threads thanks to the \texttt{Hyper-Threading} 
+technology~\cite{WikipediaHT}. However, when more 
+than two threads are running, the computation engine are shared between two 
+threads. 
   
   \begin{figure}[h!]
-\begin{tabular}{|c|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|} 
 \hline
 Threads & 30 & 35 & 40 & 45 & 50 \\
 \hline
@@ -1073,33 +1103,56 @@ Threads & 30 & 35 & 40 & 45 & 50 \\
 \hline
 \end{tabular}
 \end{figure}
-}
 
-On the following table we illustrate the impact of parallelization. The test
-were performed on a machine holding two \tt{Intel\texttrademark{}
-  Xeon\texttrademark{} X5650} CPU running at $2.67~GHz$. Each of those CPU
-have 6 physical cores that are able to run 12 threads. However, due to Hyper
-threading, when more than 12 thread are running, the computation engine are
-shared between two threads. Therefore, the speedup should by much less when
-adding more core. We can see that this is indeed happening under the
-horizontal bar in the following table.
-  \begin{figure}[h!]
-\begin{tabular}{|c|c|c|c|c|c|}
+The time of the one threaded algorithm  must be compared with the 
+\texttt{$\delta$+sse} version of the previous table : it illustrates the 
+additional cost induced by the use of \Cilk technology. 
+
+It should be notice that the \texttt{TurboBoost} technology \cite{WikipediaTB} 
+is present on the CPU. Therefore the clock of the CPU is a bit higher when the 
+number of thread 
+is smaller. Therefore the gain of using more threads is a bit over than one 
+suggested by the table.
+
+Finally we test our algorithm on a machine holding two 
+\tt{Intel\texttrademark{} Xeon\texttrademark{} X5650} CPU running 
+at \texttt{2.67GHz}.
+Each of those CPU have 6 physical cores that are able to run 12 threads : the 
+machine has also 12 physical cores.  
+For more than $12$ threads, the speedup should be much less when
+adding more core. The following table resume the time needed by the algorithm 
+to explore $\mathcal{T}_{50}$ on diffenent number of threads (the double 
+vertical line delimites the use of \texttt{Hyper Threadind}):
+\begin{figure}[h!]
+\begin{tabular}{|c|c|c|c|c|c||c|c|c|}
 \hline
-Threads & 30 & 35 & 40 & 45 & 50 \\
-\hline
-1 &  0.33 & 2.50 & 26.1 & 307 & 3709 \\
-2 &  0.17 & 1.25 & 13.05 & 153.5 & 1865\\
-3 &  0.11 & 0.71 & 8.57 & 102.6 & 1243 \\
-4 &  0.10 & 0.55 & 6.45 &  77.21 & 932.4 \\
-8 &  0.10 & 0.36 & 3.55 &  40.22 & 486.8 \\
-12 &  0.10 & 0.36 & 2.61 & 27.34 & 325.7 \\\hline
-16 &  0.10 & 0.37 & 2.50 & 25.96 & 311.2 \\
-20 &  0.10 & 0.37 & 2.69 & 26.04 & 302.3 \\
-24 &  0.12 & 0.51 & 3.18 & 25.27 & 290.2 \\
-\hline
+ Threads & 1 & 2 & 4 & 8 & 12 & 16 & 20 & 24\\
+ \hline
+ Time (s) & 3709 & 1865 & 932.4 & 486.8 & 325.7 & 311.2 & 302.3 & 290.2\\
+ \hline
 \end{tabular}
 \end{figure}
+% 
+% We can see that this is indeed happening under the
+% 
+% horizontal bar in the following table.
+%   \begin{figure}[h!]
+% \begin{tabular}{|c|c|c|c|c|c|}
+% \hline
+% Threads & 30 & 35 & 40 & 45 & 50 \\
+% \hline
+% 1 &  0.33 & 2.50 & 26.1 & 307 & 3709 \\
+% 2 &  0.17 & 1.25 & 13.05 & 153.5 & 1865\\
+% 3 &  0.11 & 0.71 & 8.57 & 102.6 & 1243 \\
+% 4 &  0.10 & 0.55 & 6.45 &  77.21 & 932.4 \\
+% 8 &  0.10 & 0.36 & 3.55 &  40.22 & 486.8 \\
+% 12 &  0.10 & 0.36 & 2.61 & 27.34 & 325.7 \\\hline
+% 16 &  0.10 & 0.37 & 2.50 & 25.96 & 311.2 \\
+% 20 &  0.10 & 0.37 & 2.69 & 26.04 & 302.3 \\
+% 24 &  0.12 & 0.51 & 3.18 & 25.27 & 290.2 \\
+% \hline
+% \end{tabular}
+% \end{figure}
 
 \textbf{Acknowledgment.} We would like to thank Shalom Eliahou for his
 presentation of the tree of numerical semigroups and for the interesting
@@ -1295,15 +1348,41 @@ suggested the two level of indirection stack optimization.
 
 \bibitem{WikipediaDuff}{Wikipedia, \emph{Duff's device}, \url{http://en.wikipedia.org/wiki/Duff's_device}}
 
+\bibitem{WikipediaHT}{Wikipedia, \emph{Hyper-Threading}, 
+\url{http://en.wikipedia.org/wiki/Hyper-Threading}}
+
 \bibitem{WikipediaSIMD}{Wikipedia, \emph{SIMD}, \url{http://en.wikipedia.org/wiki/SIMD}}
 
 \bibitem{WikipediaSSE}{Wikipedia, \emph{Streaming SIMD Extensions}, \url{http://en.wikipedia.org/wiki/Streaming_SIMD_Extensions}}
+
+\bibitem{WikipediaTB}{Wikipedia, \emph{Turbo Boost}, 
+\url{http://en.wikipedia.org/wiki/Intel_Turbo_Boost}}
+
 
 \bibitem{Wilf}{H. S. Wilf, \emph{A circle-of-lights algorithm for the money-changing problem}, Amer. Math. Monthly \textbf{85} (1978), 562--565}
 
 \bibitem{Zhai}{A. Zhai, \emph{Fibonacci-like growth of numerical semigroups of a given genus}, Semigroup Forum\textbf{86}, no.3 (2013), 634--662}
 \end{thebibliography}
 
+\vspace{2em}
+
+\noindent \textbf{Jean Fromentin}
+
+Univ. Lille Nord de France, F-59000 Lille, France
+
+ULCO, LMPA J.~Liouville, B.P. 699, F-62228 Calais, France
+
+CNRS, FR 2956, France
+
+\url{fromentin@lmpa.univ-littoral.fr}
+
+\vspace{2em}
+
+\noindent \textbf{Florent Hivert}
+
+XXX
+
+\url{florent.hivert@lri.fr}
 \end{document}
 
 
