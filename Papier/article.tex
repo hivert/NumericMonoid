@@ -103,8 +103,8 @@ tree~$\mathcal{T}$ and allow large code optimization essentially based on use of
 vectorial instructions and parallelization.
 The goal of the paper is twofold:
 first to present our new encoding of the semigroup and the associated
-algorithms, and second to present the optimization techniques which allows for
-those kinds of algorithms to get speedups by factors of hundreds and even
+algorithms, and second to present the optimization techniques which allows, for
+those kinds of algorithms, to get speedups by factors of hundreds and even
 thousands. We claim that these technique are fairly general for those kinds of
 algorithms. As a support for the claim, we applied it to an algorithm of
 N.~Borie enumerating integer vector modulo permutation groups~\cite{Borie} and
@@ -1120,18 +1120,21 @@ at \texttt{2.67GHz}.
 Each of those CPU have 6 physical cores that are able to run 12 threads : the 
 machine has also 12 physical cores.  
 For more than $12$ threads, the speedup should be much less when
-adding more core. The following table resume the time needed by the algorithm 
-to explore $\mathcal{T}_{50}$ on diffenent number of threads (the double 
-vertical line delimites the use of \texttt{Hyper Threadind}):
+adding more core. The following table resumes the time needed by the algorithm 
+to explore $\mathcal{T}_{50}$ on different number of threads (the double 
+vertical line delimites the use of \texttt{Hyper Threadind}). For reference,
+we put in the column called ``C++'' the computation time of the same
+program compiled without Cilk.
 \begin{figure}[h!]
-\begin{tabular}{|c|c|c|c|c|c||c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|c||c|c|c|}
 \hline
- Threads & 1 & 2 & 4 & 8 & 12 & 16 & 20 & 24\\
+ Threads & C++ & 1 & 2 & 4 & 8 & 12 & 16 & 20 & 24\\
  \hline
- Time (s) & 3709 & 1865 & 932.4 & 486.8 & 325.7 & 311.2 & 302.3 & 290.2\\
+ Time (s) &      & 3709 & 1865 & 932.4 & 486.8 & 325.7 & 311.2 & 302.3 & 290.2\\
  \hline
 \end{tabular}
 \end{figure}
+
 % 
 % We can see that this is indeed happening under the
 % 
@@ -1380,7 +1383,9 @@ CNRS, FR 2956, France
 
 \noindent \textbf{Florent Hivert}
 
-XXX
+Bureau 33, Laboratoire de Recherche en Informatique (UMR CNRS 8623)
+
+Bâtiment 650, Universit\'e Paris Sud 11, 91405 Orsay CEDEX, France
 
 \url{florent.hivert@lri.fr}
 \end{document}
