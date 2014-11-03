@@ -64,7 +64,7 @@
 
 \title{Exploring the tree of numerical semigroups}
 \author{Jean Fromentin and  Florent Hivert}
-\date{2 October 2014}
+\date{3 November 2014}
 \keywords{semigroups, tree, algorithm, \texttt{SSE}, 
 \texttt{Cilk}, optimization}
 \subjclass[2010]{05A15,68R05,68W10}
@@ -74,10 +74,10 @@
 \maketitle
 
 \begin{abstract}
-  In this paper we describe an algorithm visiting all the numerical semigroups
-  up to a given genus using a new representation of numerical semigroups. The
+  In this paper we describe an algorithm visiting all numerical semigroups
+  up to a given genus using a new representation. The
   interest of this algorithm is that it fits particularly well the
-  architecture of modern computer allowing very large optimizations : we obtain the number of numerical semigroups of genus $g\leq  67$ and we confirm the Wilf conjecture for $g\leq 60$.
+  architecture of modern computers allowing very large optimizations: we obtain the number of numerical semigroups of genus $g\leq  67$ and we confirm the Wilf conjecture for $g\leq 60$.
   
 \end{abstract}
 
@@ -85,7 +85,7 @@
 
 \section*{Introduction}
 
-A \emph{numerical semigroup} $S$ is a subset of $\NN$ containing $0$, close under addition and of finite complement in $\NN$.  
+A \emph{numerical semigroup} $S$ is a subset of $\NN$ containing $0$, closed under addition and of finite complement in $\NN$.  
 For example the set 
 \begin{equation}
 \label{E:NSG}
@@ -93,47 +93,47 @@ S_E=\{0,3,6,7,9,10\}\cup\{x\in\NN, x\geq 12\}
 \end{equation}
 is a numerical semigroup.
 The \emph{genus} of a numerical semigroup $S$, denoted by~$g(S)$, is the cardinality of~$\NN\setminus S$.
- For example the genus of $S_E$ is $6$,  the cardinality of $\{1,2,4,5,8,11\}$
+ For example the genus of $S_E$ is $6$,  the cardinality of $\{1,2,4,5,8,11\}$.
 
 For a given positive integer $g$, the number of numerical semigroups of genus $g$ is finite and is denoted by $n_g$. 
-In  J.A. Sloane's \emph{on-line encyclopedia of integer}~\cite{OEIS} we find the values of $n_g$ for $g\leq 52$. 
-These values have been obtain by M. Bras-Amor\'os (view \cite{BrasAmoros2008} for more details for $g\leq 50)$. 
-On his home page~\cite{Delgado}, M. Delgado  gives the value of $n_{55}$ without specifying the values of $n_{53}$ and~$n_{54}$. 
+In  J.A. Sloane's \emph{on-line encyclopedia of integer sequences}~\cite{OEIS} we find the values of $n_g$ for $g\leq 52$. 
+These values have been obtained by M. Bras-Amor\'os (\cite{BrasAmoros2008} for more details for $g\leq 50)$. 
+On his home page~\cite{Delgado}, M. Delgado  gives the value of $n_{55}$. 
+The values of $n_{53}$ and $n_{54}$ seem to be so far available nowhere.
 
 M.~Bras-Amor\'os used a depth first search exploration of the tree of numerical semigroups $\mathcal{T}$ up to a given genus.
-This tree was introduced by J.C.~Rosales and al. in \cite{Rosales} and it is the subject of the Section~\ref{S:Tree}.
+This tree was introduced by J.C.~Rosales and al. in \cite{Rosales} and it is the subject of Section~\ref{S:Tree}.
 Starting with all the numerical semigroups of genus $49$ she obtained the number of numerical semigroups of genus $50$ in $18$ days on a pentium D runing at $3$GHz. 
-In the package~\tt{NumericalSgs} \cite{NumericalSgps} of \tt{GAP} \cite{GAP}, M. Delgado together with P.A.~Garcia-Sanchez and J. Morais used the same method of exploration.
+In the package~\tt{NumericalSgs} \cite{NumericalSgps} of \tt{GAP} \cite{GAP}, M.~Delgado together with P.A.~Garcia-Sanchez and J. Morais used the same method of exploration.
 
 
 Here we describe a new algorithm for the exploration of the tree of numerical
-semigroup $\mathcal{T}$ and achieve the computation of $n_g$ for $g\leq 67$.
+semigroups $\mathcal{T}$ and achieve the computation of $n_g$ for $g\leq 67$.
 The cornerstone of our method is a new combinatorial representation of
-numerical semigroup that is well suited for exploration of the
-tree~$\mathcal{T}$ and allow large code optimization essentially based on use of
+numerical semigroups that is well suited and allows large code optimization essentially based on the use of
 vectorial instructions and parallelization.
 The goal of the paper is twofold:
-first to present our new encoding of the semigroup and the associated
-algorithms, and second to present the optimization techniques which allows, for
+first to present our new encoding of numerical semigroups and the associated
+algorithms, and second to present the optimization techniques which allow, for
 those kinds of algorithms, to get speedups by factors of hundreds and even
-thousands. We claim that these technique are fairly general for those kinds of
+thousands. We claim that these techniques are fairly general for those kinds of
 algorithms. As a support for the claim, we applied it to an algorithm of
 N.~Borie enumerating integer vector modulo permutation groups~\cite{Borie} and
 got a speedup by a factor larger than 2000 using 8 cores.
 
 The paper is divided as follows.
 In Section~\ref{S:Tree} we describe the tree of numerical semigroups and give bounds for some parameters attached to a numerical semigroup.
-The decription of our new representation of numerical semigroup is done in the third section.
+The description of our new representation of numerical semigroups is done in the second section.
 In Section~\ref{S:Algo} we describe an algorithm based on the representation given in Section~\ref{S:DecNumber} and give its complexity. 
-Section~\ref{S:Opti} is more technical, and is devoted to the optimisation of the algorithm introduced in Section~\ref{S:Algo}.
-In the last section we emphase the results obtained using our algorithm.
+Section~\ref{S:Opti} is more technical, and is devoted to the optimization of the algorithm introduced in Section~\ref{S:Algo}.
+In the last section we emphasize the results obtained using our algorithm.
 
 
 \section{The tree of numerical semigroups}
 \label{S:Tree}
 
 We start this section with definitions and properties of numerical semigroups that will be used in the sequel.
-For a more complete introduction, the reader can usefully consults the book \emph{Numerical Semigroups} of J.C.~Rosales and P.A.~Garc\'ia-S\'anchez \cite{BookNS} or the book \emph{The Diophantine Frobenius Problem} of J.L.~Ram\'irez~Alfons\'in \cite{BookDFP}.
+For a more complete introduction, the reader can usefully consult the book \emph{Numerical Semigroups} of J.C.~Rosales and P.A.~Garc\'ia-S\'anchez \cite{BookNS} or the book \emph{The Diophantine Frobenius Problem} of J.L.~Ram\'irez~Alfons\'in \cite{BookDFP}.
 
 \begin{defi}
 Let $S$ be a numerical semigroup. We define 
@@ -145,8 +145,8 @@ $ii)$ $g(S)=\card(\NN\setminus S)$, the \emph{genus} of $S$;
 $iii)$ $c(S)=1+\max(\NN\setminus S)$, the \emph{conductor} of $S$ for $S$ different from $\NN$. By convention, the conductor of $\NN$ is $0$. 
 \end{defi}
 
-By definition a numerical semigroup is an infinite object and we need a finite description of such a object. 
-That is the role of generating sets.
+By definition a numerical semigroup is an infinite object and we need a finite description of such an object. 
+That is provided by generating sets.
 
 
 \begin{defi}
@@ -157,11 +157,11 @@ In this case we write $S=\left<x_1,...,x_n\right>$.
 If we reconsider the numerical semigroup of \eqref{E:NSG}, we obtain
 \begin{equation}
 \label{E:GNSG}
-S_E=\{0,3,6,7,9,10\}\cup[12,+\infty[=\left<3,7\right>
+S_E=\{0,3,6,7,9,10\}\cup[12,+\infty[=\left<3,7\right>.
 \end{equation}
 
 
-A non-zero element $x$ of a numerical semigroup $S$ is said to be \emph{irreducible} if it cannot be expressed as a sum of two non-zeros elements of $S$.  
+A non-zero element $x$ of a numerical semigroup $S$ is said to be \emph{irreducible} if it cannot be expressed as a sum of two non-zero elements of $S$.  
 We denote by $\Irr(S)$ the set of all irreducible elements of $S$.
 
 \begin{lem}[Lemma 2.3, Chap. I, \cite{BookNS}]
@@ -183,15 +183,15 @@ $iii)$ $c(S)\leq 2 g(S)$.
 \end{prop}
 
 \begin{proof}
-$i)$ Let $x$ ba a positive integer satisfying $x \geq c(S)+m(S)$. 
+$i)$ Let $x$ be a positive integer satisfying $x \geq c(S)+m(S)$. 
 As the integers $x$ and $x-m(S)$ are greater than $c(S)$, they belong to $S$.
-Since $x$ equals $(x-m(S))+m(S)$ with $x-m(S)\not=0$ and $m(S)\not=0$, it could not be irreducible.
+Since $x$ equals $(x-m(S))+m(S)$ with $x-m(S)\not=0$ and $m(S)\not=0$, it cannot be irreducible.
 
 $ii)$ The set $\NN\setminus{S}$ of cardinality $g(S)$ contains $\{1,..,m(S)-1\}$ and so the relation $m(S)\leq g(S)+1$ holds.
 
 $iii)$ Let $x$ be an element of $S\cap\{0,...,c(S)-1\}$. 
 The integer $y=c(S)-1-x$ lies in $\{0,...,c(S)-1\}$. 
-Moreover $y$ is not in $S$, for otherwise  we write $c(S)-1=y+x$ where $x,y$ are elements of $S$ implying $c(S)-1\in S$. 
+Moreover $y$ is not in $S$, for otherwise  we write $c(S)-1=y+x$ where $x,y$ are elements of $S$ implying $c(S)-1$ belongs to $S$. 
 In contradiction with the definition of conductor. 
 Thus we define an involution 
 \[
@@ -200,7 +200,7 @@ Thus we define an involution
 x&\mapsto&c(S)-1-x
 \end{array}
 \]
-that send $S\{0,...,c(S)-1\}$ into $\{0,...,c(S)-1\}\setminus S$ which is  of cardinality~$g(S)$. 
+that sends $S\{0,...,c(S)-1\}$ into $\{0,...,c(S)-1\}\setminus S$ which is  of cardinality~$g(S)$. 
 Let us denote by $k$ the cardinality  of $S\cap\{0,...,c(S)-1\}$. 
 Since $\psi$ is injective we must have $k\leq g(S)$. 
 From the relation 
@@ -211,7 +211,7 @@ From the relation
 \end{proof}
 
 A consequence of Proposition~ \ref{P:Res}~$i)$ is that $\Irr(S)$ is finite and its cardinality is at most $c(S)+m(S)-1$.
-More precisely, using Ap\'ery set, we can prove that  the cardinality of $\Irr(S)$ is at most $m(S)$. See Section~2 of Chapter I of~\cite{BookNS} for more details.
+Moreover, the cardinality of $\Irr(S)$ is at most $m(S)$ since any two distinct elements of $\Irr(S)$ cannot be congruent modulo $m(S)$. See Section~2 of Chapter I of~\cite{BookNS} for more details.
 
 We now explain the construction of the tree of numerical semigroups.
 Let~$S$ be a numerical semigroup. The set $S'=S\cup\{c(S)-1\}$ is also a numerical  semigroup and its genus is $g(S)-1$. 
@@ -237,15 +237,15 @@ As $S$ is equal to $S^x\cup\{x\}$, the integer $a+b$ also lies in $S^x$ except i
 The latter is impossible since $a$ and $b$ are different from $x$ and $x$ is irreducible.
 \end{proof}
 
-Proposition~\ref{P:Sx} implies that every semigroup $S$ of genus $g$ can be obtained from a semigroup $S$ by removing a generator $x$ of $S$ that is greater than $c(S)$.
+Proposition~\ref{P:Sx} implies that every semigroup $S$ of genus $g$ can be obtained from a semigroup $S$ by removing a generator $x$ of $S$ that is greater than or equal to $c(S)$.
 Hence the relation~$S'=S^x$ holds.
 
 We construct the tree of numerical semigroups, denoted by $\mathcal{T}$ as follows. 
 The root of the tree is the unique semigroup of genus $0$, \ie, $\left<1\right>$ that is equal to $\NN$. 
-If~$S$ is a semigroup in the tree,  the sons of $S$ are exactly the semigroup~$S^x$ where $x$ belongs to $\Irr(S)\cap[c(s),+\infty[$. 
+If~$S$ is a semigroup in the tree,  the sons of $S$ are exactly the semigroups~$S^x$ where $x$ belongs to $\Irr(S)\cap[c(s),+\infty[$. 
 By convention, when depicting the tree, the numerical semigroup $S^x$ is in the left of $S^y$ if $x$ is smaller than~$y$. 
 With this construction, a semigroup $S$ has depth $g$ in $\mathcal{T}$ if and only if its genus is~$g$, see Figure~\ref{F:Tree}.
-We denote by $\mathcal{T}_{g}$ the subtree of~$\mathcal{T}$ resticted to all semigroup of genus $\leq g$.
+We denote by $\mathcal{T}_{g}$ the subtree of~$\mathcal{T}$ restricted to all semigroups of genus $\leq g$.
 
 
  \begin{figure}[hf!]
@@ -287,13 +287,13 @@ We denote by $\mathcal{T}_{g}$ the subtree of~$\mathcal{T}$ resticted to all sem
     ;
   \end{tikzpicture}
   \]
-\caption{The first four layers of the tree $\mathcal{T}$ of numerical semigroups, corresponding to~$\mathcal{T}_4$. A generator of a semigroup is in gray if is not greater than $c(S)$. An edge between a semigroup $S$ and its son $S'$ is labelled by  $x$ is $S'$ is obtained from $S$ by removing~$x$, that is $S'=S^x$.}
+\caption{The first four layers of the tree $\mathcal{T}$ of numerical semigroups, corresponding to~$\mathcal{T}_4$. A generator of a semigroup is it in gray if is not greater than $c(S)$. An edge between a semigroup $S$ and its son $S'$ is labelled by  $x$ if $S'$ is obtained from $S$ by removing~$x$, that is if $S'=S^x$ holds.}
 \label{F:Tree}
 \end{figure}
 
-As the reader can check, the main difficulty to characterize the son of a semigroup is to determine its irreducible elements.
- In \cite{NumericalSgps}, the semigroup are given by their Ap\'ery set and then the difficulty is to describe the Ap\'ery set of $S^x$  from this of $S$. 
- This approach is elegant but not sufficiently \emph{basic} for our optimisations.
+As the reader can check, the main difficulty to characterize the sons of a semigroup is to determine its irreducible elements.
+ In \cite{NumericalSgps}, the semigroups are given by their Ap\'ery sets and then the difficulty is to describe the Ap\'ery set of $S^x$  from that of $S$. 
+ This approach is elegant but not sufficiently \emph{basic} for our optimizations.
 
 
 
@@ -320,12 +320,12 @@ Then $x$ can be decomposed as $x=y+z$ with $y$ and $z$ in~$S$.
 Moreover the condition $2y\leq x$ implies $y\leq z$. 
 In other words if we define~$D'_S(x)$ to be the set of all $(y,z)\in S\times S$ with $x=y+z$ and $y\leq z$ then~$D_S(x)$ is the image of $D'_S(x)$ under the projection on the first coordinate.
  Hence~$D_S(x)$ describes how~$x$ can be decomposed as sums of two elements of $S$.
- This is why we decide to call $d_S(x)$ the $S$-decomposition number of $x$.
-
+ This justifies the name given to the function $d_S$.
+ 
 \begin{exam}
 Reconsider the semigroup $S_E$ given at \eqref{E:NSG}.
-The integer $14$ admits three decompositions as sums of two elements of $S$, namely $14=0+14$ and $14=7+7$. 
-Thus the set $D_{S_E}(14)$ is equal to $\{0,7\}$ and $d_{S_E}$ equals $2$.
+The integer $14$ admits two decompositions as sums of two elements of $S$, namely $14=0+14$ and $14=7+7$. 
+Thus the set $D_{S_E}(14)$ is equal to $\{0,7\}$ and $d_{S_E}=2$ holds.
 \end{exam}
 
 
@@ -361,7 +361,7 @@ Assume $x$ is irreducible in $S$.
 There cannot exist $y$ and $z$ in~$(S\setminus\{0\})^2$ such that~$x=y+z$. 
 The only possible decomposition of $x$ as a sum of two elements of $S$ is $x=0+x$. 
 Hence, the set $D_S(x)$ is equal to~$\{0\}$ and we have $d_S(x)=1$. 
-Conversely, let $x$ such that $d_S(x)$ is $1$. 
+Conversely, let $x$ be such that $d_S(x)$ is $1$. 
 By~$i)$ the  integer $x$ must be in $S$. 
 As $x=0+x$ is always a decomposition of $x$ as a sum of two elements in $S$, we obtain $D_S(x)=\{0\}$.
 If there exist $y$ and $z$ in $S$ such that $y\leq z$ and $x=y+z$ hold then $y$ lies in~$D_S(x)$. 
@@ -369,9 +369,9 @@ This implies $y=0$ and $z=x$.
 Hence $x$ is irreducible in~$S$.
 \end{proof}
 
-We note  that $0$ is never irreducible despite the fact $d_S(0)$ is $1$ for all numerical semigroup $S$.
+We note  that $0$ is never irreducible despite the fact $d_S(0)$ is $1$ for all numerical semigroups $S$.
 
-We now explain how to compute the $S$-decomposition numbers function of a numerical semigroup  from this of its father.
+We now explain how to compute the $S$-decomposition numbers function of a numerical semigroup  from that of its father.
 
 \begin{prop}
 Let $S$ be a numerical semigroup and $x$ be an irreducible element of $S$. 
@@ -404,7 +404,7 @@ The relation $y-z=x$ implies $z=y-x$ and $2z\leq y$ becomes $y\leq 2x$. Thus we 
 \[
 E=\begin{cases}
 \{y-x\}&\text{if $y-x\in S^x$ and $y\leq 2x$}\\
-\emptyset&\text{otherwise}
+\emptyset&\text{otherwise}.
 \end{cases}
 \] 
 The relation $y-x\in S^x$ together with $y\leq2x$ is equivalent to $y-x\in S$ together with $y<2x$.
@@ -412,12 +412,12 @@ Therefore we obtain
 \[
 E=\begin{cases}
 \{y-x\}&\text{if $y-x\in S$ and $y< 2x$}\\
-\emptyset&\text{otherwise}
+\emptyset&\text{otherwise}.
 \end{cases}
 \] 
 Assume $y-x$ lies in $S$.  If $y<2x$ holds, we have $E=\{y-x\}$ and $F=\emptyset$. Otherwise, we obtain $E=\emptyset$ and $F=\{x\}$. 
 Then if $y-x\in S$ holds, we have $\card(E)+\card(F)=1$ and so $d_{S}(y)$ is equal to $d_{S^x}(y)+1$.
-If $y-x$ not belong to $S$, then $E$ and $F$ are empty implying $d_{S}(y)=d_{S^x}(y)$. As the condition $y-x\in S$ is equivalent to $y\geq x$ together with $d_S(y-x)>0$, by Proposition~\ref{P:Dandd} the result holds.
+If $y-x$ does not belong to $S$, then $E$ and $F$ are empty implying $d_{S}(y)=d_{S^x}(y)$. As the condition $y-x\in S$ is equivalent to $y\geq x$ together with $d_S(y-x)>0$, by Proposition~\ref{P:Dandd} the result holds.
 \end{proof}
 
 \section{A new algorithm}
@@ -470,15 +470,15 @@ explore the tree deeper, we must restart from the root.
 \end{algorithm}
 
 In Algorithm~\ref{A:ExpRec} we do not specify how to compute $c(S)$, $g(S)$ and $m(S)$  from $S$ neither how to test if an integer is irreducible. 
-It also miss  the characterisation of $S^x$ from $S$.
+It also misses  the characterization of $S^x$ from $S$.
 These items depend heavily of the representation of $S$.
 Our choice is to use the $S$-decomposition numbers function. 
-The first task is to use a finite set of such numbers to characterise the whole semigroup.
+The first task is to use a finite set of such numbers to characterize the whole semigroup.
 
 \begin{prop}
 \label{P:delta}
 Let $G$ be an integer and $S$ be a numerical semigroup of genus $g\leq G$.
-Then $S$ is entirely described by $\delta_S=(d_S(0),...,d_S(3\,G))$. More precisely we can obtain $c(S), g(S), m(S)$ and $\Irr(S)$ from $\delta_S$.
+Then $S$ is entirely described by the vector $\delta_S=(d_S(0),...,d_S(3\,G)) \in \NN^{3G+1}$. More precisely we can obtain $c(S), g(S), m(S)$ and $\Irr(S)$ from $\delta_S$.
 \end{prop} 
 
 \begin{proof}
@@ -496,7 +496,8 @@ This implies that the $S$-decomposition number of $m(S)$ appears in $\delta_S$ :
 \[
 m(S)=\min\{i\in\{0,...,3G\},\ d_S(i)>0\}.
 \]
-Since, by Proposition~\ref{P:Res} $i)$,  all irreducible elements are smaller than $c(S)+m(S)-1$, which is itself smaller than $3G$ from the relations $ii)$ and $iii)$ of Proposition~\ref{P:Res}. So Proposition~\ref{P:Dandd} gives
+By Proposition~\ref{P:Res},  all irreducible elements are smaller than $c(S)+m(S)-1$, which is itself smaller than~$3G$.
+Hence, Proposition~\ref{P:Dandd} gives
 \[
 \Irr(S)=\{i \in\{0,...,3G\},\ d_S(i)=1\}.
 \]
@@ -504,7 +505,7 @@ Since, by Proposition~\ref{P:Res} $i)$,  all irreducible elements are smaller th
 
 Even though it is quite simple, the computation of $c(S),m(S)$ and $g(S)$ from $\delta_S$ has a non negligible cost.
 We represent a numerical semigroup $S$ of genus $g\leq G$ by $(c(S),g(S),c(S),\delta_S)$. 
-In an algorithmic context, if the variable \texttt{S} stands for a numerical semigroup  we use:
+In an algorithmic context, if the variable \texttt{S} stands for a numerical semigroups  we use:
 
 -- \tt{S.c}, \tt{S.g} and \tt{S.m} for the integers $c(S)$, $g(S)$ and $m(S)$;
 
@@ -621,14 +622,14 @@ Since there are exactly $N=\sum_{g=0}^G n_g$ such semigroups, the time complexit
 Let us now prove the space complexity statement.
 For  this we need to describe the stack through  the run of the algorithm.
 Since the stack is filled  with a depth first search algorithm, it has two properties.
-The first one is that reading the stack from the bottom to the top, the genus of  semigroup increases.  
+The first one is that reading the stack from the bottom to the top, the genus increases.  
 The second one is that, for all $g\in[0,G]$, every semigroup of genus~$g$ in the stack has the same father.
 As the number of sons of a  semigroup $S$ is the number of $S$-irreducible elements in the set $\{c(S),...,c(S)+m(S)-1\}$,  a semigroup $S$ has at most $m(S)$ sons. 
 By~Proposition~\ref{P:Res} $ii)$, this implies that a semigroup of genus $g$ as at most $g+1$ sons.
-Therefore the stack contains at most $g+1$ semigroup of genus $g+1$ for $g\leq G$. 
+Therefore the stack contains at most $g+1$ semigroups of genus $g+1$ for $g\leq G$. 
 So the size of the stack is bounded~by 
 \[
-M=\sum_{g=0}^Gg=\frac{G(G+1)}2
+M=\sum_{g=0}^Gg=\frac{G(G+1)}2.
 \]
 A semigroup $S$ is represented by a quadruple $(c(S),g(S),m(S),\delta_S)$. 
 By relations $ii)$ and $iii)$ of Proposition~\ref{P:Res}, we have $c\leq 2g(S)$ and $m\leq g(S)+1$. 
@@ -646,14 +647,14 @@ O(\log(G)\times G\times M)= O(\log(G)\times G^3).
 
 \label{S:Opti}
 
-Though there are asymptotically faster algorithms than the one presented here,
+Even though there are asymptotically faster algorithms than the one presented here,
 thank to careful optimizations, we were able to compute $n_g$ for much larger
-genus than before. This is due to the fact that our algorithm is particularly
+genuses than before. This is due to the fact that our algorithm is particularly
 well suited for the current processor architecture. In particular, it allows
-to use parallelism at various scale (parallel branch exploration,
+to use parallelism at various scales (parallel branch exploration,
 vectorization)...
 
-To get the greatest speed from modern processor, we used several optimization
+To get the greatest speed from modern processors, we used several optimization
 tricks, which we will elaborate in the following section:
 
 
@@ -673,11 +674,12 @@ tricks, which we will elaborate in the following section:
   number, vs \verb|uint_fast64_t| for all indexes).
 \end{itemize}
 
+The source code of our algorithm is available here \cite{code}.
 \subsection{Vectorization}
 
 Assume for example that we want to construct the tree~$\mathcal{T}_{100}$
-of all numerical semigroup of genus smaller than $100$.  In this case, the
-representation of numerical semigroup given in Section~\ref{S:DecNumber} uses
+of all numerical semigroups of genus smaller than $100$.  In this case, the
+representation of numerical semigroups given in Section~\ref{S:DecNumber} uses
 decomposition numbers of integers smaller than~$300$.  By Lemma~\ref{L:RepN},
 such a decomposition number is smaller than $151$ and requires~$1$ byte of
 memory.  Thus at each \textbf{for} step of Algorithm~\textsc{Son}, the CPU
@@ -691,7 +693,7 @@ the \textbf{for} loop of Algorithm~\textsc{Son} we may imagine two cursors:
 the first one, denoted \texttt{src} pointing to the memory byte of
 $\texttt{S.d[0]}$ and the second one, denoted \texttt{dst} pointing to the
 memory byte $\texttt{T.d[y]}$.  Using these two cursors, Lines \tt{10} to
-\tt{14} of Algorithm~\ref{A:Son} can be rewritten as follows :
+\tt{14} of Algorithm~\ref{A:Son} can be rewritten as follows:
 
 \vspace{1em}
 \small
@@ -713,7 +715,7 @@ pointed by \texttt{dst} only needs to access the values pointed by \tt{src}
 and \tt{dst}.  We can therefore work in multiple entries at the same time
 without collision.  Current CPUs allow this thanks to the \SIMD technologies as
 \MMX, \SSE, etc.  The acronym \SIMD~\cite{WikipediaSIMD} stands for Single Operation Multiple Data.  
-We used \SSEV~\cite{WikipediaSSE, IntelSSE} technology as it allows for the largest speedup\footnote{A much more speedup can be certainly obtained using \texttt{AVX2} technology \cite{AVX2}. However, at this time, we can't access a performent computer with this set of instructions.}.  
+We used \SSEV~\cite{WikipediaSSE, IntelSSE} technology as it allows for the largest speedup\footnote{A much greater  speedup can be certainly obtained using \texttt{AVX2} technology \cite{AVX2}. However, at this time, we can't access a performant computer with this set of instructions.}.  
 This need to respect some constraints in the memory
 organization of the data, namely ``memory alignment''. Recall that an address
 is 16~bytes aligned if it is a multiple of 16. \SSE memory access are much
@@ -736,7 +738,7 @@ void copy_blocks(dec_blocks &dst, dec_blocks const &src) {
 Here \tt{dec\_blocks} is a type for arrays of 16~bytes blocks whose size
 \tt{NBLOCKS} are just large enough to store the decomposition numbers (that is
 $3G$ rounded up to a multiple of 16). The instruction \tt{dst[i] = src[i]}
-actually copy a full 16~bytes block.
+actually copies a full 16~bytes block.
 
 Then the core of the \textbf{while} loop in the preceding algorithm is
 translated as a \texttt{for} loop as follows (recall that $x$ denotes the generator of
@@ -759,7 +761,7 @@ The instruction \tt{load\_unaligned\_epi8} (specific to \SSE technology) loads
  16 consecutive entries of the decomposition number
 of the parent (called \tt{src} semigroup) in the variable \tt{block}.
 Those entries will be used to compute
-the entries $16i, \dots 16i+15$ of the children semigroup. Since the removed
+the entries $16i, \dots 16i+15$ of the children semigroups. Since the removed
 generator~$x$ is not necessarily a multiple of $16$, the data are not aligned
 in memory, hence the use of a specific instruction. The \tt{zero}
 (resp. \tt{one}) constants are initialized as 16 bytes equal to $0$
@@ -779,75 +781,17 @@ $\tt{dst} \gets \tt{dst} - \textbf{ if } \tt{block} \neq 0 \textbf{ then } 1 \te
 As we previously said, to gain more speed this core loop is actually unrolled
 using some kind of Duff device~\cite{WikipediaDuff}. 
 
-%{\small
-%\begin{algorithmic}
-%\State \textbf{Jump to case } $\tt{start}+1$
-%\State \textbf{case 1:} \tt{block = ...; dst[1] -= ((block != zero) \& one)}
-%\State \textbf{case 2:} \tt{block = ...; dst[2] -= ((block != zero) \& one)}
-%\State \textbf{[...]}
-%\State \textbf{case NBLOCK-1:} \tt{...}
-%\end{algorithmic}}
-
-% The MMX technology permits to work on $8$ bytes in parallel while the SSE
-% works in $16$ bytes.  As the rest of the CPU works on $8$ bytes, the SSE
-% technology needs some constraint on memory access than cannot be fulfilled in
-% our algorithm.
-
-% This motivate our choice to use the MMX technology. 
-% More precisely, we use three commands: \tt{pcmpeqb}, \tt{pandn} and \tt{psubb}.
-%  These commands work on two arrays of $8$ bytes, called~\tt{s} and \tt{d} here. 
-%  In each case the array \tt{d} is modified. 
-%  We denote bytes by $\{\tt{0},\tt{1}\}$-words of length $8$.
-%  After a call to \tt{pcmpeqb(s,d)} the $i$th entry of $d$ contains \tt{11111111} if $\tt{s}[i]=\tt{d}[i]$ holds and \tt{00000000} otherwise. 
-%  The command \tt{pand(s,d)}  store in $\tt{d}[i]$  the value of the byte-logic operation \tt{s}[i] \tt{and} (\tt{not} \tt{d}[i]).
-%   When \tt{pand(s,d)} is called the new value of $\tt{d}[i]$ is $\tt{s}[i]-\tt{d}[i]$.  
-%   Glueing all the pieces together we obtain the following version of the \textbf{for} loop of Algorithm~\textsc{Son} :
-
-% \begin{algorithmic}[1]
-% \State $\tt{src}\gets \text{address}(\tt{S.d[0]})$
-% \State $\tt{dst}\gets \text{address}(\tt{T.d[x]})$
-% \State $\tt{i}\gets 0$
-% \While{$\tt{i}\leq \tt{3G}-\tt{x}$}
-% \State $\tt{t}\gets [\tt{00000000},...,\tt{00000000}]$ \Comment{$8$ bytes equal to \tt{00000000}}
-% \State \tt{pcmpeqb(\tt{src},t)}
-% \State \tt{pandn([00000001,...,00000001],t)}
-% \State \tt{psub(\tt{dst},t)}
-% \State $\tt{dst}\gets \tt{t}$ \Comment{copy the array $[\tt{t}[0],...,\tt{t}[7]]$ to $[\tt{d}[0],...,\tt{d}[7]]$}
-% \State \textbf{increase} \tt{src},\tt{dst},\tt{i} \textbf{by} $8$
-% \EndWhile
-% \end{algorithmic}
-
-% Let us explain how this works in more details. 
-% Let $i$ be an integer in $\{0,...,7\}$.  
-% After Line~\tt{5}, the value of $\tt{t}[i]$ is \tt{0000000}. 
-% After Line~\tt{6}, we have 
-% \[
-% \tt{t}[i]=\begin{cases}
-% \tt{11111111}&\text{if $\tt{src}[i]=\tt{00000000}$ (corresponding to $0$)}\\
-% \tt{00000000}&\text{otherwise}
-% \end{cases}
-% \]
-% Line \tt{7} performs a logical \tt{and} between $\tt{00000001}$ and $\tt{not t}[i]$. Hence the result byte is \tt{00000001} if the last byte of \tt{t}[i] is $0$ and \tt{00000000} otherwise: 
-% \[
-% \tt{t}[i]=\begin{cases}
-% \tt{00000000}&\text{if $\tt{src}[i]=\tt{00000000}$ (corresponding to $0$)}\\
-% \tt{00000001}&\text{otherwise}
-% \end{cases}
-% \]
-%  Line \tt{8} subtracts \tt{t}[i] (which is equal to $0$ or $1$) from $\tt{dst}[i]$ according to Proposition~\ref{P:Sx}. 
-% Finally we shift the cursor \tt{src} and \tt{dst} by eight cases. 
-
 \subsection{Parallel tree exploration using \CilkP}
 
 Our second optimization is to use parallelism on exploration of the tree.
-Today, CPU of personal computer have several cores (2, 4 or more).  The given
+Today, CPU of personal computers have several cores (2, 4 or more).  The given
 version of our exploration algorithm uses a single core and so a fraction only
 of the power of a CPU. The idea here is that different branches of the tree
 can be explored in parallel by different cores of the computer. The tricky
-part is to ensure that each cores are busy, giving a new branch when a core is
+part is to ensure that all cores are busy, giving a new branch when a core is
 done with a former one. Fortunately there is a technology called
 \CilkP~\cite{CilkIntel, CilkRefman} which is particularly well suited for
-those kind of problems. For our computation, we used the free version which is
+those kinds of problems. For our computation, we used the free version which is
 integrated in the latest version of the GNU~C compiler~\cite{GCCcilk}.
 
 \Cilk is a general-purpose language designed for multithreaded parallel
@@ -863,14 +807,14 @@ using the parallel features of \CilkP:
 \begin{itemize}
 \item\tt{cilk\_spawn}: used on a procedure call, indicates that the call can
   safely operate in parallel with the remaining code of the current
-  function. Note that the scheduler is not obligated to run this procedure in
+  function. Note that the scheduler is not obliged to run this procedure in
   parallel; the keyword merely alerts the scheduler that it can do so.
 \item\tt{cilk\_sync}: indicates that execution of the current procedure cannot
   proceed until all previously spawned procedures have completed and returned
   their results to the current frame.
 \end{itemize}
 As a consequence, to get a parallel version of the recursive
-Algorithm~\ref{A:ExpRec}, you only need to modify it as
+Algorithm~\ref{A:ExpRec}, one only needs to modify it as
 
 {\small
 \begin{algorithm}
@@ -893,7 +837,7 @@ Algorithm~\ref{A:ExpRec}, you only need to modify it as
 
 We just tells \CilkP that the subtrees rooted at various children can be
 explored in parallel.
-The thing are actually only a little bit more complicated. First we have to
+Things are actually only a little bit more complicated. First we have to
 gather the results of the exploration. If we simply write
 \begin{center}
 \tt{result}[$g(\tt{S})$] $\gets \tt{result}[g(\tt{S})] + 1$
@@ -905,9 +849,9 @@ value from the memory, adding one, storing back the result.
 Since there is by
 default non synchronization, the following sequence of actions for two cores
  is possible: Read1 / Read2 / Add1 / Add2 / Store1 / Store2. Then the two
-cores performs the same modification resulting in incrementing the variable
+cores perform the same modification resulting in incrementing the variable
 only once. This is called a data race and leads to nondeterministic wrong
-result. To cope with those kinds of synchronization problems, \CilkP provide the
+results. To cope with those kinds of synchronization problems, \CilkP provides the
 notion of \emph{reducer} which are variables local to each thread which are
 gathered (here added) when a thread is finishing its job.
 
@@ -937,15 +881,15 @@ void explore(const Semigroup &S) {
 }
 \vspace{1em}
 
-Note that in our version, we found that \tt{STACK\_BOUND} optimal value was
-around 10-12 for genus in the range~$45\dots 67$ so that \tt{explore\_stack}
+Note that in our version, we found that the \tt{STACK\_BOUND} optimal value was
+around 10 to 12 for genus in the range~$45\dots 67$ so that \tt{explore\_stack}
 is used more than $99\%$ of the time. The \CilkP recursive function does
-actually very little work but ensure that the work is balanced between the
+actually very little work but ensures that the work is balanced between the
 different cores.
 
 \subsection{Various technical optimizations}
 
-Using vectorization and loop enrolling as described previously leads to an
+Using vectorization and loop unrolling as described previously leads to an
 extremely fast \textsc{Son} algorithm. Indeed, its cost is comparable to the cost
 of copying a semigroup. It is therefore crucial for performance to avoid any
 extra cost. We list here various places where unnecessary cost can be avoided.
@@ -953,7 +897,7 @@ extra cost. We list here various places where unnecessary cost can be avoided.
 
 
 \subsubsection*{Avoiding all unnecessary copy} We also used a trick to avoid
-copying from and to the top of the stack. Indeed, then main loop perform the
+copying from and to the top of the stack. Indeed, then main loop performs the
 following sequences of operations:
 
 \vspace{1em}
@@ -968,19 +912,19 @@ following sequences of operations:
 \end{algorithmic}
 }
 
-\vspace{1em}
+\vspace{0.5em}
 
 If we use a stack of semigroup, we can construct $\tt{S}^\tt{x}$ directly into
-the stack memory but we have to copy the top of the stack to \tt{S}. Since the
-average number of children is the golden ratio, this single copy is far from
+the stack memory but we have to copy the top of the stack to \tt{S}. 
+In \cite{Zhai}, A.Zhai establishes that the limit of the quotient   $\frac{n_g}{n_{g-1}}$, when $g$ go to infinity, is the golden ratio $\phi\approx 1.618$. Therefore this single copy is far from
 being negligible. The trick is to use a level of indirection, replacing the
-stack by an array of semigroup and an array of indexes pointing to the array of
-semigroup. We keep the invariant that the array of indexes is a permutation of
-the array of semigroup. Now instead of copying \tt{S} out of the stack, we keep
+stack by an array of semigroups $A$ and an array of indexes $I$ pointing to the array of
+semigroups. The array $I$ can be viewed as a permutation of
+the array~$A$. Now instead of copying \tt{S} out of the stack, we keep
 it on the stack, pushing the children in the second position by exchanging the
-indexes. Here is the relevant part of the code:
+indexes in $I$. Here is the relevant part of the code:
 
-\vspace{1em}
+\vspace{0.5em}
 
 {\small
 \begin{verbatim}
@@ -1006,22 +950,23 @@ indexes. Here is the relevant part of the code:
 \vspace{1em}
 
 \subsubsection*{Avoiding dynamic allocation} Compared to the \textsc{Son}
-algorithm, dynamic allocation cost orders of magnitude more. Therefore, during
+algorithm, dynamic allocation costs orders of magnitude more. Therefore, during
 the derecursived stack algorithm, we only allocate (on the system stack rather
-than on the heap) the stack of semigroup. No further allocation are done.
+than on the heap) the stack of semigroups. No further allocation are done.
 
 \subsubsection*{Pointer arithmetic and indexes}
 
 Due to the way, the \CPP does its pointer arithmetic, even if the index in the
 array are less than $3G$ and therefore fits in $8$~bits, we use $64$~bits
 indexes (namely \verb|uint_fast64_t|) to avoid conversion and sign extension
-when computing addresses of indexed element. This single standard trick save
+when computing addresses of indexed elements. This single standard trick save
 10\% of speed.
+
 
 \section{Results}
 
 Running the \Cilk version of our optimized algorithm we have explored the tree
-of numerical semigroup upto genus $67$. The computation were done one a shared
+of numerical semigroups up to genus $67$. The computation were done one a shared
 $64$ core AMD Opteron\texttrademark{} Processor 6276. As other heavy
 computation were running on the machine, we only used $32$ cores. The
 computation took $18$~days. The values of~$n_g$ for $g\leq 67$ are :
@@ -1031,53 +976,52 @@ computation took $18$~days. The values of~$n_g$ for $g\leq 67$ are :
 \hline
 g & $n_g$ & g & $n_g$ & g & $n_g$ \\
 \hline
-0 & 1 & 23 & 170963 & 46 & 14463633648\\
-1 & 1 & 24 & 282828 & 47 & 23527845502\\
-2 & 2 & 25 & 467224 & 48 & 38260496374\\
-3 & 4 & 26 & 770832 & 49 & 62200036752\\
-4 & 7 & 27 & 1270267 & 50 & 101090300128\\
-5 & 12 & 28 & 2091030 & 51 & 164253200784\\
-6 & 23 & 29 & 3437839 & 52 & 266815155103\\
-7 & 39 & 30 & 5646773 & 53 & 433317458741\\
-8 & 67 & 31 & 9266788 & 54 & 703569992121\\
-9 & 118 & 32 & 15195070 & 55 & 1142140736859\\
-10 & 204 & 33 & 24896206 & 56 & 1853737832107\\
-11 & 343 & 34 & 40761087 & 57 & 3008140981820\\
-12 & 592 & 35 & 66687201 & 58 & 4880606790010\\
-13 & 1001 & 36 & 109032500 & 59 & 7917344087695\\
-14 & 1693 & 37 & 178158289 & 60 & 12841603251351\\
-15 & 2857 & 38 & 290939807 & 61 & 20825558002053\\
-16 & 4806 & 39 & 474851445 & 62 & 33768763536686\\
-17 & 8045 & 40 & 774614284 & 63 & 54749244915730\\
-18 & 13467 & 41 & 1262992840 & 64 & 88754191073328\\
-19 & 22464 & 42 & 2058356522 & 65 & 143863484925550\\
-20 & 37396 & 43 & 3353191846 & 66 & 233166577125714\\
-21 & 62194 & 44 & 5460401576 & 67 & 377866907506273\\
-22 & 103246 & 45 & 8888486816 & \\
+0 & 1 & 23 & 170\,963 & 46 & 14\,463\,633\,648\\
+1 & 1 & 24 & 282\,828 & 47 & 23\,527\,845\,502\\
+2 & 2 & 25 & 467\,224 & 48 & 38\,260\,496\,374\\
+3 & 4 & 26 & 770\,832 & 49 & 62\,200\,036\,752\\
+4 & 7 & 27 & 1\,270\,267 & 50 & 101\,090\,300\,128\\
+5 & 12 & 28 & 2\,091\,030 & 51 & 164\,253\,200\,784\\
+6 & 23 & 29 & 3\,437\,839 & 52 & 266\,815\,155\,103\\
+7 & 39 & 30 & 5\,646\,773 & 53 & 433\,317\,458\,741\\
+8 & 67 & 31 & 9\,266\,788 & 54 & 703\,569\,992\,121\\
+9 & 118 & 32 & 15\,195\,070 & 55 & 1\,142\,140\,736\,859\\
+10 & 204 & 33 & 24\,896\,206 & 56 & 1\,853\,737\,832\,107\\
+11 & 343 & 34 & 40\,761\,087 & 57 & 3\,008\,140\,981\,820\\
+12 & 592 & 35 & 66\,687\,201 & 58 & 4\,880\,606\,790\,010\\
+13 & 1\,001 & 36 & 109\,032\,500 & 59 & 7\,917\,344\,087\,695\\
+14 & 1\,693 & 37 & 178\,158\,289 & 60 & 12\,841\,603\,251\,351\\
+15 & 2\,857 & 38 & 290\,939\,807 & 61 & 20\,825\,558\,002\,053\\
+16 & 4\,806 & 39 & 474\,851\,445 & 62 & 33\,768\,763\,536\,686\\
+17 & 8\,045 & 40 & 774\,614\,284 & 63 & 54\,749\,244\,915\,730\\
+18 & 13\,467 & 41 & 1\,262\,992\,840 & 64 & 88\,754\,191\,073\,328\\
+19 & 22\,464 & 42 & 2\,058\,356\,522 & 65 & 143\,863\,484\,925\,550\\
+20 & 37\,396 & 43 & 3\,353\,191\,846 & 66 & 233\,166\,577\,125\,714\\
+21 & 62\,194 & 44 & 5\,460\,401\,576 & 67 & 377\,866\,907\,506\,273\\
+22 & 103\,246 & 45 & 8\,888\,486\,816 & &\\
 \hline
 \end{tabular}
 \end{center}
 
-In \cite{Zhai}, A.Zhai establishes that the limit of the quotient   $\frac{n_g}{n_{g-1}}$, when $g$ go to infinity, is the golden ratio $\phi\approx 1.618$. As the reader can check the convergence is very slow : the quotient $n_{67}/n_{66}$ is $\approx 1.62$.
+As the reader can check the convergence of sequence $\frac{n_g}{n_{g-1}}$ established by A.~Zhai in \cite{Zhai} is very slow: $\frac{n_{67}}{n_{66}}\approx 1.62$.
 
 
 \subsection{Wilf's conjecture}
 
 In the paper \cite{Wilf} of 1978, H.S. Wilf conjectured that all numerical semigroup $S$ satisfy the relation 
-
 \[
-\card(\Irr(S))\geq \frac{c(S)}{c(S)-g(S)}
+\card(\Irr(S))\geq \frac{c(S)}{c(S)-g(S)}.
 \]
-Since the work of M.~Bras-Amor{\'o}s, see \cite{BrasAmoros2008}, we yet know that all numerical semigroups of genus $g\leq 50$ satisfy the Wilf's conjecture. With our exploration algorithm we have proved that there is no counterexample to the Wilf's conjecture of genus $g\leq 60$.
+Since the work of M.~Bras-Amor{\'o}s, see \cite{BrasAmoros2008}, we yet know that all numerical semigroups of genus $g\leq 50$ satisfy Wilf's conjecture. With our exploration algorithm we have proved that there is no counterexample to Wilf's conjecture up to genus $60$.
 
 
 \subsection{Timings}
 
-In this section we summarize the timing improvement through the different 
-optimization of our algorithm. 
+In this section we summarize the timing improvements through the different 
+optimizations of our algorithm. 
 
 
-The following table show the time needed by the algorithm for computing 
+The following table shows the time needed by the algorithm for computing 
 the values of $n_g$ 
 for $g\leq G$ with $30\leq G \leq 40$
 on a machine equipped with  an \tt{Intel\texttrademark{} i5-3570K} CPU running at \texttt{3.4GHz}
@@ -1085,7 +1029,7 @@ and \texttt{8GB} of memory.
 All algorithms are executed on only one core. Algorithm \texttt{breadth} is 
 based on a breadth exploration of the tree while Algorithm \texttt{depth} 
 use a depth exploration. Algorithm \texttt{depth+$\delta$} is a refinement of 
-\texttt{depth} based on the the $S$-decomposition function. Algorithm 
+\texttt{depth} based on the $S$-decomposition function. Algorithm 
 \texttt{$\delta$+sse} in an optimization of \texttt{depth+$\delta$} using the 
 \SIMD extension \SSE. Times are in second.
 
@@ -1112,7 +1056,7 @@ The following table illustrates the impact of parallelization on the same
 machine based on the \tt{Intel\texttrademark{} i5-3570K} CPU. This CPU has two physical cores that are able 
 to run four threads thanks to the \texttt{Hyper-Threading} 
 technology~\cite{WikipediaHT}. However, when more 
-than two threads are running, the computation engine are shared between two 
+than two threads are running, the computation engines are shared between two 
 threads. 
   
   \begin{figure}[h!]
@@ -1128,25 +1072,27 @@ Threads & 30 & 35 & 40 & 45 & 50 \\
 \end{tabular}
 \end{figure}
 
+\vspace{-0.2em}
+
 The time of the one threaded algorithm  must be compared with the 
 \texttt{$\delta$+sse} version of the previous table : it illustrates the 
 additional cost induced by the use of \Cilk technology. 
 
-It should be notice that the \texttt{TurboBoost} technology \cite{WikipediaTB} 
+It should be noticed that the \texttt{TurboBoost} technology \cite{WikipediaTB} 
 is present on the CPU. Therefore the clock of the CPU is a bit higher when the 
-number of thread 
-is smaller. Therefore the gain of using more threads is a bit over than one 
-suggested by the table.
+number of threads 
+is smaller. Therefore the gain of using more threads is a bit over than the one 
+suggestested by the table.
 
-Finally we test our algorithm on a machine holding two 
+Finally we tested our algorithm on a machine holding two 
 \tt{Intel\texttrademark{} Xeon\texttrademark{} X5650} CPU running 
 at \texttt{2.67GHz}.
-Each of those CPU have 6 physical cores that are able to run 12 threads : the 
+Each of those CPU has 6 physical cores that are able to run 12 threads : the 
 machine has also 12 physical cores.  
 For more than $12$ threads, the speedup should be much less when
-adding more core. The following table resumes the time needed by the algorithm 
-to explore $\mathcal{T}_{50}$ on different number of threads (the double 
-vertical line delimites the use of \texttt{Hyper Threadind}). For reference,
+adding more cores. The following table resumes the time needed by the algorithm 
+to explore $\mathcal{T}_{50}$ on different numbers of threads (the double 
+vertical line delimite the use of \texttt{Hyper Threading}). For reference,
 we put in the column called \texttt{C++} the computation time of the same
 program compiled without \Cilk.
 \begin{figure}[h!]
@@ -1159,246 +1105,16 @@ program compiled without \Cilk.
 \end{tabular}
 \end{figure}
 
-% 
-% We can see that this is indeed happening under the
-% 
-% horizontal bar in the following table.
-%   \begin{figure}[h!]
-% \begin{tabular}{|c|c|c|c|c|c|}
-% \hline
-% Threads & 30 & 35 & 40 & 45 & 50 \\
-% \hline
-% 1 &  0.33 & 2.50 & 26.1 & 307 & 3709 \\
-% 2 &  0.17 & 1.25 & 13.05 & 153.5 & 1865\\
-% 3 &  0.11 & 0.71 & 8.57 & 102.6 & 1243 \\
-% 4 &  0.10 & 0.55 & 6.45 &  77.21 & 932.4 \\
-% 8 &  0.10 & 0.36 & 3.55 &  40.22 & 486.8 \\
-% 12 &  0.10 & 0.36 & 2.61 & 27.34 & 325.7 \\\hline
-% 16 &  0.10 & 0.37 & 2.50 & 25.96 & 311.2 \\
-% 20 &  0.10 & 0.37 & 2.69 & 26.04 & 302.3 \\
-% 24 &  0.12 & 0.51 & 3.18 & 25.27 & 290.2 \\
-% \hline
-% \end{tabular}
-% \end{figure}
-\vspace{2em}
-
-\textbf{Acknowledgment.} We would like to thank Shalom Eliahou for his
-presentation of the tree of numerical semigroups and for the interesting
+\textbf{Acknowledgment.} We would like to thank Shalom Eliahou for introducing us to the tree of numerical semigroups and for interesting
 discussions on the subject. We also would like to thanks Nathan Cohen who
-suggested the two level of indirection stack optimization.
-
-\vspace{2em}
-
-%\begin{figure}[b]
-%\begin{tikzpicture}[scale=1.3]
-%\begin{semilogyaxis}[xlabel=\small genus,ylabel=time,legend pos=north west,legend cell align=left]
-%\addplot[color=blue,mark=x] coordinates {(20,0.02)(21,0.04) (22,0.07)(23,0.12)(24,0.2)(25,0.35)(26,0.61)(27,1.04) (28,1.76)(29,2.96)(30,4.96)(31,8.26)(32,13.77)(33,22.95)(34,38.22)(35,1250.88)};
-%\addplot[color=black,mark=x] coordinates {(20,0.02)(21,0.04) (22,0.06)(23,0.09)(24,0.16)(25,0.26)(26,0.45)(27,0.72)(28,1.25)(29,2.1)(30,3.39)(31,5.85)(32,9.25)(33,16.34)(34,27.23)(35,45.39)(36,75.58)(37,125.59)(38,203.56)(39,346.02)(40,557.51)};
-%\addplot[color=red,mark=x] coordinates {(20,0.02)(21,0.02)(22,0.04)(23,0.06)(24,0.1)(25,0.18)(26,0.29)(27,0.48)(28,0.81)(29,1.34)(30,2.25)(31,3.73)(32,6.2)(33,10.35)(34,17.11)(35,28.35)(36,46.99)(37,77.89)(38,128.53)(39,212.1)(40,349.98)};
-%\addplot[color=magenta,mark=x] coordinates {(20,0.01)(21,0.01)(22,0.01)(23,0.01)(24,0.02)(25,0.03)(26,0.05)(27,0.08)(28,0.12)(29,0.21)(30,0.35)(31,0.57)(32,0.97)(33,1.65)(34,2.69)(35,4.18(36,7.36)(37,11.66)(38,20.35)(39,32.55)(40,74.46) };
-%          \addplot [color=green,mark=x] coordinates {
-%			(20,0.003)	
-%            (21,0.004)
-%            (22,0.006)
-%            (23,0.009)
-%            (24,0.011)
-%            (25,0.014)
-%            (26,0.018)
-%            (27,0.029)
-%            (28,0.046)
-%            (29,0.069)
-%            (30,0.110)
-%            (31,0.165)
-%            (32,0.261)
-%            (33,0.417)
-%            (34,0.755)
-%            (35,1.192)
-%            (36,1.956)
-%            (37,3.134)
-%            (38,5.089)
-%            (39,8.973)
-%            (40,14.336)
-%        };
-%	%\legend style={anchor=north,at={(20,1000)}}  
-%        \legend{\tiny breadth-expl,\tiny depth-expl,\tiny depth-expl-$\delta$,\tiny depth-expl-$\delta$-mmx}
-%        \end{semilogyaxis}
-%    \end{tikzpicture}
-%    \label{F:Time:new}
-%    \caption{Comparison of time executions of different exploration algorithms of the tree $\mathcal{T}^{\leq g}$ on an Intel \tt{i5-3570K} CPU with $8GB$ of memory. 
-%The scale is logarithmic in time. 
-%The first version is based on a breadth-first search exploration and the peak at genus~$35$ is due to the consumption of all the memory and use of swap. 
-%The second version uses a depth first search exploration.
-%The third is based on the second one with use of decomposition numbers, it corresponds to the algorithm given in Section~\ref{S:Algo}. 
-%The last one is an optimisation of the third one with \MMX.}
-%\end{figure}
+suggested the two levels of indirection stack optimization.
 
 
-
-%%\begin{figure}[b]
-%%\begin{tikzpicture}[scale=1.3]
-%%        \begin{semilogyaxis}[xlabel=\small genus,ylabel=time,legend pos=north west,legend cell align=left]
-%%        \addplot [color=blue,mark=x] coordinates {
-%%(20,0.045767)
-%%(21,0.067697)
-%%(22,0.112697)
-%%(23,0.194646)
-%%(24,0.335412)
-%%(25,0.581481)
-%%(26,1.01088)
-%%(27,1.72613)
-%%(28,2.9324)
-%%(29,4.91856)
-%%(30,8.39383)
-%%(31,14.0308)
-%%(32,23.7138)
-%%(33,39.6461)
-%%(34,66.1154)
-%%(35,109.406)
-%%(36,182.331)
-%%(37,302.765)
-%%        };
-%%       \addplot [color=black,mark=x] coordinates {
-%%(20,0.043697)
-%%(21,0.065487)
-%%(22,0.113301)
-%%(23,0.186903)
-%%(24,0.31748)
-%%(25,0.53251)
-%%(26,0.899982)
-%%(27,1.5205)
-%%(28,2.55423)
-%%(29,4.28809)
-%%(30,7.30236)
-%%(31,12.1284)
-%%(32,20.2132)
-%%(33,33.707)
-%%(34,56.5415)
-%%(35,93.7614)
-%%(36,157.09)
-%%(37,259.997)
-%%(38,427.497)
-%%(39,709.564)
-%%(40,1192.81)
-%%        };
-%%         \addplot [color=red,mark=x] coordinates {
-%%(20,0.027708)
-%%(21,0.044416)
-%%(22,0.074789)
-%%(23,0.122006)
-%%(24,0.203155)
-%%(25,0.344143)
-%%(26,0.594073)
-%%(27,1.07134)
-%%(28,1.622)
-%%(29,2.82573)
-%%(30,4.53882)
-%%(31,7.60975)
-%%(32,12.5442)
-%%(33,21.0466)
-%%(34,34.7638)
-%%(35,57.7621)
-%%(36,95.6878)
-%%(37,158.95)
-%%(38,264.495)
-%%(39,436.146)
-%%(40,719.347)
-%%        };
-%%        \addplot [color=magenta,mark=x] coordinates {
-%%(20,0.001562)
-%%(21,0.001957)
-%%(22,0.002711)
-%%(23,0.003811)
-%%(24,0.005605)
-%%(25,0.00861)
-%%(26,0.013127)
-%%(27,0.020991)
-%%(28,0.036053)
-%%(29,0.05879)
-%%(30,0.095882)
-%%(31,0.158853)
-%%(32,0.259237)
-%%(33,0.441074)
-%%(34,0.750349)
-%%(35,1.2067)
-%%(36,1.9608)
-%%(37,3.19713)
-%%(38,5.33436)
-%%(39,9.2136)
-%%(40,14.5226)
-%%        };
-%%	%\legend style={anchor=north,at={(20,1000)}}  
-%%        \legend{\tiny breadth-expl,\tiny depth-expl,\tiny depth-expl-$\delta$}
-%%        \end{semilogyaxis}
-%%    \end{tikzpicture}
-%%    \label{F:Time}
-%%    \caption{Comparison of time executions of different exploration algorithms of the tree $\mathcal{T}^{\leq g}$ on an Intel \tt{i7-3840QM} CPU with $32GB$ of memory. 
-%%The scale is logarithmic in time. 
-%%The first version is based on a breadth-first search exploration and the peak at genus~$35$ is due to the consumption of all the memory and use of swap. 
-%%The second version uses a depth first search exploration.
-%%The third is based on the second one with use of decomposition numbers, it corresponds to the algorithm given in Section~\ref{S:Algo}. 
-%%The last one is an optimisation of the third one with \SSE but not using \CilkP.}
-%%\end{figure}
-
-\footnotesize
-
-\begin{thebibliography}{10}
-
-\bibitem{BrasAmoros2008}{M.~Bras-Amor{\'o}s, \emph{Fibonacci-like behavior of the number of numerical semigroups of a given genus}, Semigroup Forum \textbf{76}, no.~2 (2008), 379--384}
-
-\bibitem{Borie}{N.~Borie, \emph{Generation modulo the action of a permutation
-      group}, Proceeding of The 25th International Conference on Formal Power
-    Series and Algebraic Combinatorics (FPSAC '13), DMTCS Proceedings \textbf{0}(01) (2013),
-    767--778}
-
- \bibitem{Delgado}{M.~Delgado, homepage, \url{http://cmup.fc.up.pt/cmup/mdelgado/numbers/}}
- 
-\bibitem{NumericalSgps}{M.~Delgado, P.A.~Garcia-Sanchez, J.~Maris, \emph{NumericalSgps} -- GAP package, ver.0.971, 2001 \url{http://cmup.fc.up.pt/cmup/mdelgado/numericalsgps/}}
-
-\bibitem{GAP}{GAP -- Groups, Algorithms, and Programming, Version 4.6.3, \url{http://www.gap-system.org}}
-
-\bibitem{BookNS}{P.A.~Garsia-Sanchez, J.C.~Rosales, \emph{Numerical semigroups}, Springer, New York, 2009, Developments in Mathematics, vol.~20, x+181}
-
-\bibitem{GCCcilk}{B.V.~Iyer, R.~Geva, P.~Halpern, \emph{Cilk\texttrademark{}+ in GCC}
-,GNU Tools Cauldron, 2012, \url{http://gcc.gnu.org/wiki/cauldron2012?action=AttachFile&do=get&target=Cilkplus_GCC.pdf}}
-
-\bibitem{BookDFP}{J.L.~Ram{\'{\i}}rez Alfons{\'{\i}}n, \emph{The Diophantine Frobenius Problem}, Oxford University press, 2005, Oxford Lecture Series in Mathematics and its Applications, vol.~30, xvi+243}
-
-\bibitem{Rosales}{J.C.~Rosales, \emph{Fundamental gaps of numerical semigroups generated by two elements}, Linear Algebre Appl. \textbf{405} (2005), 200--208}
-
-\bibitem{OEIS}{N.J.A.~Sloane, \emph{The On-Line Encyclopedia of Integer Sequences}, \url{http://oeis.org}}
-
-\bibitem{IntelSSE}{Software.intel.com, \emph{Intel Instruction Set Architechture Extensions}, Intel\textregistered{} Developer Zone, 2013, \url{https://www.cilkplus.org/}}
-
-
-\bibitem{CilkIntel}{Software.intel.com, \emph{Intel\textregistered{} Cilk\texttrademark{} Homepage}, \url{ttps://www.cilkplus.org/}}
-
-\bibitem{CilkRefman}{Software.intel.com, \emph{Intel\textregistered{} Cilk\texttrademark{} Plus Reference Guide},\url{https://software.intel.com/en-us/node/522579}}
-
-\bibitem{AVX2}{Wikipedia, \emph{Advanced Vector Extension}, \url{http://en.wikipedia.org/wiki/Advanced_Vector_Extensions}}
-
-\bibitem{WikipediaDuff}{Wikipedia, \emph{Duff's device}, \url{http://en.wikipedia.org/wiki/Duff's_device}}
-
-\bibitem{WikipediaHT}{Wikipedia, \emph{Hyper-Threading}, 
-\url{http://en.wikipedia.org/wiki/Hyper-Threading}}
-
-\bibitem{WikipediaSIMD}{Wikipedia, \emph{SIMD}, \url{http://en.wikipedia.org/wiki/SIMD}}
-
-\bibitem{WikipediaSSE}{Wikipedia, \emph{Streaming SIMD Extensions}, \url{http://en.wikipedia.org/wiki/Streaming_SIMD_Extensions}}
-
-\bibitem{WikipediaTB}{Wikipedia, \emph{Turbo Boost}, 
-\url{http://en.wikipedia.org/wiki/Intel_Turbo_Boost}}
-
-
-\bibitem{Wilf}{H. S. Wilf, \emph{A circle-of-lights algorithm for the money-changing problem}, Amer. Math. Monthly \textbf{85} (1978), 562--565}
-
-\bibitem{Zhai}{A. Zhai, \emph{Fibonacci-like growth of numerical semigroups of a given genus}, Semigroup Forum\textbf{86}, no.3 (2013), 634--662}
-\end{thebibliography}
-
+\bibliographystyle{plain} 
+\bibliography{biblio}
 \vspace{2em}
 
 \noindent \textbf{Jean Fromentin}
-
-Univ. Lille Nord de France, F-59000 Lille, France
 
 ULCO, LMPA J.~Liouville, B.P. 699, F-62228 Calais, France
 
@@ -1412,7 +1128,7 @@ CNRS, FR 2956, France
 
 Bureau 33, Laboratoire de Recherche en Informatique (UMR CNRS 8623)
 
-Bâtiment 650, Universit\'e Paris Sud 11, 91405 Orsay CEDEX, France
+B\^atiment 650, Universit\'e Paris Sud 11, 91405 Orsay CEDEX, France
 
 \url{florent.hivert@lri.fr}
 \end{document}
