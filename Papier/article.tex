@@ -683,7 +683,7 @@ in memory, hence the use of a specific instruction. The \tt{zero}
 (resp. \tt{one}) constants are initialized as 16 bytes equal to $0$
 (resp. $1$). The comparison \tt{(block != zero)} therefore returns a block
 which contains $0$ in the bytes corresponding the $0$ entries of block and
-$255$ in the non zero one. This result is then bitwise anded with one so that
+$255$ in the non zero one. This result is then bitwise and-ed with one so that
 the instruction actually performs a 16~bytes parallel version of
 
 
