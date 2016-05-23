@@ -1,4 +1,4 @@
-CXX         = g++
+CXX         = g++-5
 CPPFLAGS    = -DNDEBUG -DMAX_GENUS=$(MAX_GENUS)
 CXXFLAGS    = -std=c++11 -fcilkplus -g -Wall -O3 # -Winline
 TARGET_ARCH = -march=native -march=native

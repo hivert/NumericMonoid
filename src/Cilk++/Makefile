@@ -1,6 +1,6 @@
 # CILK_ROOT must contains the GCC/Cilk root directory
 OS	 		= $(shell uname) 
-CXX         = $(CILK_ROOT)/bin/g++
+CXX         = /usr/bin/g++-5
 CPPFLAGS    = -DNDEBUG -DMAX_GENUS=$(MAX_GENUS)
 CXXFLAGS    = -std=c++11 -fcilkplus -g -Wall -O3 # -Winline
 
