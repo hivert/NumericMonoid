@@ -39,10 +39,10 @@ void init_full_N(monoid &);
 void print_monoid(const monoid &);
 void print_epi8(epi8);
 inline void copy_blocks(      dec_blocks &__restrict__ dst,
-			const dec_blocks &__restrict__ src) __attribute__((always_inline));
+			const dec_blocks &__restrict__ src);
 inline void remove_generator(monoid &__restrict__ dst,
 		      const monoid &__restrict__ src,
-		      ind_t gen) __attribute__((always_inline));
+		      ind_t gen);
 inline monoid remove_generator(const monoid &src, ind_t gen);
 
 
@@ -177,7 +177,8 @@ template <class T> inline bool generator_iter<T>::move_next()
 
 
 
-inline void copy_blocks(dec_blocks &dst, dec_blocks const &src)
+inline __attribute__((always_inline))
+void copy_blocks(dec_blocks &dst, dec_blocks const &src)
 {
   for (ind_t i=0; i<NBLOCKS; i++) dst[i] = src[i];
 }
@@ -185,7 +186,8 @@ inline void copy_blocks(dec_blocks &dst, dec_blocks const &src)
 
 #include <cassert>
 
-inline void remove_generator(monoid &__restrict__ dst,
+inline __attribute__((always_inline))
+void remove_generator(monoid &__restrict__ dst,
 		      const monoid &__restrict__ src,
 		      ind_t gen)
 {
