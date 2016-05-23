@@ -29,7 +29,7 @@ from sage.rings.integer cimport Integer
 from sage.rings.integer import GCD_list
 from sage.structure.sage_object cimport SageObject
 
-include 'sage/ext/interrupt.pxi'
+include 'cysignals/signals.pxi'
 
 from monoid cimport *
 from treewalk cimport *

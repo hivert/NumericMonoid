@@ -39,7 +39,7 @@ numeric_monoid.so: treewalk.cpp treewalk.hpp monoid.cpp monoid.hpp numeric_monoi
 	$(PYTHON) setup.py build_ext --inplace
 
 clean:
-	rm -rf $(TARGET) *.o build numeric_monoid.so numeric_monoid.html numeric_monoid.cpp
+	rm -rf $(TARGET) *.o build cysignals numeric_monoid.so numeric_monoid.html numeric_monoid.cpp
 
 test: all
 	./treewalk

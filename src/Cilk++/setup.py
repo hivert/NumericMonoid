@@ -31,9 +31,17 @@ else:
     MARCH='-march=native'
     MTUNE='-march=native'
     CILK_LIB = os.path.join(CILK_ROOT, 'lib64')
-    
+
 import Cython.Compiler.Options
 Cython.Compiler.Options.annotate = True
+
+sage_include = sage_include_directories()
+packs = [x for x in sage_include if x.endswith('site-packages')][0]
+sage_include.append(os.path.join(packs, 'cysignals'))
+
+#sage_include+=sys.path
+#sage_include.append('/home/data/Sage-Install/sage-7.2.beta2/local/lib/python2.7/site-packages/cysignals/')
+
 
 setup(
     cmdclass = {'build_ext': build_ext},
@@ -46,7 +54,7 @@ setup(
                                         MARCH, MTUNE,
                                         '-fcilkplus'],
                   define_macros = [('NDEBUG', '1'), ('MAX_GENUS','86')],
-                  include_dirs = sage_include_directories(), # [SAGE_C,SAGE_DEV],
+                  include_dirs = sage_include, # [SAGE_C,SAGE_DEV],
                   library_dirs = [CILK_LIB],
                   runtime_library_dirs = [CILK_LIB],
                   libraries = ['cilkrts'],
