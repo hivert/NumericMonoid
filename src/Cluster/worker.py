@@ -13,11 +13,13 @@ data = m.get_data()
 results = m.get_results()
 
 def work():
+    import numeric_monoid
     print "Waiting for some job..."
     x = data.get()
     while x != None:
-        print "Computing..."
-        results.put((x, x+1))
+        mon, genus = x
+        print "Computing... %s upto genus=%s"%(mon, genus)
+        results.put(mon.walk_children(genus))
         print "Waiting for some job..."
         x = data.get()
     print "Shutdown"
