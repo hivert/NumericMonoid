@@ -1,0 +1,3 @@
+*.o
+treewalk
+numeric_monoid.so
