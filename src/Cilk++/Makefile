@@ -1,6 +1,5 @@
 # CILK_ROOT must contains the GCC/Cilk root directory
-OS	 		= $(shell uname) 
-CXX         = /usr/bin/g++-5
+OS	 		= $(shell uname)
 CPPFLAGS    = -DNDEBUG -DMAX_GENUS=$(MAX_GENUS)
 CXXFLAGS    = -std=c++11 -fcilkplus -g -Wall -O3 # -Winline
 
@@ -12,7 +11,7 @@ TARGET_ARCH = -march=native -mtune=native
 LDFLAGS     = -lcilkrts -Wl,-rpath=$(CILK_ROOT)/lib64
 endif
 
-TARGET = treewalk numeric_monoid.so
+TARGET = treewalk
 
 SAGE = sage
 PYTHON = $(SAGE) -python
