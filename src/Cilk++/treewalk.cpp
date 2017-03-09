@@ -49,6 +49,7 @@ ResultsReducer cilk_results;
 void walk_children(const monoid &m)
 {
   unsigned long int nbr = 0;
+  monoid M = m;
 
   if (m.genus < MAX_GENUS - STACK_BOUND)
     {
@@ -56,6 +57,9 @@ void walk_children(const monoid &m)
       while (it.move_next())
 	{
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
+    if (!monoid_equal(m, M)) {
+      std::cerr << "FAIL" << endl;
+    }
 	  nbr++;
 	}
       cilk_results[m.genus] += nbr;
