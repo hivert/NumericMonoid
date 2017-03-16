@@ -7,7 +7,7 @@ using namespace std::chrono;
 
 #include "treewalk.hpp"
 
-void walk_children_stack(monoid m, results_type &res)
+void walk_children_stack(monoid m, results_type res)
 {
   unsigned long int nbr;
   monoid data[MAX_GENUS-1], *stack[MAX_GENUS], *current;
@@ -46,7 +46,7 @@ void walk_children_stack(monoid m, results_type &res)
 ResultsReducer cilk_results;
 
 #define STACK_BOUND 11
-void walk_children(const monoid &m)
+void walk_children(const monoid m)
 {
   unsigned long int nbr = 0;
 
@@ -67,7 +67,7 @@ void walk_children(const monoid &m)
 
 
 
-void walk_children_stack(monoid m, ind_t bound, results_type &res)
+void walk_children_stack(monoid m, ind_t bound, results_type res)
 {
   unsigned long int nbr;
   monoid data[bound], *stack[bound], *current;
