@@ -45,7 +45,10 @@ void walk_children_stack(monoid m, results_type res)
 
 ResultsReducer cilk_results;
 
+#ifndef STACK_BOUND
 #define STACK_BOUND 11
+#endif
+
 void walk_children(const monoid m)
 {
   unsigned long int nbr = 0;
@@ -106,7 +109,7 @@ void walk_children(const monoid &m, ind_t bound)
 {
   unsigned long int nbr = 0;
 
-  if (bound > STACK_BOUND && m.genus < bound - STACK_BOUND)
+  if (m.genus < bound - STACK_BOUND)
     {
       auto it = generator_iter<CHILDREN>(m);
       while (it.move_next())
@@ -184,6 +187,7 @@ int main(int argc, char **argv)
 
   cout << "Computing number of numeric monoids for genus <= "
        << MAX_GENUS << " using " << __cilkrts_get_nworkers() << " workers" << endl;
+  cout << "Sizeof(monoid) = " << sizeof(monoid) << endl;
   auto begin = high_resolution_clock::now();
   init_full_N(N);
   walk_children(N);
