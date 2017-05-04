@@ -39,7 +39,7 @@ MAX_GENUS = cMAX_GENUS
 
 print_gen = True
 
-cdef class NumericMonoid(SageObject):
+cdef class NumericMonoid(object):
     r"""
     sage: import os; os.sys.path.insert(0,os.path.abspath('.')); from numeric_monoid import *
     sage: Full
@@ -179,7 +179,7 @@ cdef class NumericMonoid(SageObject):
         (<built-in function _from_pickle>, (<type 'numeric_monoid.NumericMonoid'>, 256, 8L, 3L, 4L, (1, 0, 0, 1, 0, 1, 2, 0, 2, 2, ..., 124, 124)))
         """
         return (_from_pickle,
-                (type(self), cSIZE,
+                (NumericMonoid, cSIZE,
                  self._m.conductor, self._m.min, self._m.genus,
                  tuple(self._decomposition_numbers())))
 
@@ -243,7 +243,7 @@ cdef class NumericMonoid(SageObject):
         ValueError: 8 is not a generator for < 3 5 7 >
         """
         cdef NumericMonoid res
-        res = NumericMonoid.__new__(type(self))
+        res = NumericMonoid.__new__(NumericMonoid)
         if gen > cSIZE or self._m.decs[gen] != 1:
             raise ValueError, "%i is not a generator for %s"%(gen, self)
         remove_generator(res._m, self._m, gen)
@@ -583,7 +583,8 @@ cdef class NumericMonoid(SageObject):
         for i in range(bound):
             res[i] = 0
         sig_on()
-        walk_children_stack(self._m, bound, res)
+        with nogil:
+            walk_children_stack(self._m, bound, res)
         sig_off()
         return [int(res[i]) for i in range(bound)]
 
@@ -595,7 +596,8 @@ cdef class NumericMonoid(SageObject):
         """
         cilk_results.reset()
         sig_on()
-        walk_children(self._m, bound)
+        with nogil:
+            walk_children(self._m, bound)
         sig_off()
         return [int(cilk_results[i]) for i in range(bound)]
 
