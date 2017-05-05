@@ -28,9 +28,9 @@ class CGenCountMixed(MR):
             res = vector(ZZ, self._g)
             res[x.genus()] = 1
             return res
-        print "start"
+        # print "start"
         res = x.walk_children(self._g)
-        print "end"
+        # print "end"
         return vector(ZZ, res)
 
 class CGen(CGenCount):
