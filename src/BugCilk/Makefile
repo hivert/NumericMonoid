@@ -1,22 +1,12 @@
 # CILK_ROOT must contains the GCC/Cilk root directory
 OS	 		= $(shell uname) 
-CXX         = /usr/bin/g++-5
-CXXFLAGS    = -std=c++11 -fcilkplus -g -Wall -O3 # -Winline
+CXXFLAGS    = -std=c++11 -fcilkplus -g -Wall -fsanitize=thread # -O3 # -Winline
 
-ifeq ($(shell uname), Darwin)
-TARGET_ARCH = -march=corei7 -march=corei7
-LDFLAGS 	= -lcilkrts
-else
 TARGET_ARCH = -march=native -mtune=native
-LDFLAGS     = -lcilkrts -Wl,-rpath=$(CILK_ROOT)/lib64
-endif
+LDFLAGS     = -lcilkrts
 
-TARGET = red
+TARGET = red red2 red_alloc red-norec redarray
 
 all: $(TARGET)
-
-red: red.o
-	$(CXX) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
-
 clean:
-	rm -rf $(TARGET) *.o red
+	rm -rf $(TARGET)
