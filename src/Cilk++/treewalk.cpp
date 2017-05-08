@@ -43,7 +43,7 @@ void walk_children_stack(monoid m, results_type res)
 }
 
 
-ResultsReducer cilk_results;
+results_type results;
 
 #ifndef STACK_BOUND
 #define STACK_BOUND 11
@@ -61,10 +61,10 @@ void walk_children(const monoid m)
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
 	  nbr++;
 	}
-      cilk_results[m.genus] += nbr;
+      results[m.genus] += nbr;
      }
   else
-    walk_children_stack(m, cilk_results.get_array());
+    walk_children_stack(m, results);
 }
 
 
@@ -117,29 +117,10 @@ void walk_children(const monoid &m, ind_t bound)
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()), bound);
 	  nbr++;
 	}
-      cilk_results[m.genus] += nbr;
+      results[m.genus] += nbr;
      }
   else
-    walk_children_stack(m, bound, cilk_results.get_array());
-}
-
-#ifdef TBB
-#include <tbb/scalable_allocator.h>
-cilk::reducer_list_append<monoid, tbb::scalable_allocator<monoid>> cilk_list_results;
-#else
-cilk::reducer_list_append<monoid> cilk_list_results;
-#endif
-
-void list_children(const monoid &m, ind_t bound)
-{
-  if (m.genus < bound)
-    {
-      auto it = generator_iter<CHILDREN>(m);
-      while (it.move_next())
-	cilk_spawn list_children(remove_generator(m, it.get_gen()), bound);
-     }
-  else
-    cilk_list_results.push_back(m);
+    walk_children_stack(m, bound, results);
 }
 
 
@@ -197,8 +178,8 @@ int main(int argc, char **argv)
   cout << endl << "============================" << endl << endl;
   for (unsigned int i=0; i<MAX_GENUS; i++)
     {
-      cout << cilk_results[i] << " ";
-      total += cilk_results[i];
+      cout << results[i] << " ";
+      total += results[i];
     }
   cout << endl;
   cout << "Total = " << total <<
