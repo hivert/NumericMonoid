@@ -8,7 +8,8 @@ TARGET_ARCH = -march=corei7 -march=corei7
 LDFLAGS 	= -lcilkrts
 else
 TARGET_ARCH = -march=native -mtune=native
-LDFLAGS     = -lcilkrts # -ltsan # -Wl,-rpath=$(CILK_ROOT)/lib64
+LDFLAGS     = # -Wl,-rpath=$(CILK_ROOT)/lib64
+LDLIBS      = -lcilkrts # -ltsan
 endif
 
 TARGET = treewalk
