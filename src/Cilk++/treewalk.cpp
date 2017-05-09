@@ -7,7 +7,7 @@ using namespace std::chrono;
 
 #include "treewalk.hpp"
 
-void walk_children_stack(monoid m, results_type res)
+void walk_children_stack(monoid m, results_type &res)
 {
   unsigned long int nbr;
   monoid data[MAX_GENUS-1], *stack[MAX_GENUS], *current;
@@ -71,7 +71,7 @@ void walk_children(const monoid m)
 
 
 
-void walk_children_stack(monoid m, ind_t bound, results_type res)
+void walk_children_stack(monoid m, ind_t bound, results_type &res)
 {
   unsigned long int nbr;
   monoid data[bound], *stack[bound], *current;
@@ -145,19 +145,29 @@ void list_children(const monoid &m, ind_t bound)
 
 #include "alarm.hpp"
 
-void print_sizes(void)
-{
+void reset_sizes() {
+  for (unsigned int i=0; i<MAX_GENUS; i++)
+    for (int w=0; w < __cilkrts_get_nworkers(); w++)
+      cilk_results[w][i] = 0;
+}
+
+unsigned long int get_sizes(results_type &restab) {
   unsigned long int total = 0;
-  results_type restab;
   for (unsigned int i=0; i<MAX_GENUS; i++) {
     restab[i] = 0;
     for (int w=0; w < __cilkrts_get_nworkers(); w++)
       restab[i] += cilk_results[w][i];
-  }
-  for (unsigned int i=0; i<MAX_GENUS; i++) {
-    cout << restab[i] << " ";
     total += restab[i];
   }
+  return total;
+}
+
+void print_sizes(void)
+{
+  results_type restab;
+  unsigned long int total = get_sizes(restab);
+  for (unsigned int i=0; i<MAX_GENUS; i++)
+    cout << restab[i] << " ";
   cout << endl;
   cout << "Total = " << total << endl;
 }
@@ -208,6 +218,7 @@ int main(int argc, char **argv)
   cout << "Computing number of numeric monoids for genus <= "
        << MAX_GENUS << " using " << __cilkrts_get_nworkers() << " workers" << endl;
   cout << "Sizeof(monoid) = " << sizeof(monoid) << endl;
+  reset_sizes();
   start_alarm();
   auto begin = high_resolution_clock::now();
   init_full_N(N);

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "alarm.hpp"
 
+int nloops;
 void sigalrm_handler( int sig )
 {
   printf("\nProgress report no %i\n", nloops++);
@@ -19,6 +20,7 @@ void start_alarm(void)
     sact.sa_handler = sigalrm_handler;
     sigaction(SIGALRM, &sact, NULL);
 
+    nloops=0;
     alarm(PERIOD);
 }
 
