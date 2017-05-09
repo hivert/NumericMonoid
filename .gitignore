@@ -1,3 +1,7 @@
 *.o
+*.pyc
+*.aux
+*.log
+*.synctex.gz
 treewalk
 numeric_monoid.so
