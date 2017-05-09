@@ -43,7 +43,8 @@ void walk_children_stack(monoid m, results_type res)
 }
 
 
-ResultsReducer cilk_results;
+results_type cilk_results[128];
+
 
 #ifndef STACK_BOUND
 #define STACK_BOUND 11
@@ -61,10 +62,10 @@ void walk_children(const monoid m)
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
 	  nbr++;
 	}
-      cilk_results[m.genus] += nbr;
+      cilk_results[__cilkrts_get_worker_number()][m.genus] += nbr;
      }
   else
-    walk_children_stack(m, cilk_results.get_array());
+    walk_children_stack(m, cilk_results[__cilkrts_get_worker_number()]);
 }
 
 
@@ -117,10 +118,10 @@ void walk_children(const monoid &m, ind_t bound)
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()), bound);
 	  nbr++;
 	}
-      cilk_results[m.genus] += nbr;
+      cilk_results[__cilkrts_get_worker_number()][m.genus] += nbr;
      }
   else
-    walk_children_stack(m, bound, cilk_results.get_array());
+    walk_children_stack(m, bound, cilk_results[__cilkrts_get_worker_number()]);
 }
 
 #ifdef TBB
@@ -142,9 +143,29 @@ void list_children(const monoid &m, ind_t bound)
     cilk_list_results.push_back(m);
 }
 
+#include "alarm.hpp"
+
+void print_sizes(void)
+{
+  unsigned long int total = 0;
+  results_type restab;
+  for (unsigned int i=0; i<MAX_GENUS; i++) {
+    restab[i] = 0;
+    for (int w=0; w < __cilkrts_get_nworkers(); w++)
+      restab[i] += cilk_results[w][i];
+  }
+  for (unsigned int i=0; i<MAX_GENUS; i++) {
+    cout << restab[i] << " ";
+    total += restab[i];
+  }
+  cout << endl;
+  cout << "Total = " << total << endl;
+}
+
+
+void progress_report(void) { print_sizes(); }
 
 #include <cpuid.h>
-#include <cilk/cilk_api.h>
 
 static void show_usage(string name)
 {
@@ -155,7 +176,6 @@ static void show_usage(string name)
 int main(int argc, char **argv)
 {
   monoid N;
-  unsigned long int total = 0;
   string nproc = "0";
 
   if (argc != 1 and argc != 3) { show_usage(argv[0]); return 1; }
@@ -188,6 +208,7 @@ int main(int argc, char **argv)
   cout << "Computing number of numeric monoids for genus <= "
        << MAX_GENUS << " using " << __cilkrts_get_nworkers() << " workers" << endl;
   cout << "Sizeof(monoid) = " << sizeof(monoid) << endl;
+  start_alarm();
   auto begin = high_resolution_clock::now();
   init_full_N(N);
   walk_children(N);
@@ -195,14 +216,9 @@ int main(int argc, char **argv)
   duration<double> ticks = end-begin;
 
   cout << endl << "============================" << endl << endl;
-  for (unsigned int i=0; i<MAX_GENUS; i++)
-    {
-      cout << cilk_results[i] << " ";
-      total += cilk_results[i];
-    }
-  cout << endl;
-  cout << "Total = " << total <<
-       ", computation time = " << std::setprecision(4) << ticks.count() << " s."  << endl;
+
+  print_sizes();
+  cout << "computation time = " << std::setprecision(4) << ticks.count() << " s."  << endl;
   return EXIT_SUCCESS;
 }
 

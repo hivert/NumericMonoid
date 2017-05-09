@@ -29,9 +29,10 @@ MAX_GENUS=$(DEFAULT_MAX_GENUS)
 
 all: $(TARGET)
 
+alarm.o: alarm.cpp alarm.hpp
 monoid.o: monoid.cpp monoid.hpp
-treewalk.o: treewalk.cpp treewalk.hpp monoid.hpp
-treewalk: treewalk.o monoid.o
+treewalk.o: treewalk.cpp treewalk.hpp monoid.hpp alarm.hpp
+treewalk: treewalk.o monoid.o alarm.o
 	$(CXX) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
 numeric_monoid.so: treewalk.cpp treewalk.hpp monoid.cpp monoid.hpp numeric_monoid.pxd numeric_monoid.pyx monoid.pxd treewalk.pxd
