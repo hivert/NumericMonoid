@@ -52,17 +52,14 @@ results_type cilk_results[128];
 
 void walk_children(const monoid m)
 {
-  unsigned long int nbr = 0;
-
   if (m.genus < MAX_GENUS - STACK_BOUND)
     {
       auto it = generator_iter<CHILDREN>(m);
       while (it.move_next())
 	{
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()));
-	  nbr++;
+	  cilk_results[__cilkrts_get_worker_number()][m.genus] ++;
 	}
-      cilk_results[__cilkrts_get_worker_number()][m.genus] += nbr;
      }
   else
     walk_children_stack(m, cilk_results[__cilkrts_get_worker_number()]);
@@ -108,17 +105,14 @@ void walk_children_stack(monoid m, ind_t bound, results_type &res)
 
 void walk_children(const monoid &m, ind_t bound)
 {
-  unsigned long int nbr = 0;
-
   if (m.genus < bound - STACK_BOUND)
     {
       auto it = generator_iter<CHILDREN>(m);
       while (it.move_next())
 	{
 	  cilk_spawn walk_children(remove_generator(m, it.get_gen()), bound);
-	  nbr++;
+	  cilk_results[__cilkrts_get_worker_number()][m.genus] ++;
 	}
-      cilk_results[__cilkrts_get_worker_number()][m.genus] += nbr;
      }
   else
     walk_children_stack(m, bound, cilk_results[__cilkrts_get_worker_number()]);
