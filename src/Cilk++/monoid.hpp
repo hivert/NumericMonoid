@@ -35,6 +35,8 @@ struct monoid
   ind_t conductor, min, genus;
 };
 
+bool monoid_equal(monoid, monoid);
+
 void init_full_N(monoid &);
 void print_monoid(const monoid &);
 void print_epi8(epi8);
