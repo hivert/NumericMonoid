@@ -22,5 +22,5 @@ extern cilk::reducer_list_append<monoid> cilk_list_results;
 void walk_children(const monoid m);
 void walk_children(const monoid &m, ind_t bound);
 void reset_sizes();
-unsigned long int get_size(results_type &restab);
+unsigned long int get_sizes(results_type &restab);
 void list_children(const monoid &m, ind_t bound);
