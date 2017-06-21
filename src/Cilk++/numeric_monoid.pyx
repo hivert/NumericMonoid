@@ -381,6 +381,7 @@ cdef class NumericMonoid(object):
             list_children(self._m, genus)
         sig_off()
         res._l = cilk_list_results.get_value()
+        cilk_list_results.get_reference().clear()
         return res
 
     # don't know how to make it readonly !
