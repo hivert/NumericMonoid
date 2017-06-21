@@ -610,6 +610,7 @@ cpdef NumericMonoid _from_pickle(type typ, int sz, int cond, int mn, int genus, 
     running ._test_category() . . . pass
     running ._test_generators() . . . pass
     running ._test_monoid() . . . pass
+    running ._test_new() . . . pass
     running ._test_not_implemented_methods() . . . pass
     running ._test_pickling() . . . pass
     sage: TestSuite(Full.remove_generator(1)).run()               # indirect doctest
