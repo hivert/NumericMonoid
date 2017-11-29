@@ -84,5 +84,5 @@ Below is the table of the results (A more computer friendly sintax is at the end
 67 | 377866907506273
 68 | 612309308257800
 69 | 992121118414851
-70 | 1607394814170158:
+70 | 1607394814170158
 
