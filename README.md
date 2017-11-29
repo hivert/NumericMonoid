@@ -10,7 +10,7 @@ DOI:https://doi.org/10.1090/mcom/3075
 The more up to date code is in directory src/Cilk++/ together with a Sagemath
 binding.
 
-Below is the table of the results (A more computer friendly sintax is at the end of https://github.com/hivert/NumericMonoid/raw/master/src/Sizes
+Below is the table of the results (A more computer friendly syntax is at the end of https://github.com/hivert/NumericMonoid/raw/master/src/Sizes
 
  g | number of semigroups
 ---|--------------------
