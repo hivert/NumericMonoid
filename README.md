@@ -1,7 +1,7 @@
 Computing the number of Numerical Monoid of a Given Genus
 =========================================================
 
-Paper published in
+This is a very optimized implementation of algorithm described in
 
 Jean Fromentin and Florent Hivert. 2016. Exploring the tree of numerical semi-
 groups. Math. Comput. 85, 301 (2016), 2553–2568.
@@ -10,7 +10,33 @@ DOI:https://doi.org/10.1090/mcom/3075
 The more up to date code is in directory src/Cilk++/ together with a Sagemath
 binding.
 
+Description of the problem
+==========================
+
+A *numerical semigroup* is a subset of the set of natural number which
+- contains 0
+- is stable under addition
+- has a finite complement
+The elements of the complement are called *gaps*. The number of gaps is
+called the *genus*.
+
+The goal is to compute the number n(g) of semigroups of a given genus.
+
+A few conjectures:
+
+- Bras-amoros 2008 : n(g) >= n(g-1) + n(g-2)
+- Zhai 2013 n(g) >= n(g-1) asymptotically true, but open for small g.
+
+See http://images.math.cnrs.fr/Semigroupes-numeriques-et-nombre-d-or-II.html (in French) for more explanation.
+
+We also validated Wilf conjecture upto n=60 and invalidated some stronger statements (See Near-misses in Wilf's conjecture, Shalom Eliahou, Jean Fromentin https://arxiv.org/abs/1710.03623v1).
+
+Results
+=======
+
 Below is the table of the results (A more computer friendly syntax is at the end of https://github.com/hivert/NumericMonoid/raw/master/src/Sizes
+
+
 
  g | number of semigroups
 ---|--------------------
