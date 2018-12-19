@@ -17,6 +17,7 @@ A *numerical semigroup* is a subset of the set of natural number which
 - contains 0
 - is stable under addition
 - has a finite complement
+
 The elements of the complement are called *gaps*. The number of gaps is
 called the *genus*.
 
@@ -24,7 +25,7 @@ The goal is to compute the number n(g) of semigroups of a given genus.
 
 A few conjectures:
 
-- Bras-amoros 2008 : n(g) >= n(g-1) + n(g-2)
+- Bras-amoros 2008 : n(g) >= n(g-1) + n(g-2). Still widely open.
 - Zhai 2013 n(g) >= n(g-1) asymptotically true, but open for small g.
 
 See http://images.math.cnrs.fr/Semigroupes-numeriques-et-nombre-d-or-II.html (in French) for more explanation.
