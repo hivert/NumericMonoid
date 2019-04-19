@@ -40,8 +40,8 @@ packs = [x for x in sage_include if x.endswith('site-packages')][0]
 sage_include.append(os.path.join(packs, 'cysignals'))
 
 #sage_include+=sys.path
-#sage_include.append('/home/data/Sage-Install/sage-7.2.beta2/local/lib/python2.7/site-packages/cysignals/')
-
+sage_include.append('/home/data/Sage-Install/sage-8.4/src/sage/libs/ntl/')
+sage_include.append('/home/data/Sage-Install/sage-8.4/src/sage/cpython/')
 
 setup(
     cmdclass = {'build_ext': build_ext},
