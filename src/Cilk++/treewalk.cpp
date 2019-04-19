@@ -10,34 +10,32 @@ using namespace std::chrono;
 void walk_children_stack(monoid m, results_type &res)
 {
   unsigned long int nbr;
-  monoid data[MAX_GENUS-1], *stack[MAX_GENUS], *current;
-  monoid **stack_pointer = stack + 1;
+  monoid stack[MAX_GENUS], father;
+  monoid *stack_pointer = stack + 1;
 
-  for (ind_t i=1; i<MAX_GENUS; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
-  stack[0] = &m;
+  stack[0] = m;
   while (stack_pointer != stack)
     {
+      // pop from the stack
       --stack_pointer;
-      current = *stack_pointer;
-      if (current->genus < MAX_GENUS - 1)
+      father = *stack_pointer;
+      if (father.genus < MAX_GENUS - 1)
 	{
 	  nbr = 0;
-	  auto it = generator_iter<CHILDREN>(*current);
+	  auto it = generator_iter<CHILDREN>(father);
 	  while (it.move_next())
 	    {
-	      // exchange top with top+1
-	      stack_pointer[0] = stack_pointer[1];
-	      remove_generator(**stack_pointer, *current, it.get_gen());
+              // push on the stack
+	      remove_generator(*stack_pointer, father, it.get_gen());
 	      stack_pointer++;
 	      nbr++;
 	    }
-	  *stack_pointer = current;
-	  res[current->genus] += nbr;
+	  res[father.genus] += nbr;
 	}
       else
 	{
-	  auto it = generator_iter<CHILDREN>(*current);
-	  res[current->genus] += it.count();
+	  auto it = generator_iter<CHILDREN>(father);
+	  res[father.genus] += it.count();
 	}
     }
 }
@@ -71,34 +69,32 @@ void walk_children(const monoid m)
 void walk_children_stack(monoid m, ind_t bound, results_type &res)
 {
   unsigned long int nbr;
-  monoid data[bound], *stack[bound], *current;
-  monoid **stack_pointer = stack + 1;
+  monoid stack[bound], father;
+  monoid *stack_pointer = stack + 1;
 
-  for (ind_t i=1; i<bound; i++) stack[i] = &(data[i-1]); // Nathann's trick to avoid copy
-  stack[0] = &m;
+  stack[0] = m;
   while (stack_pointer != stack)
     {
+      // pop from the stack
       --stack_pointer;
-      current = *stack_pointer;
-      if (current->genus < bound - 1)
+      father = *stack_pointer;
+      if (father.genus < bound - 1)
 	{
 	  nbr = 0;
-	  auto it = generator_iter<CHILDREN>(*current);
+	  auto it = generator_iter<CHILDREN>(father);
 	  while (it.move_next())
 	    {
-	      // exchange top with top+1
-	      stack_pointer[0] = stack_pointer[1];
-	      remove_generator(**stack_pointer, *current, it.get_gen());
+              // push on the stack
+	      remove_generator(*stack_pointer, father, it.get_gen());
 	      stack_pointer++;
 	      nbr++;
 	    }
-	  *stack_pointer = current;
-	  res[current->genus] += nbr;
+	  res[father.genus] += nbr;
 	}
       else
 	{
-	  auto it = generator_iter<CHILDREN>(*current);
-	  res[current->genus] += it.count();
+	  auto it = generator_iter<CHILDREN>(father);
+	  res[father.genus] += it.count();
 	}
     }
 }
